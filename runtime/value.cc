@@ -306,7 +306,11 @@ bool EsValue::operator==(const EsValue &rhs) const
         case TYPE_BOOLEAN:
             return as_boolean() == rhs.as_boolean();
         case TYPE_NUMBER:
-            return as_number() == rhs.as_number();
+        {
+            double num = as_number();
+            double rhs_num = rhs.as_number();
+            return std::isnan(num) ? std::isnan(rhs_num) : num == rhs_num;
+        }
         case TYPE_STRING:
             return as_string() == rhs.as_string();
         case TYPE_OBJECT:

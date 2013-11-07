@@ -27,7 +27,7 @@ void Analyzer::reset()
     functions_.clear();
 }
 
-void Analyzer::visit_fun_decls(parser::FunctionLiteral *lit)
+void Analyzer::visit_fun(parser::FunctionLiteral *lit)
 {
     AnalyzedFunctionMap::iterator it_fun = functions_.find(lit);
     if (it_fun == functions_.end())
@@ -105,12 +105,17 @@ void Analyzer::visit_fun_decls(parser::FunctionLiteral *lit)
 
         visit(decl->as_function());
     }
+
+    // Function body.
+    parser::StatementVector::const_iterator it_stmt;
+    for (it_stmt = lit->body().begin(); it_stmt != lit->body().end(); ++it_stmt)
+        visit(*it_stmt);
 }
 
 void Analyzer::visit_binary_expr(parser::BinaryExpression *expr)
 {
     visit(expr->left());
-        
+
     switch (expr->operation())
     {
         case parser::BinaryExpression::COMMA:
@@ -332,25 +337,26 @@ void Analyzer::visit_cond_expr(parser::ConditionalExpression *expr)
 void Analyzer::visit_prop_expr(parser::PropertyExpression *expr)
 {
     visit(expr->key());
+
     visit(expr->obj());
 }
 
 void Analyzer::visit_call_expr(parser::CallExpression *expr)
 {
-    visit(expr->expression());
-    
     parser::ExpressionVector::const_iterator it;
     for (it = expr->arguments().begin(); it != expr->arguments().end(); ++it)
         visit(*it);
+
+    visit(expr->expression());
 }
 
 void Analyzer::visit_call_new_expr(parser::CallNewExpression *expr)
 {
-    visit(expr->expression());
-
     parser::ExpressionVector::const_iterator it;
     for (it = expr->arguments().begin(); it != expr->arguments().end(); ++it)
         visit(*it);
+
+    visit(expr->expression());
 }
 
 void Analyzer::visit_regular_expr(parser::RegularExpression *expr)
@@ -454,19 +460,14 @@ void Analyzer::visit_fun_lit(parser::FunctionLiteral *lit)
 {
     lex_envs_.push_back(LexicalEnvironment(LexicalEnvironment::TYPE_DECLARATIVE, lit));
 
-    visit_fun_decls(lit);
-
-    // Function body.
-    parser::StatementVector::const_iterator it_stmt;
-    for (it_stmt = lit->body().begin(); it_stmt != lit->body().end(); ++it_stmt)
-        visit(*it_stmt);
+    visit_fun(lit);
 
     lex_envs_.pop_back();
 }
 
 void Analyzer::visit_var_lit(parser::VariableLiteral *lit)
 {
-    // Dealt with in visit_fun_decls().
+    // Dealt with in visit_fun().
 }
 
 void Analyzer::visit_array_lit(parser::ArrayLiteral *lit)
@@ -581,6 +582,7 @@ void Analyzer::visit_with_stmt(parser::WithStatement *stmt)
     lex_envs_.push_back(LexicalEnvironment(LexicalEnvironment::TYPE_OBJECT, cur_lex_env.function()));
 
     visit(stmt->expression());
+
     visit(stmt->body());
 
     lex_envs_.pop_back();
@@ -652,11 +654,7 @@ void Analyzer::analyze(parser::FunctionLiteral *root)
 
     lex_envs_.push_back(LexicalEnvironment(LexicalEnvironment::TYPE_OBJECT, root));
 
-    visit_fun_decls(root);
-
-    parser::StatementVector::const_iterator it_stmt;
-    for (it_stmt = root->body().begin(); it_stmt != root->body().end(); ++it_stmt)
-        visit(*it_stmt);
+    visit_fun(root);
 
     // Some unallocated variables might need to be allocated to the context.
     AnalyzedFunctionMap::iterator it_fun;

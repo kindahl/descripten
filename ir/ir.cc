@@ -323,7 +323,7 @@ Value *Block::push_mem_elm_ptr(Value *val, size_t index)
     return instr;
 }
 
-Value *Block::push_stk_alloc(size_t count)
+Value *Block::push_stk_alloc(const Proxy<size_t> &count)
 {
     Instruction *instr = new (GC)StackAllocInstruction(count);
     push_instr(instr);
@@ -1414,7 +1414,7 @@ const Type *MemoryElementPointerInstruction::type() const
     return new (GC)PointerType(static_cast<const PointerType *>(val_->type())->type());
 }
 
-StackAllocInstruction::StackAllocInstruction(size_t count)
+StackAllocInstruction::StackAllocInstruction(const Proxy<size_t> &count)
     : count_(count)
 {
 }

@@ -159,7 +159,7 @@ class AnalyzedFunction
 {
 private:
     parser::FunctionLiteral *fun_;  ///< Function literal to which this object is associated.
-    AnalyzedVariableSet vars_;              ///< AnalyzedVariable declarations.
+    AnalyzedVariableSet vars_;      ///< AnalyzedVariable declarations.
 
     /** true if the function must register variables in the execution context
      * because a call to eval might want to access them dynamicall by name. */
@@ -304,7 +304,7 @@ private:
     void reset();
 
 private:
-    void visit_fun_decls(parser::FunctionLiteral *lit);
+    void visit_fun(parser::FunctionLiteral *lit);
 
     virtual void visit_binary_expr(parser::BinaryExpression *expr) OVERRIDE;
     virtual void visit_unary_expr(parser::UnaryExpression *expr) OVERRIDE;

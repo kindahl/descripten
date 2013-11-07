@@ -215,11 +215,6 @@ public:
             return value_;
         }
 
-        const ir::Type *type() const
-        {
-            return value_->type();
-        }
-
         int start() const
         {
             return start_;

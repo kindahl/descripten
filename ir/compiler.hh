@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include "config.hh"
 #include "common/string.hh"
+#include "common/proxy.hh"
 #include "parser/ast.hh"
 #include "parser/visitor.hh"
 #include "analyzer.hh"
@@ -70,6 +71,17 @@ private:
                      gc_allocator<std::pair<int, Value *> > > StackMap;
     StackMap stack_map_;
 
+    typedef std::set<Value *, std::less<Value *>, gc_allocator<Value *> > TemporarySet;
+    TemporarySet used_temporaries_;
+
+    /** List of allocated, but currently free temporary slots. */
+    std::vector<Value *, gc_allocator<Value *> > free_temporaries_;
+
+    int max_temporaries_;
+
+    /** Number of values to allocate in the stack frame. */
+    ProxySource<size_t> call_frame_value_count_;
+
 public:
     /**
      * Creates a new scope for an iteration statement.
@@ -82,7 +94,8 @@ public:
         , cnt_target_(cnt_target)
         , brk_target_(brk_target)
         , epilogue_(NULL)
-        , next_cache_id_(0) {}
+        , next_cache_id_(0)
+        , max_temporaries_(0) {}
 
     /**
      * Creates a new scope for a breakable statement.
@@ -93,7 +106,8 @@ public:
         , cnt_target_(NULL)
         , brk_target_(brk_target)
         , epilogue_(NULL)
-        , next_cache_id_(0) {}
+        , next_cache_id_(0)
+        , max_temporaries_(0) {}
 
     /**
      * Creates a new scope for a non-iteration statement.
@@ -104,7 +118,18 @@ public:
         , cnt_target_(NULL)
         , brk_target_(NULL)
         , epilogue_(NULL)
-        , next_cache_id_(0) {}
+        , next_cache_id_(0)
+        , max_temporaries_(0) {}
+
+    ProxySource<size_t> &call_frame_value_count()
+    {
+        return call_frame_value_count_;
+    }
+
+    void commit()
+    {
+        call_frame_value_count_.set_value(num_locals() + num_temporaries());
+    }
 
     Type type() const
     {
@@ -147,6 +172,11 @@ public:
         epilogue_ = epilogue;
     }
 
+    size_t num_locals() const
+    {
+        return local_map_.size();
+    }
+
     void add_local(const String &name, Value *val)
     {
         local_map_[name] = val;
@@ -160,6 +190,44 @@ public:
     Value *get_local(const String &name)
     {
         return local_map_[name];
+    }
+
+    size_t num_temporaries() const
+    {
+        return max_temporaries_;
+    }
+
+    /**
+     * Get a new temporary value from the pool of temporaries.
+     */
+    Value *get_temporary()
+    {
+        if (!free_temporaries_.empty())
+        {
+            Value *tmp = free_temporaries_.back();
+            free_temporaries_.pop_back();
+            used_temporaries_.insert(tmp);
+            return tmp;
+        }
+
+        Value *tmp = new (GC)ArrayElementConstant(
+            new (GC)ValuePointer(), num_locals() + max_temporaries_++);
+        used_temporaries_.insert(tmp);
+
+        return tmp;
+    }
+
+    /**
+     * Returns a temporay into the pool of temporaries. If @tmp is not a
+     * temporary, this function will do nothing.
+     */
+    void put_temporary(Value *tmp)
+    {
+        TemporarySet::iterator it = used_temporaries_.find(tmp);
+        assert(it != used_temporaries_.end());
+
+        free_temporaries_.push_back(*it);
+        used_temporaries_.erase(it);
     }
 
     uint16_t get_ctx_cache_id(uint64_t key)
@@ -218,7 +286,7 @@ private:
     typedef std::vector<Scope *, gc_allocator<Scope *> > ScopeVector;
     ScopeVector scopes_;
 
-    Scope *current_fun_scope();
+    Scope *current_fun_scope(bool accept_with);
     Value *get_local(const String &name, Function *fun);
 
 private:
@@ -236,6 +304,77 @@ private:
         assert(!exception_actions_.empty());
         return exception_actions_.back();
     }
+
+private:
+    class TemporaryManager
+    {
+    private:
+        TemporaryManager *parent_;
+        Compiler *compiler_;
+        Scope *scope_;
+
+        std::set<Value *, std::less<Value *>, gc_allocator<Value *> > temporaries_;
+        bool discard_return_;
+
+    public:
+        TemporaryManager(Compiler *compiler)
+            : parent_(NULL)
+            , compiler_(compiler)
+            , scope_(compiler->current_fun_scope(true))
+            , discard_return_(false)
+        {
+            if (!compiler_->temporaries_stack_.empty())
+                parent_ = compiler_->temporaries_stack_.back();
+
+            compiler_->temporaries_stack_.push_back(this);
+        }
+
+        ~TemporaryManager()
+        {
+            for (Value *val : temporaries_)
+                scope_->put_temporary(val);
+
+            if (!compiler_->temporaries_stack_.empty())
+                compiler_->temporaries_stack_.pop_back();
+        }
+
+        bool parent_discards_result() const
+        {
+            return parent_->discard_return_;
+        }
+
+        void set_discard_return(bool discard_return)
+        {
+            discard_return_ = discard_return;
+        }
+
+        /**
+         * @return Temporary value storage that can be returned to the scope used
+         *         by the parent pool.
+         */
+        Value *get_for_return()
+        {
+            assert(parent_);
+            return parent_->discard_return_ ? get() : parent_->get();
+        }
+
+        Value *get()
+        {
+            Value *val = scope_->get_temporary();
+            temporaries_.insert(val);
+            return val;
+        }
+
+        void put(Value *value)
+        {
+            assert(temporaries_.count(value) == 1);
+
+            scope_->put_temporary(value);
+            temporaries_.erase(value);
+        }
+    };
+
+    std::vector<TemporaryManager *> temporaries_stack_;
 
 private:
     Scope *unroll_for_continue(Function *fun, const std::string &label = "");
@@ -307,12 +446,15 @@ private:
      * Extracts the value from a reference. This essentially implements the
      * ECMA-262 function GetValue.
      * @param [in] ref Reference to get value from.
+     * @param [in] dst Destination value where the dereferenced ref should be
+     *             written.
      * @param [in] fun Current function.
      * @param [in] expt_block Block to jump to in case of failure.
      * @return If ref is a reference the dereferenced value is returned, if v
      *         is not a reference v is returned.
      */
-    Value *expand_ref_get(Value *ref, Function *fun, Block *expt_block);
+    Value *expand_ref_get(Value *ref, Value *dst, Function *fun,
+                          Block *expt_block);
 
     /**
      * Extracts the value from a reference. This essentially implements the

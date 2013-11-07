@@ -23,6 +23,7 @@
 #include <gc/gc_allocator.h>
 #include "common/core.hh"
 #include "common/list.hh"
+#include "common/proxy.hh"
 #include "common/string.hh"
 
 #ifdef DEBUG
@@ -828,7 +829,7 @@ public:
     Value *push_mem_alloc(const Type *type);
     Value *push_mem_store(Value *dst, Value *src);
     Value *push_mem_elm_ptr(Value *val, size_t index);
-    Value *push_stk_alloc(size_t count);
+    Value *push_stk_alloc(const Proxy<size_t> &count);
     Value *push_stk_free(size_t count);
     Value *push_stk_push(Value *val);
 #ifdef UNUSED
@@ -1815,10 +1816,10 @@ public:
 class StackAllocInstruction : public Instruction
 {
 private:
-    size_t count_;
+    Proxy<size_t> count_;
 
 public:
-    StackAllocInstruction(size_t count);
+    StackAllocInstruction(const Proxy<size_t> &count);
 
     /**
      * @return Number of values to allocate.

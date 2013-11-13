@@ -852,9 +852,9 @@ public:
     Value *push_val_to_bool(Value *val);
     Value *push_val_to_double(Value *val, Value *res);
     Value *push_val_to_str(Value *val, Value *res);
-    Value *push_val_from_bool(Value *val);
-    Value *push_val_from_double(Value *val);
-    Value *push_val_from_str(Value *val);
+    Value *push_val_from_bool(Value *val, Value *res);  // FIXME: Rename args more appropriately val, bval
+    Value *push_val_from_double(Value *val, Value *res);
+    Value *push_val_from_str(Value *val, Value *res);
     Value *push_val_is_null(Value *val);
     Value *push_val_is_undefined(Value *val);
     Value *push_val_tst_coerc(Value *val);
@@ -867,7 +867,7 @@ public:
     Value *push_ctx_get(uint64_t key, Value *res, uint16_t cid);
     Value *push_ctx_put(uint64_t key, Value *val, uint16_t cid);
     Value *push_ctx_del(uint64_t key, Value *res);
-    Value *push_ex_save_state();
+    Value *push_ex_save_state(Value *res);
     Value *push_ex_load_state(Value *state);
     Value *push_ex_set(Value *val);
     Value *push_ex_clear();
@@ -880,12 +880,14 @@ public:
     Value *push_link_fun(uint64_t key, bool is_strict, Value *fun);
     Value *push_link_prm(uint64_t key, bool is_strict, Value *prm);
 
-    Value *push_es_new_arr(size_t length, Value *vals);
-    Value *push_es_new_fun(Function *fun, int param_count, bool is_strict);
+    Value *push_es_new_arr(size_t length, Value *vals, Value *res);
+    Value *push_es_new_fun(Function *fun, int param_count, bool is_strict,
+                           Value *res);
     Value *push_es_new_fun_expr(Function *fun, int param_count,
-                                bool is_strict);
-    Value *push_es_new_obj();
-    Value *push_es_new_rex(const String &pattern, const String &flags);
+                                bool is_strict, Value *res);
+    Value *push_es_new_obj(Value *res);
+    Value *push_es_new_rex(const String &pattern, const String &flags,
+                           Value *res);
 
     Value *push_es_bin_mul(Value *op1, Value *op2, Value *res);
     Value *push_es_bin_div(Value *op1, Value *op2, Value *res);
@@ -925,6 +927,7 @@ public:
 /**
  * @brief Value.
  */
+// FIXME: Maybe Value shouldn't be able to be of type EsValue?
 class Value
 {
 private:
@@ -2208,7 +2211,17 @@ public:
  */
 class ExceptionSaveStateInstruction : public Instruction
 {
+private:
+    Value *res_;
+
 public:
+    ExceptionSaveStateInstruction(Value *res);
+
+    /**
+     * @return Result value.
+     */
+    Value *result() const;
+
     /**
      * @copydoc Value::type
      */
@@ -2903,9 +2916,10 @@ class EsNewArrayInstruction : public Instruction
 private:
     size_t length_;
     Value *vals_;
+    Value *res_;
 
 public:
-    EsNewArrayInstruction(size_t length, Value *vals);
+    EsNewArrayInstruction(size_t length, Value *vals, Value *res);
 
     /**
      * @return Array length.
@@ -2916,6 +2930,11 @@ public:
      * @return Array values.
      */
     Value *values() const;
+
+    /**
+     * @return Result value.
+     */
+    Value *result() const;
 
     /**
      * @copydoc Value::type
@@ -2940,10 +2959,11 @@ private:
     Function *fun_;
     int param_count_;
     bool is_strict_;
+    Value *res_;
 
 public:
     EsNewFunctionDeclarationInstruction(Function *fun, int param_count,
-                                        bool is_strict);
+                                        bool is_strict, Value *res);
 
     /**
      * @return Function value.
@@ -2959,6 +2979,11 @@ public:
      * @return true if function is a strict function.
      */
     bool is_strict() const;
+
+    /**
+     * @return Result value.
+     */
+    Value *result() const;
 
     /**
      * @copydoc Value::type
@@ -2983,10 +3008,11 @@ private:
     Function *fun_;
     int param_count_;
     bool is_strict_;
+    Value *res_;
 
 public:
     EsNewFunctionExpressionInstruction(Function *fun, int param_count,
-                                       bool is_strict);
+                                       bool is_strict, Value *res);
 
     /**
      * @return Function value.
@@ -3002,6 +3028,11 @@ public:
      * @return true if function is a strict function.
      */
     bool is_strict() const;
+
+    /**
+     * @return Result value.
+     */
+    Value *result() const;
 
     /**
      * @copydoc Value::type
@@ -3022,7 +3053,17 @@ public:
  */
 class EsNewObjectInstruction : public Instruction
 {
+private:
+    Value *res_;
+
 public:
+    EsNewObjectInstruction(Value *res);
+
+    /**
+     * @return Result value.
+     */
+    Value *result() const;
+
     /**
      * @copydoc Value::type
      */
@@ -3045,9 +3086,11 @@ class EsNewRegexInstruction : public Instruction
 private:
     String pattern_;
     String flags_;
+    Value *res_;
 
 public:
-    EsNewRegexInstruction(const String &pattern, const String &flags);
+    EsNewRegexInstruction(const String &pattern, const String &flags,
+                          Value *res);
 
     /**
      * @return Regular expression pattern.
@@ -3058,6 +3101,11 @@ public:
      * @return Regular expression flags.
      */
     const String &flags() const;
+
+    /**
+     * @return Result value.
+     */
+    Value *result() const;
 
     /**
      * @copydoc Value::type

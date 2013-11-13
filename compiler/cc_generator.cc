@@ -464,15 +464,15 @@ void CcGenerator::visit_instr_val(ir::ValueInstruction *instr)
         }
 
         case ir::ValueInstruction::FROM_BOOLEAN:
-            out() << value(instr) << " = " << "EsValue::from_bool("
+            out() << value(instr->result()) << " = " << "EsValue::from_bool("
                   << value(instr->value()) << ");\n";
             break;
         case ir::ValueInstruction::FROM_DOUBLE:
-            out() << value(instr) << " = " << "EsValue::from_num("
+            out() << value(instr->result()) << " = " << "EsValue::from_num("
                   << value(instr->value()) << ");\n";
             break;
         case ir::ValueInstruction::FROM_STRING:
-            out() << value(instr) << " = " << "EsValue::from_str("
+            out() << value(instr->result()) << " = " << "EsValue::from_str("
                   << value(instr->value()) << ");\n";
             break;
 
@@ -620,7 +620,7 @@ void CcGenerator::visit_instr_ctx_del(ir::ContextDeleteInstruction *instr)
 
 void CcGenerator::visit_instr_ex_save_state(ir::ExceptionSaveStateInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_ex_save_state(ctx);\n";
+    out() << value(instr->result()) << " = " << "op_ex_save_state(ctx);\n";
 }
 
 void CcGenerator::visit_instr_ex_load_state(ir::ExceptionLoadStateInstruction *instr)
@@ -798,14 +798,14 @@ void CcGenerator::visit_instr_prp_del_slow(ir::PropertyDeleteSlowInstruction *in
 
 void CcGenerator::visit_instr_es_new_arr(ir::EsNewArrayInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_new_arr("
+    out() << value(instr->result()) << " = " << "op_new_arr("
           << instr->length() << ", "
           << value(instr->values()) << ");\n";
 }
 
 void CcGenerator::visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_new_fun_decl(ctx, "
+    out() << value(instr->result()) << " = " << "op_new_fun_decl(ctx, "
           << instr->function()->name() << ", "
           << boolean(instr->is_strict()) << ", "
           << instr->parameter_count() << ");\n";
@@ -813,7 +813,7 @@ void CcGenerator::visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstru
 
 void CcGenerator::visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_new_fun_expr(ctx, "
+    out() << value(instr->result()) << " = " << "op_new_fun_expr(ctx, "
           << instr->function()->name() << ", "
           << boolean(instr->is_strict()) << ", "
           << instr->parameter_count() << ");\n";
@@ -822,12 +822,12 @@ void CcGenerator::visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruc
 void CcGenerator::visit_instr_es_new_obj(ir::EsNewObjectInstruction *instr)
 {
     // FIXME: Inline.
-    out() << value(instr) << " = " << "op_new_obj();\n";
+    out() << value(instr->result()) << " = " << "op_new_obj();\n";
 }
 
 void CcGenerator::visit_instr_es_new_rex(ir::EsNewRegexInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_new_reg_exp("
+    out() << value(instr->result()) << " = " << "op_new_reg_exp("
           << string(instr->pattern()) << ", "
           << string(instr->flags()) << ");\n";
 }

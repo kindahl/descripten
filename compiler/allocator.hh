@@ -297,7 +297,10 @@ private:
     Function *cur_fun_;
 
 private:
-    void touch(ir::Value *val);
+    /** Touch an instruction result */
+    void touch_r(ir::Value *val);
+    /** Touch an operand. */
+    void touch_o(ir::Value *val);
 
 public:
     Allocator();

@@ -115,7 +115,10 @@ void Function::push_block(Block *block)
     // we're not leaving any empty blocks by checking the preivously last
     // block.
     if (!blocks_.empty())
+    {
         assert(!last_block()->empty());
+        assert(last_block()->last_instr()->is_terminating());
+    }
 #endif
     blocks_.push_back(block);
 }
@@ -259,6 +262,7 @@ Value *Block::push_bnd_extra_ptr(int hops)
 
 Value *Block::push_call(Value *fun, int argc, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)CallInstruction(CallInstruction::NORMAL, fun, argc, res);
     push_instr(instr);
@@ -267,6 +271,7 @@ Value *Block::push_call(Value *fun, int argc, Value *res)
 
 Value *Block::push_call_keyed(Value *obj, uint64_t key, int argc, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)CallKeyedInstruction(obj, key, argc, res);
     push_instr(instr);
@@ -276,6 +281,7 @@ Value *Block::push_call_keyed(Value *obj, uint64_t key, int argc, Value *res)
 Value *Block::push_call_keyed_slow(Value *obj, Value *key, int argc,
                                    Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)CallKeyedSlowInstruction(obj, key, argc, res);
     push_instr(instr);
@@ -284,6 +290,7 @@ Value *Block::push_call_keyed_slow(Value *obj, Value *key, int argc,
 
 Value *Block::push_call_named(uint64_t key, int argc, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)CallNamedInstruction(key, argc, res);
     push_instr(instr);
@@ -292,6 +299,7 @@ Value *Block::push_call_named(uint64_t key, int argc, Value *res)
 
 Value *Block::push_call_new(Value *fun, int argc, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)CallInstruction(CallInstruction::NEW, fun, argc, res);
     push_instr(instr);
@@ -307,6 +315,8 @@ Value *Block::push_mem_alloc(const Type *type)
 
 Value *Block::push_mem_store(Value *dst, Value *src)
 {
+    assert(dst);
+
     Instruction *instr = new (GC)MemoryStoreInstruction(dst, src);
     push_instr(instr);
     return instr;
@@ -394,6 +404,7 @@ Value *Block::push_prp_it_next(Value *it, Value *val)
 
 Value *Block::push_prp_get(Value *obj, uint64_t key, Value *res)
 {
+    assert(res);
     Instruction *instr = new (GC)PropertyGetInstruction(obj, key, res);
     push_instr(instr);
     return instr;
@@ -401,6 +412,7 @@ Value *Block::push_prp_get(Value *obj, uint64_t key, Value *res)
 
 Value *Block::push_prp_get_slow(Value *obj, Value *key, Value *res)
 {
+    assert(res);
     Instruction *instr = new (GC)PropertyGetSlowInstruction(obj, key, res);
     push_instr(instr);
     return instr;
@@ -422,6 +434,7 @@ Value *Block::push_prp_put_slow(Value *obj, Value *key, Value *val)
 
 Value *Block::push_prp_del(Value *obj, uint64_t key, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)PropertyDeleteInstruction(obj, key, res);
     push_instr(instr);
@@ -430,6 +443,7 @@ Value *Block::push_prp_del(Value *obj, uint64_t key, Value *res)
 
 Value *Block::push_prp_del_slow(Value *obj, Value *key, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)PropertyDeleteSlowInstruction(obj, key, res);
     push_instr(instr);
@@ -473,6 +487,7 @@ Value *Block::push_val_to_bool(Value *val)
 
 Value *Block::push_val_to_double(Value *val, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)ValueInstruction(ValueInstruction::TO_DOUBLE, val, res);
     push_instr(instr);
@@ -481,32 +496,33 @@ Value *Block::push_val_to_double(Value *val, Value *res)
 
 Value *Block::push_val_to_str(Value *val, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)ValueInstruction(ValueInstruction::TO_STRING, val, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_val_from_bool(Value *val)
+Value *Block::push_val_from_bool(Value *val, Value *res)
 {
     Instruction *instr =
-        new (GC)ValueInstruction(ValueInstruction::FROM_BOOLEAN, val);
+        new (GC)ValueInstruction(ValueInstruction::FROM_BOOLEAN, val, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_val_from_double(Value *val)
+Value *Block::push_val_from_double(Value *val, Value *res)
 {
     Instruction *instr =
-        new (GC)ValueInstruction(ValueInstruction::FROM_DOUBLE, val);
+        new (GC)ValueInstruction(ValueInstruction::FROM_DOUBLE, val, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_val_from_str(Value *val)
+Value *Block::push_val_from_str(Value *val, Value *res)
 {
     Instruction *instr =
-        new (GC)ValueInstruction(ValueInstruction::FROM_STRING, val);
+        new (GC)ValueInstruction(ValueInstruction::FROM_STRING, val, res);
     push_instr(instr);
     return instr;
 }
@@ -582,6 +598,7 @@ Value *Block::push_ctx_leave()
 
 Value *Block::push_ctx_get(uint64_t key, Value *res, uint16_t cid)
 {
+    assert(res);
     Instruction *instr = new (GC)ContextGetInstruction(key, res, cid);
     push_instr(instr);
     return instr;
@@ -596,15 +613,16 @@ Value *Block::push_ctx_put(uint64_t key, Value *val, uint16_t cid)
 
 Value *Block::push_ctx_del(uint64_t key, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)ContextDeleteInstruction(key, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_ex_save_state()
+Value *Block::push_ex_save_state(Value *res)
 {
-    Instruction *instr = new (GC)ExceptionSaveStateInstruction();
+    Instruction *instr = new (GC)ExceptionSaveStateInstruction(res);
     push_instr(instr);
     return instr;
 }
@@ -632,6 +650,7 @@ Value *Block::push_ex_clear()
 
 Value *Block::push_init_args(Value *dst, int prmc)
 {
+    assert(dst);
     Instruction *instr = new (GC)InitArgumentsInstruction(dst, prmc);
     push_instr(instr);
     return instr;
@@ -680,50 +699,53 @@ Value *Block::push_link_prm(uint64_t key, bool is_strict, Value *prm)
     return instr;
 }
 
-Value *Block::push_es_new_arr(size_t length, Value *vals)
+Value *Block::push_es_new_arr(size_t length, Value *vals, Value *res)
 {
     Instruction *instr =
-        new (GC)EsNewArrayInstruction(length, vals);
+        new (GC)EsNewArrayInstruction(length, vals, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_es_new_fun(Function *fun, int param_count, bool is_strict)
+Value *Block::push_es_new_fun(Function *fun, int param_count, bool is_strict,
+                              Value *res)
 {
     Instruction *instr =
         new (GC)EsNewFunctionDeclarationInstruction(fun, param_count,
-                                                    is_strict);
+                                                    is_strict, res);
     push_instr(instr);
     return instr;
 }
 
 Value *Block::push_es_new_fun_expr(Function *fun, int param_count,
-                                   bool is_strict)
+                                   bool is_strict, Value *res)
 {
     Instruction *instr =
         new (GC)EsNewFunctionExpressionInstruction(fun, param_count,
-                                                   is_strict);
+                                                   is_strict, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_es_new_obj()
+Value *Block::push_es_new_obj(Value *res)
 {
-    Instruction *instr = new (GC)EsNewObjectInstruction();
+    Instruction *instr = new (GC)EsNewObjectInstruction(res);
     push_instr(instr);
     return instr;
 }
 
 Value *Block::push_es_new_rex(const String &pattern,
-                              const String &flags)
+                              const String &flags,
+                              Value *res)
 {
-    Instruction *instr = new (GC)EsNewRegexInstruction(pattern, flags);
+    Instruction *instr = new (GC)EsNewRegexInstruction(pattern, flags, res);
     push_instr(instr);
     return instr;
 }
 
 Value *Block::push_es_bin_mul(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::MUL, op1, op2, res);
     push_instr(instr);
@@ -732,6 +754,7 @@ Value *Block::push_es_bin_mul(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_div(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::DIV, op1, op2, res);
     push_instr(instr);
@@ -740,6 +763,7 @@ Value *Block::push_es_bin_div(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_mod(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::MOD, op1, op2, res);
     push_instr(instr);
@@ -748,6 +772,7 @@ Value *Block::push_es_bin_mod(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_add(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::ADD, op1, op2, res);
     push_instr(instr);
@@ -756,6 +781,7 @@ Value *Block::push_es_bin_add(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_sub(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::SUB, op1, op2, res);
     push_instr(instr);
@@ -764,6 +790,7 @@ Value *Block::push_es_bin_sub(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_ls(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::LS, op1, op2, res);
     push_instr(instr);
@@ -772,6 +799,7 @@ Value *Block::push_es_bin_ls(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_rss(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::RSS, op1, op2, res);
     push_instr(instr);
@@ -780,6 +808,7 @@ Value *Block::push_es_bin_rss(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_rus(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::RUS, op1, op2, res);
     push_instr(instr);
@@ -788,6 +817,7 @@ Value *Block::push_es_bin_rus(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_lt(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::LT, op1, op2, res);
     push_instr(instr);
@@ -796,6 +826,7 @@ Value *Block::push_es_bin_lt(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_gt(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::GT, op1, op2, res);
     push_instr(instr);
@@ -804,6 +835,7 @@ Value *Block::push_es_bin_gt(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_lte(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::LTE, op1, op2, res);
     push_instr(instr);
@@ -812,6 +844,7 @@ Value *Block::push_es_bin_lte(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_gte(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::GTE, op1, op2, res);
     push_instr(instr);
@@ -820,6 +853,7 @@ Value *Block::push_es_bin_gte(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_in(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::IN, op1, op2, res);
     push_instr(instr);
@@ -828,6 +862,7 @@ Value *Block::push_es_bin_in(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_instanceof(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::INSTANCEOF, op1, op2, res);
     push_instr(instr);
@@ -836,6 +871,7 @@ Value *Block::push_es_bin_instanceof(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_eq(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::EQ, op1, op2, res);
     push_instr(instr);
@@ -844,6 +880,7 @@ Value *Block::push_es_bin_eq(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_neq(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::NEQ, op1, op2, res);
     push_instr(instr);
@@ -852,6 +889,7 @@ Value *Block::push_es_bin_neq(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_strict_eq(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::STRICT_EQ, op1, op2, res);
     push_instr(instr);
@@ -860,6 +898,7 @@ Value *Block::push_es_bin_strict_eq(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_strict_neq(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::STRICT_NEQ, op1, op2, res);
     push_instr(instr);
@@ -868,6 +907,7 @@ Value *Block::push_es_bin_strict_neq(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_bit_and(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::BIT_AND, op1, op2, res);
     push_instr(instr);
@@ -877,6 +917,7 @@ Value *Block::push_es_bin_bit_and(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_bit_xor(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::BIT_XOR, op1, op2, res);
     push_instr(instr);
@@ -886,6 +927,7 @@ Value *Block::push_es_bin_bit_xor(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_bin_bit_or(Value *op1, Value *op2, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsBinaryInstruction(EsBinaryInstruction::BIT_OR, op1, op2, res);
     push_instr(instr);
@@ -894,6 +936,7 @@ Value *Block::push_es_bin_bit_or(Value *op1, Value *op2, Value *res)
 
 Value *Block::push_es_unary_typeof(Value *op1, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsUnaryInstruction(EsUnaryInstruction::TYPEOF, op1, res);
     push_instr(instr);
@@ -902,6 +945,7 @@ Value *Block::push_es_unary_typeof(Value *op1, Value *res)
 
 Value *Block::push_es_unary_neg(Value *op1, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsUnaryInstruction(EsUnaryInstruction::NEG, op1, res);
     push_instr(instr);
@@ -910,6 +954,7 @@ Value *Block::push_es_unary_neg(Value *op1, Value *res)
 
 Value *Block::push_es_unary_bit_not(Value *op1, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsUnaryInstruction(EsUnaryInstruction::BIT_NOT, op1, res);
     push_instr(instr);
@@ -918,6 +963,7 @@ Value *Block::push_es_unary_bit_not(Value *op1, Value *res)
 
 Value *Block::push_es_unary_log_not(Value *op1, Value *res)
 {
+    assert(res);
     Instruction *instr =
         new (GC)EsUnaryInstruction(EsUnaryInstruction::LOG_NOT, op1, res);
     push_instr(instr);
@@ -1015,10 +1061,15 @@ Value *ArrayInstruction::value() const
 
 const Type *ArrayInstruction::type() const
 {
-    assert(arr_->type()->is_array());
-    return op_ == PUT
-        ? Type::_void()
-        : static_cast<const ArrayType *>(arr_->type())->type();
+    assert(arr_->type()->is_array() ||
+           arr_->type()->is_pointer());
+
+    if (op_ == PUT)
+        return Type::_void();
+
+    return arr_->type()->is_array()
+        ? static_cast<const ArrayType *>(arr_->type())->type()
+        : static_cast<const PointerType *>(arr_->type())->type();
 }
 
 BinaryInstruction::BinaryInstruction(Operation op, Value *lval, Value *rval)
@@ -1228,12 +1279,23 @@ ValueInstruction::ValueInstruction(Operation op, Value *val, Value *res)
     , val_(val)
     , res_(res)
 {
-    assert(val->type()->is_value());
-    assert(op == TO_DOUBLE || op == TO_STRING);
+    assert(op == FROM_BOOLEAN || op == FROM_DOUBLE || op == FROM_STRING ||
+           op == TO_DOUBLE || op == TO_STRING);
 
 #ifdef DEBUG
-    if (op == TO_DOUBLE) { assert(res->type()->is_double()); }
-    if (op == TO_STRING) { assert(res->type()->is_string()); }
+    if (op == FROM_BOOLEAN) { assert(val->type()->is_boolean()); }
+    if (op == FROM_DOUBLE) { assert(val->type()->is_double()); }
+    if (op == FROM_STRING) { assert(val->type()->is_string()); }
+    if (op == TO_DOUBLE)
+    {
+        assert(res->type()->is_double());
+        assert(val->type()->is_value());
+    }
+    if (op == TO_STRING)
+    {
+        assert(res->type()->is_string());
+        assert(val->type()->is_value());
+    }
 #endif
 }
 
@@ -1244,9 +1306,6 @@ ValueInstruction::ValueInstruction(Operation op, Value *val)
 {
 #ifdef DEBUG
     if (op == TO_BOOLEAN) { assert(val->type()->is_value()); }
-    if (op == FROM_BOOLEAN) { assert(val->type()->is_boolean()); }
-    if (op == FROM_DOUBLE) { assert(val->type()->is_double()); }
-    if (op == FROM_STRING) { assert(val->type()->is_string()); }
     if (op == IS_NULL) { assert(val->type()->is_value()); }
     if (op == IS_UNDEFINED) { assert(val->type()->is_value()); }
     if (op == TEST_COERCIBILITY) { assert(val->type()->is_value()); }
@@ -1282,7 +1341,7 @@ const Type *ValueInstruction::type() const
         case FROM_BOOLEAN:
         case FROM_DOUBLE:
         case FROM_STRING:
-            return Type::value();
+            return Type::_void();
 
         case IS_NULL:
         case IS_UNDEFINED:
@@ -1624,9 +1683,19 @@ const Type *ContextDeleteInstruction::type() const
     return Type::boolean();
 }
 
+ExceptionSaveStateInstruction::ExceptionSaveStateInstruction(Value *res)
+    : res_(res)
+{
+}
+
+Value *ExceptionSaveStateInstruction::result() const
+{
+    return res_;
+}
+
 const Type *ExceptionSaveStateInstruction::type() const
 {
-    return Type::value();
+    return Type::_void();
 }
 
 ExceptionLoadStateInstruction::ExceptionLoadStateInstruction(Value *state)
@@ -2065,9 +2134,11 @@ const Type *PropertyDeleteSlowInstruction::type() const
     return Type::boolean();
 }
 
-EsNewArrayInstruction::EsNewArrayInstruction(size_t length, Value *vals)
+EsNewArrayInstruction::EsNewArrayInstruction(size_t length, Value *vals,
+                                             Value *res)
     : length_(length)
     , vals_(vals)
+    , res_(res)
 {
 }
 
@@ -2081,16 +2152,22 @@ Value *EsNewArrayInstruction::values() const
     return vals_;
 }
 
+Value *EsNewArrayInstruction::result() const
+{
+    return res_;
+}
+
 const Type *EsNewArrayInstruction::type() const
 {
-    return Type::value();
+    return Type::_void();
 }
 
 EsNewFunctionDeclarationInstruction::EsNewFunctionDeclarationInstruction(
-    Function *fun, int param_count, bool is_strict)
+    Function *fun, int param_count, bool is_strict, Value *res)
     : fun_(fun)
     , param_count_(param_count)
     , is_strict_(is_strict)
+    , res_(res)
 {
 }
 
@@ -2109,16 +2186,22 @@ bool EsNewFunctionDeclarationInstruction::is_strict() const
     return is_strict_;
 }
 
+Value *EsNewFunctionDeclarationInstruction::result() const
+{
+    return res_;
+}
+
 const Type *EsNewFunctionDeclarationInstruction::type() const
 {
-    return Type::value();
+    return Type::_void();
 }
 
 EsNewFunctionExpressionInstruction::EsNewFunctionExpressionInstruction(
-    Function *fun, int param_count, bool is_strict)
+    Function *fun, int param_count, bool is_strict, Value *res)
     : fun_(fun)
     , param_count_(param_count)
     , is_strict_(is_strict)
+    , res_(res)
 {
 }
 
@@ -2137,20 +2220,37 @@ bool EsNewFunctionExpressionInstruction::is_strict() const
     return is_strict_;
 }
 
+Value *EsNewFunctionExpressionInstruction::result() const
+{
+    return res_;
+}
+
 const Type *EsNewFunctionExpressionInstruction::type() const
 {
-    return Type::value();
+    return Type::_void();
+}
+
+EsNewObjectInstruction::EsNewObjectInstruction(Value *res)
+    : res_(res)
+{
+}
+
+Value *EsNewObjectInstruction::result() const
+{
+    return res_;
 }
 
 const Type *EsNewObjectInstruction::type() const
 {
-    return Type::value();
+    return Type::_void();
 }
 
 EsNewRegexInstruction::EsNewRegexInstruction(const String &pattern,
-                                             const String &flags)
+                                             const String &flags,
+                                             Value *res)
     : pattern_(pattern)
     , flags_(flags)
+    , res_(res)
 {
 }
 
@@ -2164,9 +2264,14 @@ const String &EsNewRegexInstruction::flags() const
     return flags_;
 }
 
+Value *EsNewRegexInstruction::result() const
+{
+    return res_;
+}
+
 const Type *EsNewRegexInstruction::type() const
 {
-    return Type::value();
+    return Type::_void();
 }
 
 EsBinaryInstruction::EsBinaryInstruction(Operation op, Value *lval, Value *rval, Value *res)

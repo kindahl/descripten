@@ -27,6 +27,45 @@
 
 namespace ir {
 
+TemporaryValueAllocator::TemporaryValueAllocator(Compiler *compiler)
+    : parent_(NULL)
+    , compiler_(compiler)
+    , scope_(compiler->current_fun_scope(true))
+{
+    if (!compiler_->temporaries_stack_.empty())
+        parent_ = compiler_->temporaries_stack_.back();
+    compiler_->temporaries_stack_.push_back(this);
+}
+
+TemporaryValueAllocator::~TemporaryValueAllocator()
+{
+    for (Value *val : temporaries_)
+        scope_->put_temporary(val);
+
+    if (!compiler_->temporaries_stack_.empty())
+        compiler_->temporaries_stack_.pop_back();
+}
+
+TemporaryValueAllocator *TemporaryValueAllocator::parent()
+{
+    return parent_;
+}
+
+Value *TemporaryValueAllocator::get()
+{
+    Value *val = scope_->get_temporary();
+    temporaries_.insert(val);
+    return val;
+}
+
+void TemporaryValueAllocator::release(Value *value)
+{
+    assert(temporaries_.count(value) == 1);
+
+    scope_->put_temporary(value);
+    temporaries_.erase(value);
+}
+
 Compiler::Compiler()
     : is_in_epilogue_(false)
     , module_(NULL)
@@ -321,9 +360,18 @@ Value *Compiler::expand_prp_put(Value *val, Function *fun,
     return fun->last_block()->push_prp_put_slow(prp_load->object(), prp_load->key(), val);
 }
 
-Value *Compiler::expand_ref_get(Value *ref, Value *dst, Function *fun,
-                                Block *expt_block)
+ValueHandle Compiler::expand_ref_get_inplace(ValueHandle &ref,
+                                             ValueHandle &dst,
+                                             Function *fun, Block *expt_block)
 {
+    assert(ref);
+
+    if (!dst)
+        return ValueHandle();
+
+    if (ref == dst)
+        return ref;
+
     if (!ref->type()->is_reference())
     {
         fun->last_block()->push_mem_store(dst, ref);
@@ -331,38 +379,94 @@ Value *Compiler::expand_ref_get(Value *ref, Value *dst, Function *fun,
     }
 
     if (MetaPropertyLoadInstruction *prp_load =
-        dynamic_cast<MetaPropertyLoadInstruction *>(ref))
+        dynamic_cast<MetaPropertyLoadInstruction *>(ref.get()))
     {
-        Value *t = NULL;
+        Value *_ = NULL;
         Block *done_block = new (GC)Block(NameGenerator::instance().next());
 
-        t = expand_prp_get(dst, fun, prp_load);
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+        _ = expand_prp_get(dst, fun, prp_load);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
 
         fun->push_block(done_block);
         return dst;
     }
     else if (MetaContextLoadInstruction *ctx_load =
-        dynamic_cast<MetaContextLoadInstruction *>(ref))
+        dynamic_cast<MetaContextLoadInstruction *>(ref.get()))
     {
-        Value *t = NULL;
+        Value *_ = NULL;
         Block *done_block = new (GC)Block(NameGenerator::instance().next());
 
-        t = fun->last_block()->push_ctx_get(ctx_load->key(), dst,
+        _ = fun->last_block()->push_ctx_get(ctx_load->key(), dst,
                                             get_ctx_cid(ctx_load->key()));
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
 
         fun->push_block(done_block);
         return dst;
     }
 
     assert(false);
-    return NULL;
+    return ValueHandle();
 }
 
-Value *Compiler::expand_ref_get(Value *ref, Value *dst, Function *fun,
-                                Block *done_block, Block *expt_block)
+ValueHandle Compiler::expand_ref_get_inplace_lazy(ValueHandle &ref,
+                                                  Function *fun,
+                                                  Block *expt_block,
+                                                  ValueAllocator &allocator)
 {
+    assert(ref);
+
+    if (!ref->type()->is_reference())
+        return ref;
+
+    ValueHandle dst = ValueHandle::lazy(&allocator);
+
+    if (MetaPropertyLoadInstruction *prp_load =
+        dynamic_cast<MetaPropertyLoadInstruction *>(ref.get()))
+    {
+        Value *_ = NULL;
+        Block *done_block = new (GC)Block(NameGenerator::instance().next());
+
+        _ = expand_prp_get(dst, fun, prp_load);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
+
+        fun->push_block(done_block);
+        return dst;
+    }
+    else if (MetaContextLoadInstruction *ctx_load =
+        dynamic_cast<MetaContextLoadInstruction *>(ref.get()))
+    {
+        Value *_ = NULL;
+        Block *done_block = new (GC)Block(NameGenerator::instance().next());
+
+        _ = fun->last_block()->push_ctx_get(ctx_load->key(), dst,
+                                            get_ctx_cid(ctx_load->key()));
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
+
+        fun->push_block(done_block);
+        return dst;
+    }
+
+    assert(false);
+    return ValueHandle();
+}
+
+ValueHandle Compiler::expand_ref_get(ValueHandle &ref,
+                                     ValueHandle &dst,
+                                     Function *fun,
+                                     Block *done_block, Block *expt_block)
+{
+    if (!ref || !dst)
+    {
+        fun->last_block()->push_trm_jmp(done_block);
+        return ValueHandle();
+    }
+
+    if (ref == dst)
+    {
+        fun->last_block()->push_trm_jmp(done_block);
+        return ref;
+    }
+
     if (!ref->type()->is_reference())
     {
         fun->last_block()->push_mem_store(dst, ref);
@@ -371,22 +475,22 @@ Value *Compiler::expand_ref_get(Value *ref, Value *dst, Function *fun,
     }
 
     if (MetaPropertyLoadInstruction *prp_load =
-        dynamic_cast<MetaPropertyLoadInstruction *>(ref))
+        dynamic_cast<MetaPropertyLoadInstruction *>(ref.get()))
     {
-        Value *t = NULL;
+        Value *_ = NULL;
 
-        t = expand_prp_get(dst, fun, prp_load);
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+        _ = expand_prp_get(dst, fun, prp_load);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
         return dst;
     }
     else if (MetaContextLoadInstruction *ctx_load =
-        dynamic_cast<MetaContextLoadInstruction *>(ref))
+        dynamic_cast<MetaContextLoadInstruction *>(ref.get()))
     {
-        Value *t = NULL;
+        Value *_ = NULL;
 
-        t = fun->last_block()->push_ctx_get(ctx_load->key(), dst,
+        _ = fun->last_block()->push_ctx_get(ctx_load->key(), dst,
                                             get_ctx_cid(ctx_load->key()));
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
         return dst;
     }
 
@@ -394,29 +498,74 @@ Value *Compiler::expand_ref_get(Value *ref, Value *dst, Function *fun,
     return dst;
 }
 
-void Compiler::expand_ref_put(Value *ref, Value *val, Function *fun,
-                              Block *expt_block)
+ValueHandle Compiler::expand_ref_get_lazy(ValueHandle &ref, Function *fun,
+                                          Block *done_block, Block *expt_block,
+                                          ValueAllocator &allocator)
 {
-    if (MetaPropertyLoadInstruction *prp_load =
-        dynamic_cast<MetaPropertyLoadInstruction *>(ref))
+    if (!ref)
     {
-        Value *t = NULL;
+        fun->last_block()->push_trm_jmp(done_block);
+        return ValueHandle();
+    }
+
+    if (!ref->type()->is_reference())
+    {
+        fun->last_block()->push_trm_jmp(done_block);
+        return ref;
+    }
+
+    ValueHandle dst = ValueHandle::lazy(&allocator);
+
+    if (MetaPropertyLoadInstruction *prp_load =
+        dynamic_cast<MetaPropertyLoadInstruction *>(ref.get()))
+    {
+        Value *_ = NULL;
+
+        _ = expand_prp_get(dst, fun, prp_load);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
+        return dst;
+    }
+    else if (MetaContextLoadInstruction *ctx_load =
+        dynamic_cast<MetaContextLoadInstruction *>(ref.get()))
+    {
+        Value *_ = NULL;
+
+        _ = fun->last_block()->push_ctx_get(ctx_load->key(), dst,
+                                            get_ctx_cid(ctx_load->key()));
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
+        return dst;
+    }
+
+    assert(false);
+    return dst;
+}
+
+void Compiler::expand_ref_put_inplace(ValueHandle &ref,
+                                      ValueHandle &val,
+                                      Function *fun, Block *expt_block)
+{
+    assert(val);
+
+    if (MetaPropertyLoadInstruction *prp_load =
+        dynamic_cast<MetaPropertyLoadInstruction *>(ref.get()))
+    {
+        Value *_ = NULL;
         Block *done_block = new (GC)Block(NameGenerator::instance().next());
 
-        t = expand_prp_put(val, fun, prp_load);
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+        _ = expand_prp_put(val, fun, prp_load);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
 
         fun->push_block(done_block);
     }
     else if (MetaContextLoadInstruction *ctx_load =
-        dynamic_cast<MetaContextLoadInstruction *>(ref))
+        dynamic_cast<MetaContextLoadInstruction *>(ref.get()))
     {
-        Value *t = NULL;
+        Value *_ = NULL;
         Block *done_block = new (GC)Block(NameGenerator::instance().next());
 
-        t = fun->last_block()->push_ctx_put(ctx_load->key(), val,
+        _ = fun->last_block()->push_ctx_put(ctx_load->key(), val,
                                             get_ctx_cid(ctx_load->key()));
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
 
         fun->push_block(done_block);
     }
@@ -426,25 +575,31 @@ void Compiler::expand_ref_put(Value *ref, Value *val, Function *fun,
     }
 }
 
-void Compiler::expand_ref_put(Value *ref, Value *val, Function *fun,
+void Compiler::expand_ref_put(ValueHandle &ref, ValueHandle &val,
+                              Function *fun,
                               Block *done_block, Block *expt_block)
 {
-    if (MetaPropertyLoadInstruction *prp_load =
-        dynamic_cast<MetaPropertyLoadInstruction *>(ref))
-    {
-        Value *t = NULL;
+    assert(val);
 
-        t = expand_prp_put(val, fun, prp_load);
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+    if (!ref)
+        fun->last_block()->push_trm_jmp(done_block);
+
+    if (MetaPropertyLoadInstruction *prp_load =
+        dynamic_cast<MetaPropertyLoadInstruction *>(ref.get()))
+    {
+        Value *_ = NULL;
+
+        _ = expand_prp_put(val, fun, prp_load);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
     }
     else if (MetaContextLoadInstruction *ctx_load =
-        dynamic_cast<MetaContextLoadInstruction *>(ref))
+        dynamic_cast<MetaContextLoadInstruction *>(ref.get()))
     {
-        Value *t = NULL;
+        Value *_ = NULL;
 
-        t = fun->last_block()->push_ctx_put(ctx_load->key(), val,
+        _ = fun->last_block()->push_ctx_put(ctx_load->key(), val,
                                             get_ctx_cid(ctx_load->key()));
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
     }
     else
     {
@@ -485,16 +640,16 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
     ScopedVectorValue<TemplateBlock> expt_action(
         exception_actions_, new (GC)ReturnFalseTemplateBlock());
 
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
     Block *body_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
     // Locals, extra and temporary registers.
-    Value *e = NULL, *t = NULL;
+    ValueHandle e, t;
 
-    Value *fp = new (GC)FramePointer();
-    Value *vp = new (GC)ValuePointer();
+    ValueHandle fp = new (GC)FramePointer();
+    ValueHandle vp = new (GC)ValuePointer();
 
     size_t start_extras = 0;    // Start of first non-parameter extra in extras array.
 
@@ -556,7 +711,8 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                 {
                     Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
 
-                    t = fun->last_block()->push_decl_prm(get_prp_key(var->name()), lit->is_strict_mode(),
+                    t = fun->last_block()->push_decl_prm(get_prp_key(var->name()),
+                                                         lit->is_strict_mode(),
                                                          var->parameter_index(), fp);
                     t = fun->last_block()->push_trm_br(t, blk0_block, expt_block);
 
@@ -773,7 +929,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         if (!decl->is_function())
             continue;
 
-        Value *f = parse(decl->as_function(), fun);
+        ValueHandle f = parse(decl->as_function(), fun, &temporaries);
 
         switch (var->storage())
         {
@@ -807,7 +963,8 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
             {
                 Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
 
-                t = fun->last_block()->push_decl_fun(get_prp_key(var->name()), lit->is_strict_mode(), f);
+                t = fun->last_block()->push_decl_fun(get_prp_key(var->name()),
+                                                     lit->is_strict_mode(), f);
                 t = fun->last_block()->push_trm_br(t, blk0_block, expt_block);
 
                 fun->push_block(blk0_block);
@@ -818,9 +975,9 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                 assert(false);
                 break;
         }
-    }
 
-    temporaries.set_discard_return(true);
+        f.release();
+    }
 
     // Parse variable declarations.
     for (const AnalyzedVariable *var : analyzed_fun->variables())
@@ -835,7 +992,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         if (!decl->is_variable())
             continue;
 
-        parse(decl->as_variable(), fun);
+        parse(decl->as_variable(), fun, NULL);
 
         switch (var->storage())
         {
@@ -882,15 +1039,18 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
 
     fun->last_block()->push_trm_jmp(body_block);
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
     fun->push_block(body_block);
 
     // Parse statements.
     parser::StatementVector::const_iterator it_stmt;
     for (it_stmt = lit->body().begin(); it_stmt != lit->body().end(); ++it_stmt)
-        parse(*it_stmt, fun);
+        parse(*it_stmt, fun, NULL);
 
     // Make sure the function return something.
     if (fun->last_block()->empty() || !fun->last_block()->last_instr()->is_terminating())
@@ -903,79 +1063,59 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
     return fun;
 }
 
-Value *Compiler::parse_binary_expr(parser::BinaryExpression *expr,
-                                   Function *fun)
+ValueHandle Compiler::parse_binary_expr(parser::BinaryExpression *expr,
+                                        Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL, *t = NULL;     // Return and temporary values.
+    ValueHandle _, R, X = ValueHandle::lazy(rva ? rva : &temporaries);
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-    t = parse(expr->left(), fun);
-
-    Value *lhs = temporaries.get();
-    t = expand_ref_get(t, lhs, fun, expt_block);
-    //r = fun->last_block()->push_mem_alloc(Type::value());
-    r = temporaries.get_for_return();
-
     if (expr->operation() == parser::BinaryExpression::LOG_AND)
     {
+        R = parse(expr->left(), fun, &temporaries);
+        expand_ref_get_inplace(R, X, fun, expt_block);
+
         // Short-circuit evaluation.
-        Block *true_block = new (GC)Block(NameGenerator::instance().next());
-        Block *false_block = new (GC)Block(NameGenerator::instance().next());
+        Block *next_block = new (GC)Block(NameGenerator::instance().next());
 
-        Value *b = NULL;
+        _ = fun->last_block()->push_val_to_bool(X);
+            fun->last_block()->push_trm_br(_, next_block, done_block);
 
-        b = fun->last_block()->push_val_to_bool(lhs);
-        t = fun->last_block()->push_trm_br(b, true_block, false_block);
-
-        //scope->put_temporary(lhs);
-
-        // True block.
-        fun->push_block(true_block);
+        fun->push_block(next_block);
         {
-            t = parse(expr->right(), fun);
-            t = expand_ref_get(t, r, fun, done_block, expt_block);
-        }
-
-        // False block.
-        fun->push_block(false_block);
-        {
-            t = fun->last_block()->push_mem_store(r, lhs);
-            t = fun->last_block()->push_trm_jmp(done_block);
+            R = parse(expr->right(), fun, &temporaries);
+            expand_ref_get(R, X, fun, done_block, expt_block);
         }
     }
     else if (expr->operation() == parser::BinaryExpression::LOG_OR)
     {
+        R = parse(expr->left(), fun, &temporaries);
+        expand_ref_get_inplace(R, X, fun, expt_block);
+
         // Short-circuit evaluation.
-        Block *true_block = new (GC)Block(NameGenerator::instance().next());
-        Block *false_block = new (GC)Block(NameGenerator::instance().next());
+        Block *next_block = new (GC)Block(NameGenerator::instance().next());
 
-        t = fun->last_block()->push_val_to_bool(lhs);
-        t = fun->last_block()->push_trm_br(t, true_block, false_block);
+        _ = fun->last_block()->push_val_to_bool(X);
+            fun->last_block()->push_trm_br(_, done_block, next_block);
 
-        // True block.
-        fun->push_block(true_block);
+        fun->push_block(next_block);
         {
-            t = fun->last_block()->push_mem_store(r, lhs);
-            t = fun->last_block()->push_trm_jmp(done_block);
-        }
-
-        // False block.
-        fun->push_block(false_block);
-        {
-            t = parse(expr->right(), fun);
-            t = expand_ref_get(t, r, fun, done_block, expt_block);
+            R = parse(expr->right(), fun, &temporaries);
+            expand_ref_get(R, X, fun, done_block, expt_block);
         }
     }
     else
     {
-        t = parse(expr->right(), fun);
+        ValueHandle l, r;
 
-        Value *rhs = temporaries.get();
-        t = expand_ref_get(t, rhs, fun, expt_block);
+        R = parse(expr->left(), fun, &temporaries);
+        l = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+
+        R = parse(expr->right(), fun, &temporaries);
+        r = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
         switch (expr->operation())
         {
@@ -983,142 +1123,142 @@ Value *Compiler::parse_binary_expr(parser::BinaryExpression *expr,
             {
                 // Don't do anything, the comma expression only requires us to
                 // call GetValue which we already have done.
-                t = fun->last_block()->push_mem_store(r, rhs);
-                t = fun->last_block()->push_trm_jmp(done_block);
+                fun->last_block()->push_mem_store(X, r);
+                fun->last_block()->push_trm_jmp(done_block);
                 break;
             }
 
             // Arithmetic.
             case parser::BinaryExpression::MUL:
             {
-                t = fun->last_block()->push_es_bin_mul(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_mul(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::DIV:
             {
-                t = fun->last_block()->push_es_bin_div(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_div(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::MOD:
             {
-                t = fun->last_block()->push_es_bin_mod(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_mod(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::ADD:
             {
-                t = fun->last_block()->push_es_bin_add(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_add(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::SUB:
             {
-                t = fun->last_block()->push_es_bin_sub(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_sub(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::LS:  // <<
             {
-                t = fun->last_block()->push_es_bin_ls(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_ls(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::RSS: // >>
             {
-                t = fun->last_block()->push_es_bin_rss(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_rss(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::RUS: // >>>
             {
-                t = fun->last_block()->push_es_bin_rus(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_rus(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
 
             // Relational.
             case parser::BinaryExpression::LT:
             {
-                t = fun->last_block()->push_es_bin_lt(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_lt(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::GT:
             {
-                t = fun->last_block()->push_es_bin_gt(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_gt(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::LTE:
             {
-                t = fun->last_block()->push_es_bin_lte(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_lte(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::GTE:
             {
-                t = fun->last_block()->push_es_bin_gte(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_gte(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::IN:
             {
-                t = fun->last_block()->push_es_bin_in(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_in(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::INSTANCEOF:
             {
-                t = fun->last_block()->push_es_bin_instanceof(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_instanceof(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
 
             // Equality.
             case parser::BinaryExpression::EQ:
             {
-                t = fun->last_block()->push_es_bin_eq(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_eq(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::NEQ:
             {
-                t = fun->last_block()->push_es_bin_neq(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_neq(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::STRICT_EQ:
             {
-                t = fun->last_block()->push_es_bin_strict_eq(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_strict_eq(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::STRICT_NEQ:
             {
-                t = fun->last_block()->push_es_bin_strict_neq(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_strict_neq(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
 
             // Bitwise.
             case parser::BinaryExpression::BIT_AND:
             {
-                t = fun->last_block()->push_es_bin_bit_and(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_bit_and(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::BIT_XOR:
             {
-                t = fun->last_block()->push_es_bin_bit_xor(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_bit_xor(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
             case parser::BinaryExpression::BIT_OR:
             {
-                t = fun->last_block()->push_es_bin_bit_or(lhs, rhs, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_es_bin_bit_or(l, r, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
                 break;
             }
 
@@ -1133,19 +1273,28 @@ Value *Compiler::parse_binary_expr(parser::BinaryExpression *expr,
         }
     }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
-    return r;
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
+
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_unary_expr(parser::UnaryExpression *expr,
-                                  Function *fun)
+ValueHandle Compiler::parse_unary_expr(parser::UnaryExpression *expr,
+                                       Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL, *t = NULL, *e = NULL;  // Return, temporary and expression values.
+    ValueHandle _, R;
+
+    ValueHandle X;
 
     if (expr->operation() == parser::UnaryExpression::DELETE)
     {
@@ -1170,50 +1319,58 @@ Value *Compiler::parse_unary_expr(parser::UnaryExpression *expr,
 
             if (!immediate_key_str.empty())
             {
+                X = ValueHandle::lazy(rva ? rva : &temporaries);
+
+                ValueHandle o;
+
                 Block *done_block = new (GC)Block(NameGenerator::instance().next());
                 Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-                Value *obj = temporaries.get();
-                t = expand_ref_get(parse(prop->obj(), fun), obj, fun, expt_block);
+                R = parse(prop->obj(), fun, &temporaries);
+                o = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-                //r = fun->last_block()->push_mem_alloc(Type::value());
-                r = temporaries.get_for_return();
-                t = fun->last_block()->push_prp_del(obj, get_prp_key(immediate_key_str), r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_prp_del(o, get_prp_key(immediate_key_str), X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
 
-                temporaries.put(obj);
-                obj = NULL;
+                if (!expt_block->referrers().empty())
+                {
+                    exception_action()->inflate(expt_block, fun);
+                    fun->push_block(expt_block);
+                }
 
-                fun->push_block(expt_block);
-                exception_action()->inflate(expt_block, fun);
-
-                fun->push_block(done_block);
+                if (!done_block->referrers().empty())
+                {
+                    fun->push_block(done_block);
+                }
             }
             else
             {
+                X = ValueHandle::lazy(rva ? rva : &temporaries);
+
+                ValueHandle k, o;
+
                 Block *done_block = new (GC)Block(NameGenerator::instance().next());
                 Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-                Value *key = temporaries.get();
-                t = expand_ref_get(parse(prop->key(), fun), key, fun, expt_block);
+                R = parse(prop->key(), fun, &temporaries);
+                k = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-                Value *obj = temporaries.get();
-                t = expand_ref_get(parse(prop->obj(), fun), obj, fun, expt_block);
+                R = parse(prop->obj(), fun, &temporaries);
+                o = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-                //r = fun->last_block()->push_mem_alloc(Type::value());
-                r = temporaries.get_for_return();
-                t = fun->last_block()->push_prp_del_slow(obj, key, r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_prp_del_slow(o, k, X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
 
-                temporaries.put(key);
-                key = NULL;
-                temporaries.put(obj);
-                obj = NULL;
+                if (!expt_block->referrers().empty())
+                {
+                    exception_action()->inflate(expt_block, fun);
+                    fun->push_block(expt_block);
+                }
 
-                fun->push_block(expt_block);
-                exception_action()->inflate(expt_block, fun);
-
-                fun->push_block(done_block);
+                if (!done_block->referrers().empty())
+                {
+                    fun->push_block(done_block);
+                }
             }
         }
         else if (parser::IdentifierLiteral * ident =
@@ -1227,53 +1384,62 @@ Value *Compiler::parse_unary_expr(parser::UnaryExpression *expr,
                 //    environment record.
                 // 2. The local does not belong to an eval context.
                 // This means that trying to delete the entity should fail.
-                r = new (GC)ValueConstant(ValueConstant::VALUE_FALSE);
+                X = new (GC)ValueConstant(ValueConstant::VALUE_FALSE);
             }
             else
             {
+                X = ValueHandle::lazy(rva ? rva : &temporaries);
+
                 Block *done_block = new (GC)Block(NameGenerator::instance().next());
                 Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-                //r = fun->last_block()->push_mem_alloc(Type::value());
-                r = temporaries.get_for_return();
-                t = fun->last_block()->push_ctx_del(get_prp_key(ident->value()), r);
-                t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+                _ = fun->last_block()->push_ctx_del(get_prp_key(ident->value()), X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
 
-                fun->push_block(expt_block);
-                exception_action()->inflate(expt_block, fun);
+                if (!expt_block->referrers().empty())
+                {
+                    exception_action()->inflate(expt_block, fun);
+                    fun->push_block(expt_block);
+                }
 
-                fun->push_block(done_block);
+                if (!done_block->referrers().empty())
+                {
+                    fun->push_block(done_block);
+                }
             }
         }
         else
         {
-            r = new (GC)ValueConstant(ValueConstant::VALUE_TRUE);
+            X = new (GC)ValueConstant(ValueConstant::VALUE_TRUE);
         }
 
-        assert(r);
-        return r;
+        return rva ? X : ValueHandle();
     }
 
-    e = parse(expr->expression(), fun);
+    R = parse(expr->expression(), fun, &temporaries);
 
     switch (expr->operation())
     {
         case parser::UnaryExpression::VOID:
         {
+            X = new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED);
+
             Block *done_block = new (GC)Block(NameGenerator::instance().next());
             Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-            r = new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED);
-            //t = fun->last_block()->push_mem_alloc(Type::value());
-            t = expand_ref_get(e, temporaries.get(), fun, done_block, expt_block);
+            expand_ref_get_lazy(R, fun, done_block, expt_block, temporaries);
 
-            temporaries.put(t);
-            t = NULL;
+            // FIXME: These can be expanded in expand_ref_get*
+            if (!expt_block->referrers().empty())
+            {
+                exception_action()->inflate(expt_block, fun);
+                fun->push_block(expt_block);
+            }
 
-            fun->push_block(expt_block);
-            exception_action()->inflate(expt_block, fun);
-
-            fun->push_block(done_block);
+            if (!done_block->referrers().empty())
+            {
+                fun->push_block(done_block);
+            }
             break;
         }
         case parser::UnaryExpression::PLUS:
@@ -1282,139 +1448,184 @@ Value *Compiler::parse_unary_expr(parser::UnaryExpression *expr,
         case parser::UnaryExpression::POST_INC:
         case parser::UnaryExpression::POST_DEC:
         {
-            Value *d = NULL, *v = NULL;
+            ValueHandle d, e;
 
             Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
             Block *done_block = new (GC)Block(NameGenerator::instance().next());
             Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-            v = expand_ref_get(e, temporaries.get(), fun, expt_block);
+            e = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
             d = fun->last_block()->push_mem_alloc(Type::_double());
-            t = fun->last_block()->push_val_to_double(v, d);
-            t = fun->last_block()->push_trm_br(t, blk0_block, expt_block);
-
-            temporaries.put(v);
-            v = NULL;
+            _ = fun->last_block()->push_val_to_double(e, d);
+            _ = fun->last_block()->push_trm_br(_, blk0_block, expt_block);
 
             fun->push_block(blk0_block);
             switch (expr->operation())
             {
                 case parser::UnaryExpression::PLUS:
-                    r = fun->last_block()->push_val_from_double(d);
-                    t = fun->last_block()->push_trm_jmp(done_block);
+                    if (rva)
+                    {
+                        X = ValueHandle::lazy(rva ? rva : &temporaries);
+                        fun->last_block()->push_val_from_double(d, X);
+                    }
+
+                    fun->last_block()->push_trm_jmp(done_block);
 
                     // Needed for early return:
-                    fun->push_block(expt_block);
-                    exception_action()->inflate(expt_block, fun);
+                    if (!expt_block->referrers().empty())
+                    {
+                        exception_action()->inflate(expt_block, fun);
+                        fun->push_block(expt_block);
+                    }
 
-                    fun->push_block(done_block);
-                    return r;   // Early return.
+                    if (!done_block->referrers().empty())
+                    {
+                        fun->push_block(done_block);
+                    }
+                    return rva ? X : ValueHandle(); // Early return.
                 case parser::UnaryExpression::PRE_INC:
-                    t = fun->last_block()->push_bin_add(d, new (GC)DoubleConstant(1.0));
-                    t = fun->last_block()->push_val_from_double(t);
-                    r = t;
+                    X = ValueHandle::lazy(rva ? rva : &temporaries);
+
+                    _ = fun->last_block()->push_bin_add(d, new (GC)DoubleConstant(1.0));
+                        fun->last_block()->push_val_from_double(_, X);
+                    _ = X;
                     break;
                 case parser::UnaryExpression::PRE_DEC:
-                    t = fun->last_block()->push_bin_sub(d, new (GC)DoubleConstant(1.0));
-                    t = fun->last_block()->push_val_from_double(t);
-                    r = t;
+                    X = ValueHandle::lazy(rva ? rva : &temporaries);
+
+                    _ = fun->last_block()->push_bin_sub(d, new (GC)DoubleConstant(1.0));
+                        fun->last_block()->push_val_from_double(_, X);
+                    _ = X;
                     break;
                 case parser::UnaryExpression::POST_INC:
-                    r = fun->last_block()->push_val_from_double(d);
-                    t = fun->last_block()->push_bin_add(d, new (GC)DoubleConstant(1.0));
-                    t = fun->last_block()->push_val_from_double(t);
+                {
+                    if (rva)
+                    {
+                        X = ValueHandle::lazy(rva ? rva : &temporaries);
+                        fun->last_block()->push_val_from_double(d, X);
+                    }
+
+                    ValueHandle t = ValueHandle::lazy(&temporaries);
+
+                    _ = fun->last_block()->push_bin_add(d, new (GC)DoubleConstant(1.0));
+                        fun->last_block()->push_val_from_double(_, t);
+                    _ = t;
                     break;
+                }
                 case parser::UnaryExpression::POST_DEC:
-                    r = fun->last_block()->push_val_from_double(d);
-                    t = fun->last_block()->push_bin_sub(d, new (GC)DoubleConstant(1.0));
-                    t = fun->last_block()->push_val_from_double(t);
+                {
+                    ValueHandle t = ValueHandle::lazy(&temporaries);
+
+                    if (rva)
+                    {
+                        X = ValueHandle::lazy(rva ? rva : &temporaries);
+                        fun->last_block()->push_val_from_double(d, X);
+                    }
+
+                    _ = fun->last_block()->push_bin_sub(d, new (GC)DoubleConstant(1.0));
+                        fun->last_block()->push_val_from_double(_, t);
+                    _ = t;
                     break;
+                }
             }
 
-            expand_ref_put(e, t, fun, done_block, expt_block);
+            expand_ref_put(R, _, fun, done_block, expt_block);
 
-            fun->push_block(expt_block);
-            exception_action()->inflate(expt_block, fun);
+            if (!expt_block->referrers().empty())
+            {
+                exception_action()->inflate(expt_block, fun);
+                fun->push_block(expt_block);
+            }
 
-            fun->push_block(done_block);
+            if (!done_block->referrers().empty())
+            {
+                fun->push_block(done_block);
+            }
             break;
         }
         case parser::UnaryExpression::TYPEOF:
         {
-            //r = fun->last_block()->push_mem_alloc(Type::value());
-            r = temporaries.get_for_return();
+            ValueHandle e;
 
-            Value *v = NULL;
-            if (e->type()->is_reference())
-            {
-                Block *done_block = new (GC)Block(NameGenerator::instance().next());
-                Block *fail_block = new (GC)Block(NameGenerator::instance().next());
+            X = ValueHandle::lazy(rva ? rva : &temporaries);
 
-                //v = fun->last_block()->push_mem_alloc(Type::value());
-                v = expand_ref_get(e, temporaries.get(), fun, done_block, fail_block);
+            Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
+            Block *fail_block = new (GC)Block(NameGenerator::instance().next());
 
-                fun->push_block(fail_block);
-                t = fun->last_block()->push_ex_clear();
-                t = fun->last_block()->push_mem_store(v,
-                    new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED));
-                t = fun->last_block()->push_trm_jmp(done_block);
+            e = expand_ref_get_lazy(R, fun, blk0_block, fail_block, temporaries);
 
-                fun->push_block(done_block);
-            }
-            else
-            {
-                v = e;
-            }
+            fun->push_block(fail_block);
+            fun->last_block()->push_ex_clear();
+            fun->last_block()->push_mem_store(e,
+                new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED));
+            fun->last_block()->push_trm_jmp(blk0_block);
 
-            assert(v);
-            t = fun->last_block()->push_es_unary_typeof(v, r);
+            fun->push_block(blk0_block);
+
+            _ = fun->last_block()->push_es_unary_typeof(e, X);
 
             Block *done_block = new (GC)Block(NameGenerator::instance().next());
             Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-            fun->last_block()->push_trm_br(t, done_block, expt_block);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
 
-            fun->push_block(expt_block);
-            exception_action()->inflate(expt_block, fun);
+            if (!expt_block->referrers().empty())
+            {
+                exception_action()->inflate(expt_block, fun);
+                fun->push_block(expt_block);
+            }
 
-            fun->push_block(done_block);
+            if (!done_block->referrers().empty())
+            {
+                fun->push_block(done_block);
+            }
             break;
         }
         case parser::UnaryExpression::MINUS:
         case parser::UnaryExpression::BIT_NOT:
         case parser::UnaryExpression::LOG_NOT:
         {
+            ValueHandle e;
+
+            X = ValueHandle::lazy(rva ? rva : &temporaries);
+
             Block *done_block = new (GC)Block(NameGenerator::instance().next());
             Block *expt_block = new (GC)Block(NameGenerator::instance().next());
-
-            //r = fun->last_block()->push_mem_alloc(Type::value());
-            r = temporaries.get_for_return();
 
             switch (expr->operation())
             {
                 case parser::UnaryExpression::MINUS:
-                    t = fun->last_block()->push_es_unary_neg(
-                        expand_ref_get(e, temporaries.get(), fun, expt_block), r);
+                {
+                    e = expand_ref_get_inplace_lazy(R, fun, expt_block,
+                                                    temporaries);
+                    _ = fun->last_block()->push_es_unary_neg(e, X);
                     break;
+                }
                 case parser::UnaryExpression::BIT_NOT:
-                    t = fun->last_block()->push_es_unary_bit_not(
-                        expand_ref_get(e, temporaries.get(), fun, expt_block), r);
+                    e = expand_ref_get_inplace_lazy(R, fun, expt_block,
+                                                    temporaries);
+                    _ = fun->last_block()->push_es_unary_bit_not(e, X);
                     break;
                 case parser::UnaryExpression::LOG_NOT:
-                    t = fun->last_block()->push_es_unary_log_not(
-                        expand_ref_get(e, temporaries.get(), fun, expt_block), r);
+                    e = expand_ref_get_inplace_lazy(R, fun, expt_block,
+                                                    temporaries);
+                    _ = fun->last_block()->push_es_unary_log_not(e, X);
                     break;
             }
 
-            assert(t != NULL);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
 
-            fun->last_block()->push_trm_br(t, done_block, expt_block);
+            if (!expt_block->referrers().empty())
+            {
+                exception_action()->inflate(expt_block, fun);
+                fun->push_block(expt_block);
+            }
 
-            fun->push_block(expt_block);
-            exception_action()->inflate(expt_block, fun);
-
-            fun->push_block(done_block);
+            if (!done_block->referrers().empty())
+            {
+                fun->push_block(done_block);
+            }
             break;
         }
 
@@ -1423,160 +1634,203 @@ Value *Compiler::parse_unary_expr(parser::UnaryExpression *expr,
             break;
     }
 
-    assert(r);
-    return r;
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_assign_expr(parser::AssignmentExpression *expr,
-                                   Function *fun)
+ValueHandle Compiler::parse_assign_expr(parser::AssignmentExpression *expr,
+                                        Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
-
-    Value *l = parse(expr->lhs(), fun);
-    Value *r = parse(expr->rhs(), fun);
-    //Value *v = fun->last_block()->push_mem_alloc(Type::value());
-    Value *v = temporaries.get_for_return();
-    Value *t = NULL;
+    TemporaryValueAllocator temporaries(this);
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
     if (expr->operation() == parser::AssignmentExpression::ASSIGN)
     {
-        v = expand_ref_get(r, v, fun, expt_block);
-    }
-    else
-    {
-        Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
+        ValueHandle L, R, X, l;
 
-        switch (expr->operation())
+        if (rva)
         {
-            case parser::AssignmentExpression::ASSIGN_ADD:
-                t = fun->last_block()->push_es_bin_add(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_SUB:
-                t = fun->last_block()->push_es_bin_sub(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_MUL:
-                t = fun->last_block()->push_es_bin_mul(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_MOD:
-                t = fun->last_block()->push_es_bin_mod(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_LS:
-                t = fun->last_block()->push_es_bin_ls(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_RSS:
-                t = fun->last_block()->push_es_bin_rss(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_RUS:
-                t = fun->last_block()->push_es_bin_rus(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_BIT_AND:
-                t = fun->last_block()->push_es_bin_bit_and(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_BIT_OR:
-                t = fun->last_block()->push_es_bin_bit_or(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_BIT_XOR:
-                t = fun->last_block()->push_es_bin_bit_xor(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
-            case parser::AssignmentExpression::ASSIGN_DIV:
-                t = fun->last_block()->push_es_bin_div(
-                    expand_ref_get(l, temporaries.get(), fun, expt_block),
-                    expand_ref_get(r, temporaries.get(), fun, expt_block), v);
-                break;
+            L = parse(expr->lhs(), fun, &temporaries);
+            if (L->type()->is_reference())
+            {
+                R = parse(expr->rhs(), fun, rva);
+                l = expand_ref_get_inplace_lazy(R, fun, expt_block, *rva);
+                    expand_ref_put_inplace(L, l, fun, expt_block);
+            }
+            else
+            {
+                FixedValueAllocator fva(L);
+                R = parse(expr->rhs(), fun, &fva);
+                l = expand_ref_get_inplace(R, L, fun, expt_block);
+            }
 
-            default:
-                assert(false);
-                break;
+            fun->last_block()->push_trm_jmp(done_block);
+
+            if (rva)
+                X = l;
+        }
+        else
+        {
+            SingleValueAllocator sva(temporaries);
+
+            L = parse(expr->lhs(), fun, &temporaries);
+            if (L->type()->is_reference())
+            {
+                R = parse(expr->rhs(), fun, &sva);
+                l = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+                    expand_ref_put_inplace(L, l, fun, expt_block);
+            }
+            else
+            {
+                FixedValueAllocator fva(L);
+                R = parse(expr->rhs(), fun, &fva);
+                l = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+            }
+
+            fun->last_block()->push_trm_jmp(done_block);
         }
 
-        t = fun->last_block()->push_trm_br(t, blk0_block, expt_block);
-        fun->push_block(blk0_block);
+        if (!expt_block->referrers().empty())
+        {
+            exception_action()->inflate(expt_block, fun);
+            fun->push_block(expt_block);
+        }
+
+        if (!done_block->referrers().empty())
+        {
+            fun->push_block(done_block);
+        }
+
+        return rva ? X : ValueHandle();
     }
 
-    expand_ref_put(l, v, fun, done_block, expt_block);
+    ValueHandle _, L, R, X, l, r;
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    L = parse(expr->lhs(), fun, &temporaries);
+    R = parse(expr->rhs(), fun, &temporaries);
 
-    fun->push_block(done_block);
-    return v;
+    Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
+
+    l = expand_ref_get_inplace_lazy(L, fun, expt_block, temporaries);
+    r = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+
+    switch (expr->operation())
+    {
+        case parser::AssignmentExpression::ASSIGN_ADD:
+            _ = fun->last_block()->push_es_bin_add(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_SUB:
+            _ = fun->last_block()->push_es_bin_sub(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_MUL:
+            _ = fun->last_block()->push_es_bin_mul(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_MOD:
+            _ = fun->last_block()->push_es_bin_mod(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_LS:
+            _ = fun->last_block()->push_es_bin_ls(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_RSS:
+            _ = fun->last_block()->push_es_bin_rss(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_RUS:
+            _ = fun->last_block()->push_es_bin_rus(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_BIT_AND:
+            _ = fun->last_block()->push_es_bin_bit_and(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_BIT_OR:
+            _ = fun->last_block()->push_es_bin_bit_or(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_BIT_XOR:
+            _ = fun->last_block()->push_es_bin_bit_xor(l, r, l);
+            break;
+        case parser::AssignmentExpression::ASSIGN_DIV:
+            _ = fun->last_block()->push_es_bin_div(l, r, l);
+            break;
+
+        default:
+            assert(false);
+            break;
+    }
+
+    fun->last_block()->push_trm_br(_, blk0_block, expt_block);
+    fun->push_block(blk0_block);
+
+    expand_ref_put(L, l, fun, done_block, expt_block);
+
+    if (rva)
+        X = l;
+
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
+
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
+
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_cond_expr(parser::ConditionalExpression *expr,
-                                 Function *fun)
+ValueHandle Compiler::parse_cond_expr(parser::ConditionalExpression *expr,
+                                      Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    // Result, temporary and boolean values.
-    Value *r = NULL, *t = NULL, *b = NULL;
+    ValueHandle _, R, X;
 
     Block *true_block = new (GC)Block(NameGenerator::instance().next());
     Block *false_block = new (GC)Block(NameGenerator::instance().next());
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-    //r = fun->last_block()->push_mem_alloc(Type::value());
-    r = temporaries.get_for_return();
-    t = parse(expr->condition(), fun);
-    t = expand_ref_get(t, temporaries.get(), fun, expt_block);
-    b = fun->last_block()->push_val_to_bool(t);
+    R = parse(expr->condition(), fun, &temporaries);
+    _ = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+    _ = fun->last_block()->push_val_to_bool(_);
+        fun->last_block()->push_trm_br(_, true_block, false_block);
 
-    temporaries.put(t);
-    t = NULL;
-
-    t = fun->last_block()->push_trm_br(b, true_block, false_block);
+    X = ValueHandle::lazy(rva ? rva : &temporaries);
 
     // True block.
     fun->push_block(true_block);
     {
-        t = parse(expr->left(), fun);
-        t = expand_ref_get(t, r, fun, done_block, expt_block);
+        R = parse(expr->left(), fun, rva);
+        expand_ref_get(R, X, fun, done_block, expt_block);
     }
 
     // False block.
     fun->push_block(false_block);
     {
-        t = parse(expr->right(), fun);
-        t = expand_ref_get(t, r, fun, done_block, expt_block);
+        R = parse(expr->right(), fun, rva);
+        expand_ref_get(R, X, fun, done_block, expt_block);
     }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
-    return r;
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
+
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_prop_expr(parser::PropertyExpression *expr,
-                                 Function *fun)
+ValueHandle Compiler::parse_prop_expr(parser::PropertyExpression *expr,
+                                      Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    // Result and temporary values.
-    Value *r = NULL, *t = NULL;
+    ValueHandle R;
 
     // Test if we have an immediate property key that we can use. If that's the
     // case we don't have to go the to_string() path and can intern the string
@@ -1596,53 +1850,82 @@ Value *Compiler::parse_prop_expr(parser::PropertyExpression *expr,
 
     if (!immediate_key_str.empty())
     {
+        ValueHandle o;
+
         Block *done_block = new (GC)Block(NameGenerator::instance().next());
         Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-        //t = fun->last_block()->push_mem_alloc(Type::value());
-        // We need a temporary for return here since the meta instruction will
-        // be expanded by the caller.
-        t = temporaries.get_for_return();
-        Value *obj = expand_ref_get(parse(expr->obj(), fun), t, fun, done_block, expt_block);
+        assert(rva);
 
-        fun->push_block(expt_block);
-        exception_action()->inflate(expt_block, fun);
+        R = parse(expr->obj(), fun, rva);
+        // FIXME: We must use temporaries.parent() because rva might re-use the
+        //        same value for multiple calls to get.
+        //o = expand_ref_get_lazy(R, fun, done_block, expt_block, *rva);
+        o = expand_ref_get_lazy(R, fun, done_block, expt_block,
+                                *temporaries.parent());
 
-        fun->push_block(done_block);
-        r = fun->last_block()->push_meta_prp_load(obj, new (GC)StringConstant(immediate_key_str));
+        if (!expt_block->referrers().empty())
+        {
+            exception_action()->inflate(expt_block, fun);
+            fun->push_block(expt_block);
+        }
+
+        if (!done_block->referrers().empty())
+        {
+            fun->push_block(done_block);
+        }
+
+        return fun->last_block()->push_meta_prp_load(
+                o, new (GC)StringConstant(immediate_key_str));
     }
     else
     {
+        ValueHandle k, o;
+
         Block *done_block = new (GC)Block(NameGenerator::instance().next());
         Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-        // We need temporary for returns here since the meta instruction will
-        // be expanded by the caller.
-        Value *key = expand_ref_get(parse(expr->key(), fun),
-                                    temporaries.get_for_return(),
-                                    fun, expt_block);
-        Value *obj = expand_ref_get(parse(expr->obj(), fun),
-                                    temporaries.get_for_return(),
-                                    fun, expt_block);
-        t = fun->last_block()->push_trm_jmp(done_block);
+        assert(rva);
 
-        fun->push_block(expt_block);
-        exception_action()->inflate(expt_block, fun);
+        R = parse(expr->key(), fun, rva);
+        // FIXME: We must use temporaries.parent() because rva might re-use the
+        //        same value for multiple calls to get.
+        //k = expand_ref_get_inplace_lazy(R, fun, expt_block, *rva);
+        k = expand_ref_get_inplace_lazy(R, fun, expt_block,
+                                        *temporaries.parent());
 
-        fun->push_block(done_block);
-        r = fun->last_block()->push_meta_prp_load(obj, key);
+        R = parse(expr->obj(), fun, rva);
+        // FIXME: We must use temporaries.parent() because rva might re-use the
+        //        same value for multiple calls to get.
+        //o = expand_ref_get_inplace_lazy(R, fun, expt_block, *rva);
+        o = expand_ref_get_inplace_lazy(R, fun, expt_block,
+                                        *temporaries.parent());
+
+        fun->last_block()->push_trm_jmp(done_block);
+
+        if (!expt_block->referrers().empty())
+        {
+            exception_action()->inflate(expt_block, fun);
+            fun->push_block(expt_block);
+        }
+
+        if (!done_block->referrers().empty())
+        {
+            fun->push_block(done_block);
+        }
+
+        return fun->last_block()->push_meta_prp_load(o, k);
     }
 
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_call_expr(parser::CallExpression *expr,
-                                 Function *fun)
+ValueHandle Compiler::parse_call_expr(parser::CallExpression *expr,
+                                      Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    // Result, temporary and function values.
-    Value *r = NULL, *t = NULL;
+    ValueHandle _, R, X;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
@@ -1650,21 +1933,23 @@ Value *Compiler::parse_call_expr(parser::CallExpression *expr,
     parser::ExpressionVector::const_iterator it;
     for (it = expr->arguments().begin(); it != expr->arguments().end(); ++it)
     {
+        ValueHandle v;
+
+        R = parse(*it, fun, &temporaries);
+        v = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+
         // FIXME: What to do if the second or later argument throws? The stack
         //        must be restored somehow.
         //
         //        We only have to act if the exception is catched in this
         //        function or the stack will be cleaned up when the frame is
         //        popped.
-        Value *v = NULL;
+        fun->last_block()->push_stk_push(v);
 
-        v = expand_ref_get(parse(*it, fun), temporaries.get(), fun,
-                           expt_block);
-        t = fun->last_block()->push_stk_push(v);
-
-        temporaries.put(v);
-        v = NULL;
+        v.release();
     }
+
+    X = ValueHandle::lazy(rva ? rva : &temporaries);
 
     if (parser::PropertyExpression *prop =
         dynamic_cast<parser::PropertyExpression *>(expr->expression()))
@@ -1687,229 +1972,269 @@ Value *Compiler::parse_call_expr(parser::CallExpression *expr,
 
         if (!immediate_key_str.empty())
         {
-            Value *obj = expand_ref_get(parse(prop->obj(), fun),
-                                        temporaries.get(), fun, expt_block);
+            ValueHandle o;
 
-            //r = fun->last_block()->push_mem_alloc(Type::value());
-            r = temporaries.get_for_return();
-            t = fun->last_block()->push_call_keyed(obj, get_prp_key(immediate_key_str),
-                                                   static_cast<int>(expr->arguments().size()), r);
-            t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+            R = parse(prop->obj(), fun, &temporaries);
+            o = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+
+            _ = fun->last_block()->push_call_keyed(
+                    o, get_prp_key(immediate_key_str),
+                    static_cast<int>(expr->arguments().size()), X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
         }
         else
         {
-            Value *key = expand_ref_get(parse(prop->key(), fun),
-                                        temporaries.get(), fun, expt_block);
-            Value *obj = expand_ref_get(parse(prop->obj(), fun),
-                                        temporaries.get(), fun, expt_block);
+            ValueHandle k, o;
 
-            //r = fun->last_block()->push_mem_alloc(Type::value());
-            r = temporaries.get_for_return();
-            t = fun->last_block()->push_call_keyed_slow(
-                obj, key, static_cast<int>(expr->arguments().size()), r);
-            t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+            R = parse(prop->key(), fun, &temporaries);
+            k = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+
+            R = parse(prop->obj(), fun, &temporaries);
+            o = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+
+            fun->last_block()->push_call_keyed_slow(
+                    o, k, static_cast<int>(expr->arguments().size()), X);
+                    fun->last_block()->push_trm_br(_, done_block, expt_block);
         }
     }
     else if (parser::IdentifierLiteral * ident =
         dynamic_cast<parser::IdentifierLiteral *>(expr->expression()))
     {
-        //r = fun->last_block()->push_mem_alloc(Type::value());
-        r = temporaries.get_for_return();
-
-        t = get_local(ident->value(), fun);
-        if (t)
+        _ = get_local(ident->value(), fun);
+        if (_)
         {
-            t = fun->last_block()->push_call(t, static_cast<int>(expr->arguments().size()), r);
+            _ = fun->last_block()->push_call(
+                    _, static_cast<int>(expr->arguments().size()), X);
         }
         else
         {
-            t = fun->last_block()->push_call_named(get_prp_key(ident->value()),
-                                                   static_cast<int>(expr->arguments().size()), r);
+            _ = fun->last_block()->push_call_named(
+                    get_prp_key(ident->value()),
+                    static_cast<int>(expr->arguments().size()), X);
         }
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+        fun->last_block()->push_trm_br(_, done_block, expt_block);
     }
     else
     {
-        Value *f = parse(expr->expression(), fun);
+        ValueHandle f;
+
+        f = parse(expr->expression(), fun, &temporaries);
+
         assert(!f->type()->is_reference());
 
-        //r = fun->last_block()->push_mem_alloc(Type::value());
-        r = temporaries.get_for_return();
-        t = fun->last_block()->push_call(f, static_cast<int>(expr->arguments().size()), r);
-        t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+        _ = fun->last_block()->push_call(
+                f, static_cast<int>(expr->arguments().size()), X);
+        _ = fun->last_block()->push_trm_br(_, done_block, expt_block);
     }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
-    return r;
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
+
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_call_new_expr(parser::CallNewExpression *expr,
-                                     Function *fun)
+ValueHandle Compiler::parse_call_new_expr(parser::CallNewExpression *expr,
+                                          Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    // Result, temporary, and function values.
-    Value *r = NULL, *t = NULL, *f = NULL;
+    ValueHandle _, R, X, f;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-    f = expand_ref_get(parse(expr->expression(), fun), temporaries.get(), fun,
-                       expt_block);
+    X = ValueHandle::lazy(rva ? rva : &temporaries);
+
+    R = parse(expr->expression(), fun, &temporaries);
+    f = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
     parser::ExpressionVector::const_iterator it;
     for (it = expr->arguments().begin(); it != expr->arguments().end(); ++it)
     {
-        Value *v = NULL;
+        ValueHandle v;
 
-        v = expand_ref_get(parse(*it, fun), temporaries.get(), fun,
-                           expt_block);
-        t = fun->last_block()->push_stk_push(v);
+        R = parse(*it, fun, &temporaries);
+        v = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-        temporaries.put(v);
-        v = NULL;
+        fun->last_block()->push_stk_push(v);
+
+        v.release();
     }
 
-    //r = fun->last_block()->push_mem_alloc(Type::value());
-    r = temporaries.get_for_return();
-    t = fun->last_block()->push_call_new(f, static_cast<int>(expr->arguments().size()), r);
-    t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+    _ = fun->last_block()->push_call_new(
+            f, static_cast<int>(expr->arguments().size()), X);
+            fun->last_block()->push_trm_br(_, done_block, expt_block);
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
-    return r;
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
+
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_regular_expr(parser::RegularExpression *expr,
-                                    Function *fun)
+ValueHandle Compiler::parse_regular_expr(parser::RegularExpression *expr,
+                                         Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL;
-    r = fun->last_block()->push_es_new_rex(expr->pattern(), expr->flags());
-    return r;
+    TemporaryValueAllocator temporaries(this);
+
+    ValueHandle X = ValueHandle::lazy(rva ? rva : &temporaries);
+
+    fun->last_block()->push_es_new_rex(expr->pattern(), expr->flags(), X);
+
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_fun_expr(parser::FunctionExpression *expr,
-                                Function *fun)
+ValueHandle Compiler::parse_fun_expr(parser::FunctionExpression *expr,
+                                     Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL;
+    ValueHandle X = ValueHandle::lazy(rva ? rva : &temporaries);
 
     const parser::FunctionLiteral *lit = expr->function();
 
     Function *new_fun = parse_fun(lit, false);
-    r = fun->last_block()->push_es_new_fun_expr(new_fun, static_cast<int>(lit->parameters().size()),
-                                                lit->is_strict_mode());
-    return r;
+    fun->last_block()->push_es_new_fun_expr(
+        new_fun, static_cast<int>(lit->parameters().size()),
+        lit->is_strict_mode(), X);
+
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_this_lit(parser::ThisLiteral *lit,
-                                Function *fun)
+ValueHandle Compiler::parse_this_lit(parser::ThisLiteral *lit,
+                                     Function *fun, ValueAllocator *rva)
 {
-    Value *vp = new (GC)ValuePointer();
-
-    return new (GC)ArrayElementConstant(vp, -2);
+    return rva
+            ? new (GC)ArrayElementConstant(new (GC)ValuePointer(), -2)
+            : ValueHandle();
 }
 
-Value *Compiler::parse_ident_lit(parser::IdentifierLiteral *lit,
-                                 Function *fun)
+ValueHandle Compiler::parse_ident_lit(parser::IdentifierLiteral *lit,
+                                      Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL;
+    Value* X = NULL;
 
-    r = get_local(lit->value(), fun);
-    if (!r)
-        r = fun->last_block()->push_meta_ctx_load(get_prp_key(lit->value()));
+    X = get_local(lit->value(), fun);
+    if (X)
+        return rva ? ValueHandle(X) : ValueHandle();
 
-    return r;
+    return fun->last_block()->push_meta_ctx_load(get_prp_key(lit->value()));
 }
 
-Value *Compiler::parse_null_lit(parser::NullLiteral *lit,
-                                Function *fun)
+ValueHandle Compiler::parse_null_lit(parser::NullLiteral *lit,
+                                     Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL;
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NULL);
-    return r;
+    return rva
+            ? new (GC)ValueConstant(ValueConstant::VALUE_NULL)
+            : ValueHandle();
 }
 
-Value *Compiler::parse_bool_lit(parser::BoolLiteral *lit,
-                                Function *fun)
+ValueHandle Compiler::parse_bool_lit(parser::BoolLiteral *lit,
+                                     Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL, *n = NULL;
+    ValueHandle X = ValueHandle::lazy(rva);
 
-    n = new (GC)BooleanConstant(lit->value());
-    r = fun->last_block()->push_val_from_bool(n);
+    if (X)
+    {
+        fun->last_block()->push_val_from_bool(
+                new (GC)BooleanConstant(lit->value()),
+                X);
+    }
 
-    return r;
+    return rva ? X :ValueHandle();
 }
 
-Value *Compiler::parse_num_lit(parser::NumberLiteral *lit,
-                               Function *fun)
+ValueHandle Compiler::parse_num_lit(parser::NumberLiteral *lit,
+                                    Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL, *n = NULL;
+    ValueHandle X = ValueHandle::lazy(rva);
 
-    n = new (GC)StringifiedDoubleConstant(lit->as_string());
-    r = fun->last_block()->push_val_from_double(n);
+    if (X)
+    {
+        fun->last_block()->push_val_from_double(
+                new (GC)StringifiedDoubleConstant(lit->as_string()),
+                X);
+    }
 
-    return r;
+    return rva ? X :ValueHandle();
 }
 
-Value *Compiler::parse_str_lit(parser::StringLiteral *lit,
-                               Function *fun)
+ValueHandle Compiler::parse_str_lit(parser::StringLiteral *lit,
+                                    Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL, *n = NULL;
+    ValueHandle X = ValueHandle::lazy(rva);
 
-    n = new (GC)StringConstant(lit->value());
-    r = fun->last_block()->push_val_from_str(n);
+    if (X)
+    {
+        fun->last_block()->push_val_from_str(
+                new (GC)StringConstant(lit->value()),
+                X);
+    }
 
-    return r;
+    return rva ? X :ValueHandle();
 }
 
-Value *Compiler::parse_fun_lit(parser::FunctionLiteral *lit,
-                               Function *fun)
+ValueHandle Compiler::parse_fun_lit(parser::FunctionLiteral *lit,
+                                    Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL;
+    ValueHandle X = ValueHandle::lazy(rva ? rva : &temporaries);
 
     Function *new_fun = parse_fun(lit, false);
     if (lit->type() == parser::FunctionLiteral::TYPE_DECLARATION)
     {
-        r = fun->last_block()->push_es_new_fun(new_fun, static_cast<int>(lit->parameters().size()),
-                                               lit->is_strict_mode());
+        fun->last_block()->push_es_new_fun(
+                new_fun,
+                static_cast<int>(lit->parameters().size()),
+                lit->is_strict_mode(),
+                X);
     }
     else
     {
-        r = fun->last_block()->push_es_new_fun_expr(new_fun,
-                                                    static_cast<int>(lit->parameters().size()),
-                                                    lit->is_strict_mode());
+        fun->last_block()->push_es_new_fun_expr(
+                new_fun,
+                static_cast<int>(lit->parameters().size()),
+                lit->is_strict_mode(),
+                X);
     }
 
-    assert(r);
-    return r;
+    return rva ? X :ValueHandle();
 }
 
-Value *Compiler::parse_var_lit(parser::VariableLiteral *lit,
-                               Function *fun)
+ValueHandle Compiler::parse_var_lit(parser::VariableLiteral *lit,
+                                    Function *fun, ValueAllocator *rva)
 {
     // Do nothing, dealt with when parsing functions.
-    return NULL;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_array_lit(parser::ArrayLiteral *lit,
-                                 Function *fun)
+ValueHandle Compiler::parse_array_lit(parser::ArrayLiteral *lit,
+                                      Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL, *a = NULL, *v = NULL;
+    ValueHandle a, R, X;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
+    // FIXME: Should use stack.
     a = fun->last_block()->push_mem_alloc(
         new (GC)ArrayType(Type::value(), lit->values().size()));
 
@@ -1917,39 +2242,48 @@ Value *Compiler::parse_array_lit(parser::ArrayLiteral *lit,
     parser::ExpressionVector::const_iterator it;
     for (it = lit->values().begin(); it != lit->values().end(); ++it, i++)
     {
-        v = expand_ref_get(parse(*it, fun), temporaries.get(), fun,
-                           expt_block);
-        fun->last_block()->push_arr_put(i, a, v);
+        ValueHandle v = new (GC)ArrayElementConstant(a, i);
+        FixedValueAllocator fva(v);
 
-        temporaries.put(v);
-        v = NULL;
+        R = parse(*it, fun, &fva);
+        expand_ref_get_inplace(R, v, fun, expt_block);
     }
 
-    r = fun->last_block()->push_es_new_arr(lit->values().size(), a);
+    X = ValueHandle::lazy(rva ? rva : &temporaries);
+
+    fun->last_block()->push_es_new_arr(lit->values().size(), a, X);
     fun->last_block()->push_trm_jmp(done_block);
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
-    return r;
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
+
+    return rva ? X :ValueHandle();
 }
 
-Value *Compiler::parse_obj_lit(parser::ObjectLiteral *lit,
-                               Function *fun)
+ValueHandle Compiler::parse_obj_lit(parser::ObjectLiteral *lit,
+                                    Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL, *t = NULL, *k = NULL, *v = NULL;
+    ValueHandle _, R, X;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-    r = fun->last_block()->push_es_new_obj();
-    //k = fun->last_block()->push_mem_alloc(Type::value());
-    k = temporaries.get();
-    //v = fun->last_block()->push_mem_alloc(Type::value());
-    v = temporaries.get();
+    X = ValueHandle::lazy(rva ? rva : &temporaries);
+
+    fun->last_block()->push_es_new_obj(X);
+
+    SingleValueAllocator sva_k(temporaries);
+    SingleValueAllocator sva_v(temporaries);
 
     parser::ObjectLiteral::PropertyVector::const_iterator it;
     for (it = lit->properties().begin(); it != lit->properties().end(); ++it)
@@ -1958,96 +2292,106 @@ Value *Compiler::parse_obj_lit(parser::ObjectLiteral *lit,
 
         if (prop->type() == parser::ObjectLiteral::Property::DATA)
         {
+            ValueHandle k, v;
+
             Block *done_block = new (GC)Block(NameGenerator::instance().next());
 
-            t = parse(prop->key(), fun);
-            k = expand_ref_get(t, k, fun, expt_block);
+            R = parse(prop->key(), fun, &sva_k);
+            k = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-            t = parse(prop->val(), fun);
-            v = expand_ref_get(t, v, fun, expt_block);
+            R = parse(prop->val(), fun, &sva_v);
+            v = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-            t = fun->last_block()->push_prp_def_data(r, k, v);
-            t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+            _ = fun->last_block()->push_prp_def_data(X, k, v);
+                fun->last_block()->push_trm_br(_, done_block, expt_block);
 
             fun->push_block(done_block);
+
+            k.release();
+            v.release();
         }
         else
         {
+            ValueHandle v;
+
             Block *done_block = new (GC)Block(NameGenerator::instance().next());
 
-            t = parse(prop->val(), fun);
-            v = expand_ref_get(t, v, fun, expt_block);
+            R = parse(prop->val(), fun, &sva_v);
+            v = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-            t = fun->last_block()->push_prp_def_accessor(
-                r, get_prp_key(prop->accessor_name()),
-                v, prop->type() == parser::ObjectLiteral::Property::SETTER);
-            t = fun->last_block()->push_trm_br(t, done_block, expt_block);
+            _ = fun->last_block()->push_prp_def_accessor(
+                    X, get_prp_key(prop->accessor_name()),
+                    v, prop->type() == parser::ObjectLiteral::Property::SETTER);
+                fun->last_block()->push_trm_br(_, done_block, expt_block);
 
             fun->push_block(done_block);
+
+            v.release();
         }
     }
 
     fun->last_block()->push_trm_jmp(done_block);
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
-    return r;
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
+
+    return rva ? X :ValueHandle();
 }
 
-Value *Compiler::parse_nothing_lit(parser::NothingLiteral *lit,
-                                   Function *fun)
+ValueHandle Compiler::parse_nothing_lit(parser::NothingLiteral *lit,
+                                        Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL;
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return rva
+            ? new (GC)ValueConstant(ValueConstant::VALUE_NOTHING)
+            : ValueHandle();
 }
 
-Value *Compiler::parse_empty_stmt(parser::EmptyStatement *stmt,
-                                  Function *fun)
+ValueHandle Compiler::parse_empty_stmt(parser::EmptyStatement *stmt,
+                                       Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL;
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_expr_stmt(parser::ExpressionStatement *stmt,
-                                 Function *fun)
+ValueHandle Compiler::parse_expr_stmt(parser::ExpressionStatement *stmt,
+                                      Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *t = NULL, *v = NULL;
+    ValueHandle R, X;
+
+    R = parse(stmt->expression(), fun, rva ? rva : &temporaries);
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-    t = parse(stmt->expression(), fun);
+    X = expand_ref_get_lazy(R, fun, done_block, expt_block, temporaries);
 
-    // Short-circuit the case where we have a primitive value (no context or
-    // property lookup that can fail). If the parent doesn't care about the
-    // result, return early.
-    if (!t->type()->is_reference() && temporaries.parent_discards_result())
-        return NULL;    // Return NULL to catch any illegal accesses.
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    //v = fun->last_block()->push_mem_alloc(Type::value());
-    v = temporaries.get_for_return();
-    t = expand_ref_get(t, v, fun, done_block, expt_block);
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
-
-    fun->push_block(done_block);
-    return v;
+    return rva ? X : ValueHandle();
 }
 
-Value *Compiler::parse_block_stmt(parser::BlockStatement *stmt,
-                                  Function *fun)
+ValueHandle Compiler::parse_block_stmt(parser::BlockStatement *stmt,
+                                       Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
-    temporaries.set_discard_return(true);
-
-    Value *r = NULL;
+    TemporaryValueAllocator temporaries(this);
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
 
@@ -2063,43 +2407,40 @@ Value *Compiler::parse_block_stmt(parser::BlockStatement *stmt,
 
     parser::StatementVector::const_iterator it_stmt;
     for (it_stmt = stmt->body().begin(); it_stmt != stmt->body().end(); ++it_stmt)
-        parse(*it_stmt, fun);
+        parse(*it_stmt, fun, NULL);
 
     // FIXME: We might be able to optimize away this jump if the done block isn't breaked from.
     if (fun->last_block()->empty() || !fun->last_block()->last_instr()->is_terminating())
         fun->last_block()->push_trm_jmp(done_block);
 
     fun->push_block(done_block);
-
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_if_stmt(parser::IfStatement *stmt,
-                               Function *fun)
+ValueHandle Compiler::parse_if_stmt(parser::IfStatement *stmt,
+                                    Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *c = NULL, *r = NULL, *t = NULL;
+    ValueHandle _, R;
 
     Block *true_block = new (GC)Block(NameGenerator::instance().next());
     Block *false_block = new (GC)Block(NameGenerator::instance().next());
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-    c = expand_ref_get(parse(stmt->condition(), fun), temporaries.get(), fun,
-                       expt_block);
-    t = fun->last_block()->push_val_to_bool(c);
-    t = fun->last_block()->push_trm_br(t, true_block, stmt->has_else() ? false_block : done_block);
-
-    temporaries.put(c);
-    c = NULL;
+    ValueHandle c;
+    R = parse(stmt->condition(), fun, &temporaries);
+    c = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+    _ = fun->last_block()->push_val_to_bool(c);
+        fun->last_block()->push_trm_br(_, true_block, stmt->has_else() ? false_block : done_block);
+    c.release();
 
     // if block.
     fun->push_block(true_block);
     {
-        t = parse(stmt->if_statement(), fun);
-        t = fun->last_block()->push_trm_jmp(done_block);
+        parse(stmt->if_statement(), fun, NULL);
+        fun->last_block()->push_trm_jmp(done_block);
     }
 
     // else block.
@@ -2107,33 +2448,38 @@ Value *Compiler::parse_if_stmt(parser::IfStatement *stmt,
     {
         fun->push_block(false_block);
         {
-            t = parse(stmt->else_statement(), fun);
-            t = fun->last_block()->push_trm_jmp(done_block);
+            parse(stmt->else_statement(), fun, NULL);
+            fun->last_block()->push_trm_jmp(done_block);
         }
     }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
 
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_do_while_stmt(parser::DoWhileStatement *stmt,
-                                     Function *fun)
+ValueHandle Compiler::parse_do_while_stmt(parser::DoWhileStatement *stmt,
+                                          Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *c = NULL, *r = NULL, *t = NULL;
+    ValueHandle _, R;
 
     Block *next_block = new (GC)Block(NameGenerator::instance().next());
     Block *cond_block = new (GC)Block(NameGenerator::instance().next());
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-    t = fun->last_block()->push_trm_jmp(next_block);
+    fun->last_block()->push_trm_jmp(next_block);
 
     ScopedVectorValue<Scope> scope(
         scopes_, new (GC)Scope(cond_block, done_block));
@@ -2148,8 +2494,8 @@ Value *Compiler::parse_do_while_stmt(parser::DoWhileStatement *stmt,
     // Next block.
     fun->push_block(next_block);
     {
-        t = parse(stmt->body(), fun);
-        t = fun->last_block()->push_trm_jmp(cond_block);
+        parse(stmt->body(), fun, NULL);
+        fun->last_block()->push_trm_jmp(cond_block);
     }
 
     // Condition block.
@@ -2157,35 +2503,39 @@ Value *Compiler::parse_do_while_stmt(parser::DoWhileStatement *stmt,
     {
         if (stmt->has_condition())
         {
-            c = expand_ref_get(parse(stmt->condition(), fun),
-                               temporaries.get(), fun, expt_block);
-            t = fun->last_block()->push_val_to_bool(c);
-            t = fun->last_block()->push_trm_br(t, next_block, done_block);
-
-            temporaries.put(c);
-            c = NULL;
+            ValueHandle c;
+            R = parse(stmt->condition(), fun, &temporaries);
+            c = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+            _ = fun->last_block()->push_val_to_bool(c);
+                fun->last_block()->push_trm_br(_, next_block, done_block);
+            c.release();
         }
         else
         {
-            t = fun->last_block()->push_trm_jmp(next_block);
+            fun->last_block()->push_trm_jmp(next_block);
         }
     }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
 
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_while_stmt(parser::WhileStatement *stmt,
-                                  Function *fun)
+ValueHandle Compiler::parse_while_stmt(parser::WhileStatement *stmt,
+                                       Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *c = NULL, *r = NULL, *t = NULL;
+    ValueHandle _, R;
 
     Block *cond_block = new (GC)Block(NameGenerator::instance().next());
     Block *next_block = new (GC)Block(NameGenerator::instance().next());
@@ -2202,42 +2552,45 @@ Value *Compiler::parse_while_stmt(parser::WhileStatement *stmt,
     for (it_label = labels.begin(); it_label != labels.end(); ++it_label)
         scope->push_label((*it_label).utf8());
 
-    t = fun->last_block()->push_trm_jmp(cond_block);
+    fun->last_block()->push_trm_jmp(cond_block);
 
     // Condition block.
     fun->push_block(cond_block);
     {
-        c = expand_ref_get(parse(stmt->condition(), fun), temporaries.get(),
-                           fun, expt_block);
-        t = fun->last_block()->push_val_to_bool(c);
-        t = fun->last_block()->push_trm_br(t, next_block, done_block);
-
-        temporaries.put(c);
-        c = NULL;
+        ValueHandle c;
+        R = parse(stmt->condition(), fun, &temporaries);
+        c = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+        _ = fun->last_block()->push_val_to_bool(c);
+            fun->last_block()->push_trm_br(_, next_block, done_block);
+        c.release();
     }
 
     fun->push_block(next_block);
     {
-        t = parse(stmt->body(), fun);
-        t = fun->last_block()->push_trm_jmp(cond_block);
+        parse(stmt->body(), fun, NULL);
+        fun->last_block()->push_trm_jmp(cond_block);
     }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
 
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_for_in_stmt(parser::ForInStatement *stmt,
-                                   Function *fun)
+ValueHandle Compiler::parse_for_in_stmt(parser::ForInStatement *stmt,
+                                        Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    // Result, temporary, enumerable, iterator and property values.
-    Value *r = NULL, *t = NULL, *e = NULL, *i = NULL, *p = NULL;
+    ValueHandle i, _, R;
 
     Block *init_block = new (GC)Block(NameGenerator::instance().next());
     Block *cond_block = new (GC)Block(NameGenerator::instance().next());
@@ -2255,64 +2608,73 @@ Value *Compiler::parse_for_in_stmt(parser::ForInStatement *stmt,
     for (it_label = labels.begin(); it_label != labels.end(); ++it_label)
         scope->push_label((*it_label).utf8());
 
-    t = parse(stmt->enumerable(), fun);
-    e = expand_ref_get(t, temporaries.get(), fun, expt_block);
-    t = fun->last_block()->push_bin_or(
+    ValueHandle e;
+    R = parse(stmt->enumerable(), fun, &temporaries);
+    e = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+
+    _ = fun->last_block()->push_bin_or(
         fun->last_block()->push_val_is_null(e),
         fun->last_block()->push_val_is_undefined(e));
-    t = fun->last_block()->push_trm_br(t, done_block, init_block);
+    _ = fun->last_block()->push_trm_br(_, done_block, init_block);  // FIXME: Not needed.
 
     fun->push_block(init_block);
     {
         Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
         i = fun->last_block()->push_prp_it_new(e);
-        t = fun->last_block()->push_bin_eq(i,
+        _ = fun->last_block()->push_bin_eq(i,
             new (GC)NullConstant(new (GC)OpaqueType("EsPropertyIterator")));
-        t = fun->last_block()->push_trm_br(t, expt_block, cond_block);
+        _ = fun->last_block()->push_trm_br(_, expt_block, cond_block);
 
-        fun->push_block(expt_block);
-        exception_action()->inflate(expt_block, fun);
+        if (!expt_block->referrers().empty())
+        {
+            exception_action()->inflate(expt_block, fun);
+            fun->push_block(expt_block);
+        }
     }
 
-    temporaries.put(e);
-    e = NULL;
+    e.release();
+
+    ValueHandle p = ValueHandle::lazy(&temporaries);
 
     fun->push_block(cond_block);
     {
-        //p = fun->last_block()->push_mem_alloc(Type::value());
-        p = temporaries.get();
-        t = fun->last_block()->push_prp_it_next(i, p);
-        t = fun->last_block()->push_trm_br(t, body_block, done_block);
+        _ = fun->last_block()->push_prp_it_next(i, p);
+        _ = fun->last_block()->push_trm_br(_, body_block, done_block);
     }
 
     fun->push_block(body_block);
     {
         Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
 
-        t = parse(stmt->declaration(), fun);
-        expand_ref_put(t, p, fun, blk0_block, expt_block);
+        R = parse(stmt->declaration(), fun, &temporaries);
+        expand_ref_put(R, p, fun, blk0_block, expt_block);
 
         fun->push_block(blk0_block);
-        t = parse(stmt->body(), fun);
-        t = fun->last_block()->push_trm_jmp(cond_block);
+        parse(stmt->body(), fun, NULL);
+        fun->last_block()->push_trm_jmp(cond_block);
     }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
 
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_for_stmt(parser::ForStatement *stmt,
-                                Function *fun)
+ValueHandle Compiler::parse_for_stmt(parser::ForStatement *stmt,
+                                     Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *c = NULL, *r = NULL, *t = NULL;
+    ValueHandle _, R;
 
     Block *cond_block = new (GC)Block(NameGenerator::instance().next());
     Block *next_block = new (GC)Block(NameGenerator::instance().next());
@@ -2331,55 +2693,57 @@ Value *Compiler::parse_for_stmt(parser::ForStatement *stmt,
         scope->push_label((*it_label).utf8());
 
     if (stmt->has_initializer())
-        t = parse(stmt->initializer(), fun);
+        parse(stmt->initializer(), fun, NULL);
 
-    t = fun->last_block()->push_trm_jmp(cond_block);
+    fun->last_block()->push_trm_jmp(cond_block);
 
     fun->push_block(cond_block);
 
     if (stmt->has_condition())
     {
-        c = expand_ref_get(parse(stmt->condition(), fun), temporaries.get(),
-                           fun, expt_block);
-        t = fun->last_block()->push_val_to_bool(c);
-        t = fun->last_block()->push_trm_br(t, body_block, done_block);
-
-        temporaries.put(c);
-        c = NULL;
+        ValueHandle c;
+        R = parse(stmt->condition(), fun, &temporaries);
+        c = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+        _ = fun->last_block()->push_val_to_bool(c);
+            fun->last_block()->push_trm_br(_, body_block, done_block);
+        c.release();
     }
     else
     {
-        t = fun->last_block()->push_trm_jmp(body_block);
+        fun->last_block()->push_trm_jmp(body_block);
     }
 
     fun->push_block(body_block);
     {
-        t = parse(stmt->body(), fun);
-        t = fun->last_block()->push_trm_jmp(next_block);
+        parse(stmt->body(), fun, NULL);
+        fun->last_block()->push_trm_jmp(next_block);
     }
-
-    temporaries.set_discard_return(true);
 
     fun->push_block(next_block);
     {
         if (stmt->has_next())
-            parse(stmt->next(), fun);
+            parse(stmt->next(), fun, NULL);
 
         // Jump to top.
         fun->last_block()->push_trm_jmp(cond_block);
     }
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
 
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_cont_stmt(parser::ContinueStatement *stmt,
-                                 Function *fun)
+ValueHandle Compiler::parse_cont_stmt(parser::ContinueStatement *stmt,
+                                      Function *fun, ValueAllocator *rva)
 {
     if (stmt->has_target())
     {
@@ -2406,11 +2770,11 @@ Value *Compiler::parse_cont_stmt(parser::ContinueStatement *stmt,
         fun->last_block()->push_trm_jmp(scope->continue_target());
     }
 
-    return NULL;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_break_stmt(parser::BreakStatement *stmt,
-                                  Function *fun)
+ValueHandle Compiler::parse_break_stmt(parser::BreakStatement *stmt,
+                                       Function *fun, ValueAllocator *rva)
 {
     if (stmt->has_target())
     {
@@ -2437,51 +2801,54 @@ Value *Compiler::parse_break_stmt(parser::BreakStatement *stmt,
         fun->last_block()->push_trm_jmp(scope->break_target());
     }
 
-    return NULL;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_ret_stmt(parser::ReturnStatement *stmt,
-                                Function *fun)
+ValueHandle Compiler::parse_ret_stmt(parser::ReturnStatement *stmt,
+                                     Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *vp = new (GC)ValuePointer();
-
-    Value *r = NULL, *t = NULL;
-
-    r = new (GC)ArrayElementConstant(vp, -1);   // FIXME: Use constant offset.
+    ValueHandle R;
 
     if (stmt->has_expression())
     {
         Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
         Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-        t = parse(stmt->expression(), fun);
-        t = expand_ref_get(t, r, fun, blk0_block, expt_block);
+        ValueHandle r = new (GC)ArrayElementConstant(new (GC)ValuePointer(), -1);   // FIXME: Constant offset.
 
-        fun->push_block(blk0_block);
+        FixedValueAllocator fva(r);
+        R = parse(stmt->expression(), fun, &fva);
+        expand_ref_get(R, r, fun, blk0_block, expt_block);
+
+        if (!blk0_block->referrers().empty())
+            fun->push_block(blk0_block);
+
         unroll_for_return(fun);
-        t = fun->last_block()->push_trm_ret(new (GC)BooleanConstant(true));
+        fun->last_block()->push_trm_ret(new (GC)BooleanConstant(true));
 
-        fun->push_block(expt_block);
-        exception_action()->inflate(expt_block, fun);
+        if (!expt_block->referrers().empty())
+        {
+            exception_action()->inflate(expt_block, fun);
+            fun->push_block(expt_block);
+        }
     }
     else
     {
         unroll_for_return(fun);
-        t = fun->last_block()->push_trm_ret(new (GC)BooleanConstant(true));
+        fun->last_block()->push_trm_ret(new (GC)BooleanConstant(true));
     }
 
-    assert(r);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_with_stmt(parser::WithStatement *stmt,
-                                 Function *fun)
+ValueHandle Compiler::parse_with_stmt(parser::WithStatement *stmt,
+                                      Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL, *t = NULL, *v = NULL;
+    ValueHandle _, R;
 
     Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
@@ -2492,14 +2859,12 @@ Value *Compiler::parse_with_stmt(parser::WithStatement *stmt,
     scope->set_epilogue(new (GC)LeaveContextTemplateBlock());
 
     // 12.10.
-    t = parse(stmt->expression(), fun);
-    v = expand_ref_get(t, temporaries.get(), fun, expt0_block);
-
-    t = fun->last_block()->push_ctx_enter_with(v);
-    t = fun->last_block()->push_trm_br(t, blk0_block, expt0_block);
-
-    temporaries.put(v);
-    v = NULL;
+    ValueHandle v;
+    R = parse(stmt->expression(), fun, &temporaries);
+    v = expand_ref_get_inplace_lazy(R, fun, expt0_block, temporaries);
+    _ = fun->last_block()->push_ctx_enter_with(v);
+        fun->last_block()->push_trm_br(_, blk0_block, expt0_block);
+    v.release();
 
     fun->push_block(expt0_block);
     exception_action()->inflate(expt0_block, fun);
@@ -2512,23 +2877,23 @@ Value *Compiler::parse_with_stmt(parser::WithStatement *stmt,
     ScopedVectorValue<TemplateBlock> expt_action(
         exception_actions_, multi_block);
 
-    r = parse(stmt->body(), fun);
-    t = fun->last_block()->push_ctx_leave();
-    t = fun->last_block()->push_trm_jmp(done_block);
+    parse(stmt->body(), fun, rva);
+    fun->last_block()->push_ctx_leave();
+    fun->last_block()->push_trm_jmp(done_block);
 
     fun->push_block(expt1_block);
     exception_action()->inflate(expt1_block, fun);
 
     fun->push_block(done_block);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
-                                   Function *fun)
+ValueHandle Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
+                                        Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL, *t = NULL, *e = NULL, *b = NULL;
+    ValueHandle b, _, R;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
@@ -2543,11 +2908,13 @@ Value *Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
     for (it_label = labels.begin(); it_label != labels.end(); ++it_label)
         scope->push_label((*it_label).utf8());
 
-    e = expand_ref_get(parse(stmt->expression(), fun), temporaries.get(), fun,
-                       expt_block);
+    ValueHandle e;
+
+    R = parse(stmt->expression(), fun, &temporaries);
+    e = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
     b = fun->last_block()->push_mem_alloc(Type::boolean());    // true if case name is found.
-    t = fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));  // FIXME: Can this be removed?
+        fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));   // FIXME: Can this be removed?
 
     parser::SwitchStatement::CaseClauseVector::const_iterator it;
     for (it = stmt->cases().begin(); it != stmt->cases().end(); ++it)
@@ -2556,30 +2923,29 @@ Value *Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
 
         if (!clause->is_default())
         {
-            Value *c = NULL, *v = NULL;
-
             Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
             Block *blk1_block = new (GC)Block(NameGenerator::instance().next());
             Block *skip_block = new (GC)Block(NameGenerator::instance().next());
 
-            t = fun->last_block()->push_trm_br(b, skip_block, blk0_block);
+            fun->last_block()->push_trm_br(b, skip_block, blk0_block);
 
             fun->push_block(blk0_block);
-            v = expand_ref_get(parse(clause->label(), fun), temporaries.get(),
-                               fun, expt_block);
-            //c = fun->last_block()->push_mem_alloc(Type::value());
-            c = temporaries.get();
-            t = fun->last_block()->push_es_bin_strict_eq(v, e, c);
-            t = fun->last_block()->push_trm_br(t, blk1_block, expt_block);
 
-            temporaries.put(v);
-            v = NULL;
+            ValueHandle v;
+            R = parse(clause->label(), fun, &temporaries);
+            v = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
+
+            ValueHandle c = ValueHandle::lazy(&temporaries);
+            _ = fun->last_block()->push_es_bin_strict_eq(v, e, c);
+                fun->last_block()->push_trm_br(_, blk1_block, expt_block);
+
+            v.release();
 
             fun->push_block(blk1_block);
-            t = fun->last_block()->push_val_to_bool(c);
-            temporaries.put(c);
-            t = fun->last_block()->push_mem_store(b, t);
-            t = fun->last_block()->push_trm_jmp(skip_block);   // FIXME:
+            _ = fun->last_block()->push_val_to_bool(c);
+            c.release();
+            fun->last_block()->push_mem_store(b, _);
+            fun->last_block()->push_trm_jmp(skip_block);    // FIXME:
 
             fun->push_block(skip_block);
         }
@@ -2587,7 +2953,7 @@ Value *Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
         Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
         Block *skip_block = new (GC)Block(NameGenerator::instance().next());
 
-        t = fun->last_block()->push_trm_br(b, blk0_block, skip_block);
+        fun->last_block()->push_trm_br(b, blk0_block, skip_block);
 
         fun->push_block(blk0_block);
         {
@@ -2595,18 +2961,18 @@ Value *Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
             for (it_stmt = clause->body().begin();
                 it_stmt != clause->body().end(); ++it_stmt)
             {
-                t = parse(*it_stmt, fun);
+                parse(*it_stmt, fun, NULL);
             }
         }
 
-        t = fun->last_block()->push_trm_jmp(skip_block);
+        fun->last_block()->push_trm_jmp(skip_block);
 
         fun->push_block(skip_block);
     }
 
     Block *tdef_block = new (GC)Block(NameGenerator::instance().next());
 
-    t = fun->last_block()->push_trm_br(b, done_block, tdef_block);
+    fun->last_block()->push_trm_br(b, done_block, tdef_block);
 
     // Try finding and executing the default block.
     fun->push_block(tdef_block);
@@ -2621,54 +2987,65 @@ Value *Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
                 for (it_stmt = clause->body().begin();
                     it_stmt != clause->body().end(); ++it_stmt)
                 {
-                    t = parse(*it_stmt, fun);
+                    parse(*it_stmt, fun, NULL);
                 }
             }
         }
     }
 
-    t = fun->last_block()->push_trm_jmp(done_block);
+    fun->last_block()->push_trm_jmp(done_block);
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    fun->push_block(done_block);
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
 
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_throw_stmt(parser::ThrowStatement *stmt,
-                                  Function *fun)
+ValueHandle Compiler::parse_throw_stmt(parser::ThrowStatement *stmt,
+                                       Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL, *t = NULL;
+    ValueHandle R, t;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
     // Inflate the exception action into the last block.
-    t = parse(stmt->expression(), fun);
-    t = fun->last_block()->push_ex_set(expand_ref_get(t, temporaries.get(),
-                                                      fun, expt_block));
-    t = fun->last_block()->push_trm_jmp(expt_block);
+    R = parse(stmt->expression(), fun, &temporaries);
+    t = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-    fun->push_block(expt_block);
-    exception_action()->inflate(expt_block, fun);
+    fun->last_block()->push_ex_set(t);
+    fun->last_block()->push_trm_jmp(expt_block);
 
-    fun->push_block(done_block);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
+
+    return ValueHandle();
 }
 
-Value *Compiler::parse_try_stmt(parser::TryStatement *stmt,
-                                Function *fun)
+ValueHandle Compiler::parse_try_stmt(parser::TryStatement *stmt,
+                                     Function *fun, ValueAllocator *rva)
 {
-    TemporaryManager temporaries(this);
+    TemporaryValueAllocator temporaries(this);
 
-    Value *r = NULL, *t = NULL, *b = NULL;
+    ValueHandle b;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *fail_block = new (GC)Block(NameGenerator::instance().next());
@@ -2694,13 +3071,13 @@ Value *Compiler::parse_try_stmt(parser::TryStatement *stmt,
     }
 
     b = fun->last_block()->push_mem_alloc(Type::boolean());    // Fail check.
-    t = fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(true));
+    fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(true));
     {
         ScopedVectorValue<TemplateBlock> action(
             exception_actions_, new (GC)JumpTemplateBlock(fail_block));
 
-        r = parse(stmt->try_block(), fun);
-        t = fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));
+        parse(stmt->try_block(), fun, rva);
+        fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));
 
         // If we have a finally block but no catch block there is no need to
         // jump, but we can fall directly through to the finally block.
@@ -2726,8 +3103,8 @@ Value *Compiler::parse_try_stmt(parser::TryStatement *stmt,
         ScopedVectorValue<TemplateBlock> expt_action(
             exception_actions_, multi_block);
 
-        r = parse(stmt->catch_block(), fun);
-        t = fun->last_block()->push_ctx_leave();
+        parse(stmt->catch_block(), fun, rva);
+        fun->last_block()->push_ctx_leave();
 
         fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));
         fun->last_block()->push_trm_jmp(skip_block);
@@ -2741,29 +3118,36 @@ Value *Compiler::parse_try_stmt(parser::TryStatement *stmt,
 
     if (stmt->has_finally_block())
     {
-        t = fun->last_block()->push_ex_save_state();
-        r = parse(stmt->finally_block(), fun);
-        t = fun->last_block()->push_ex_load_state(t);
+        ValueHandle t = ValueHandle::lazy(&temporaries);
+
+        fun->last_block()->push_ex_save_state(t);
+        parse(stmt->finally_block(), fun, rva);
+        fun->last_block()->push_ex_load_state(t);
+
+        t.release();
     }
 
     // On failure, execute the previous exception action.
     fun->last_block()->push_trm_br(b, expt_block, done_block);
 
-    fun->push_block(expt_block);
-    prv_exception_action->inflate(expt_block, fun);
+    if (!expt_block->referrers().empty())
+    {
+        exception_action()->inflate(expt_block, fun);
+        fun->push_block(expt_block);
+    }
 
-    assert(r);
+    if (!done_block->referrers().empty())
+    {
+        fun->push_block(done_block);
+    }
 
-    fun->push_block(done_block);
-    return r;
+    return ValueHandle();
 }
 
-Value *Compiler::parse_dbg_stmt(parser::DebuggerStatement *stmt,
-                                Function *fun)
+ValueHandle Compiler::parse_dbg_stmt(parser::DebuggerStatement *stmt,
+                                     Function *fun, ValueAllocator *rva)
 {
-    Value *r = NULL;
-    r = new (GC)ValueConstant(ValueConstant::VALUE_NOTHING);
-    return r;
+    return ValueHandle();
 }
 
 Module *Compiler::compile(const parser::FunctionLiteral *root)

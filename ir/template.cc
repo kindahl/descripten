@@ -68,7 +68,7 @@ void FinallyTemplateBlock::inflate(Block *block, Function *fun) const
 {
     ScopedVectorValue<TemplateBlock> v(compiler_->exception_actions_, expt_block_);
 
-    compiler_->parse(const_cast<parser::Statement *>(stmt_), fun);
+    compiler_->parse(const_cast<parser::Statement *>(stmt_), fun, NULL);
 }
 
 }

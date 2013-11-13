@@ -259,13 +259,147 @@ public:
     }
 };
 
+class Compiler;
+
+class ValueAllocator
+{
+public:
+    virtual ~ValueAllocator() {}
+
+    virtual Value *get() = 0;
+    virtual void release(Value *value) = 0;
+};
+
+class FixedValueAllocator : public ValueAllocator
+{
+private:
+    Value *val_;
+
+public:
+    FixedValueAllocator(Value *val)
+        : val_(val) {}
+
+    virtual Value *get() OVERRIDE
+    {
+        return val_;
+    }
+
+    virtual void release(Value *value) OVERRIDE
+    {
+    }
+};
+
+class SingleValueAllocator : public ValueAllocator
+{
+private:
+    ValueAllocator &allocator_;
+    Value *value_;
+
+public:
+    SingleValueAllocator(ValueAllocator &allocator)
+        : allocator_(allocator)
+        , value_(NULL) {}
+
+    virtual Value *get() OVERRIDE
+    {
+        if (value_ == NULL)
+            value_ = allocator_.get();
+
+        return value_;
+    }
+
+    virtual void release(Value *value) OVERRIDE
+    {
+        assert(value_);
+
+        allocator_.release(value);
+        value_ = NULL;
+    }
+};
+
+class TemporaryValueAllocator : public ValueAllocator
+{
+private:
+    TemporaryValueAllocator *parent_;
+    Compiler *compiler_;
+    Scope *scope_;
+
+    std::set<Value *, std::less<Value *>, gc_allocator<Value *> > temporaries_;
+
+public:
+    TemporaryValueAllocator(Compiler *compiler);
+    ~TemporaryValueAllocator();
+
+    TemporaryValueAllocator *parent();
+
+    virtual Value *get() OVERRIDE;
+    virtual void release(Value *value) OVERRIDE;
+};
+
+class ValueHandle
+{
+private:
+    ValueAllocator *allocator_;
+    Value *value_;
+
+    ValueHandle(ValueAllocator *allocator)
+        : allocator_(allocator)
+        , value_(NULL) {}
+
+public:
+    ValueHandle()
+        : allocator_(NULL)
+        , value_(NULL) {}
+    ValueHandle(Value *value)
+        : allocator_(NULL)
+        , value_(value) {}
+
+    static ValueHandle lazy(ValueAllocator *allocator)
+    {
+        return ValueHandle(allocator);
+    }
+
+    Value *get()
+    {
+        if (value_ == NULL && allocator_ == NULL)
+            return NULL;
+
+        if (value_ == NULL)
+            value_ = allocator_->get();
+
+        return value_;
+    }
+
+    void release()
+    {
+        if (allocator_)
+        {
+            allocator_->release(value_);
+            value_ = NULL;
+        }
+    }
+
+    operator Value *()
+    {
+        return get();
+    }
+
+    Value *operator->()
+    {
+        assert(value_);
+        return value_;
+    }
+};
+
 /**
  * @brief Compiles a syntax tree into an intermediate representation.
  */
-class Compiler : public parser::ValueVisitor1<Value *, Function *>
+class Compiler : public parser::ValueVisitor2<ValueHandle, Function *, ValueAllocator *>
 {
 public:
     friend class FinallyTemplateBlock;  // FIXME: Ugly.
+
+    friend class TemporaryValueAllocator;
 
 private:
     /**
@@ -306,75 +440,7 @@ private:
     }
 
 private:
-    class TemporaryManager
-    {
-    private:
-        TemporaryManager *parent_;
-        Compiler *compiler_;
-        Scope *scope_;
-
-        std::set<Value *, std::less<Value *>, gc_allocator<Value *> > temporaries_;
-        bool discard_return_;
-
-    public:
-        TemporaryManager(Compiler *compiler)
-            : parent_(NULL)
-            , compiler_(compiler)
-            , scope_(compiler->current_fun_scope(true))
-            , discard_return_(false)
-        {
-            if (!compiler_->temporaries_stack_.empty())
-                parent_ = compiler_->temporaries_stack_.back();
-
-            compiler_->temporaries_stack_.push_back(this);
-        }
-
-        ~TemporaryManager()
-        {
-            for (Value *val : temporaries_)
-                scope_->put_temporary(val);
-
-            if (!compiler_->temporaries_stack_.empty())
-                compiler_->temporaries_stack_.pop_back();
-        }
-
-        bool parent_discards_result() const
-        {
-            return parent_->discard_return_;
-        }
-
-        void set_discard_return(bool discard_return)
-        {
-            discard_return_ = discard_return;
-        }
-
-        /**
-         * @return Temporary value storage that can be returned to the scope used
-         *         by the parent pool.
-         */
-        Value *get_for_return()
-        {
-            assert(parent_);
-            return parent_->discard_return_ ? get() : parent_->get();
-        }
-
-        Value *get()
-        {
-            Value *val = scope_->get_temporary();
-            temporaries_.insert(val);
-            return val;
-        }
-
-        void put(Value *value)
-        {
-            assert(temporaries_.count(value) == 1);
-
-            scope_->put_temporary(value);
-            temporaries_.erase(value);
-        }
-    };
-
-    std::vector<TemporaryManager *> temporaries_stack_;
+    std::vector<TemporaryValueAllocator *> temporaries_stack_;
 
 private:
     Scope *unroll_for_continue(Function *fun, const std::string &label = "");
@@ -453,8 +519,13 @@ private:
      * @return If ref is a reference the dereferenced value is returned, if v
      *         is not a reference v is returned.
      */
-    Value *expand_ref_get(Value *ref, Value *dst, Function *fun,
-                          Block *expt_block);
+    ValueHandle expand_ref_get_inplace(ValueHandle &ref,
+                                       ValueHandle &dst,
+                                       Function *fun, Block *expt_block);
+
+    ValueHandle expand_ref_get_inplace_lazy(ValueHandle &ref,
+                                            Function *fun, Block *expt_block,
+                                            ValueAllocator &allocator);
 
     /**
      * Extracts the value from a reference. This essentially implements the
@@ -467,8 +538,13 @@ private:
      * @param [in] expt_block Block to jump to in case of failure.
      * @return dst.
      */
-    Value *expand_ref_get(Value *ref, Value *dst, Function *fun,
-                          Block *done_block, Block *expt_block);
+    ValueHandle expand_ref_get(ValueHandle &ref, ValueHandle &dst,
+                               Function *fun,
+                               Block *done_block, Block *expt_block);
+
+    ValueHandle expand_ref_get_lazy(ValueHandle &ref, Function *fun,
+                                    Block *done_block, Block *expt_block,
+                                    ValueAllocator &allocator);
 
     /**
      * Writes a value to a reference. This essentially implements the ECMA-262
@@ -478,8 +554,8 @@ private:
      * @param [in] fun Current function.
      * @param [in] expt_block Block to jump to in case of failure.
      */
-    void expand_ref_put(Value *ref, Value *val, Function *fun,
-                        Block *expt_block);
+    void expand_ref_put_inplace(ValueHandle &ref, ValueHandle &val,
+                                Function *fun, Block *expt_block);
 
     /**
      * Writes a value to a reference. This essentially implements the ECMA-262
@@ -490,52 +566,124 @@ private:
      * @param [in] done_block Block to jump to in case of success.
      * @param [in] expt_block Block to jump to in case of failure.
      */
-    void expand_ref_put(Value *ref, Value *val, Function *fun,
-                        Block *done_block, Block *expt_block);
+    void expand_ref_put(ValueHandle &ref, ValueHandle &val,
+                        Function *fun, Block *done_block, Block *expt_block);
 
     void reset();
 
     Function *parse_fun(const parser::FunctionLiteral *lit, bool is_global);
 
 private:
-    virtual Value *parse_binary_expr(parser::BinaryExpression *expr, Function *fun) OVERRIDE;
-    virtual Value *parse_unary_expr(parser::UnaryExpression *expr, Function *fun) OVERRIDE;
-    virtual Value *parse_assign_expr(parser::AssignmentExpression *expr, Function *fun) OVERRIDE;
-    virtual Value *parse_cond_expr(parser::ConditionalExpression *expr, Function *fun) OVERRIDE;
-    virtual Value *parse_prop_expr(parser::PropertyExpression *expr, Function *fun) OVERRIDE;
-    virtual Value *parse_call_expr(parser::CallExpression *expr, Function *fun) OVERRIDE;
-    virtual Value *parse_call_new_expr(parser::CallNewExpression *expr, Function *fun) OVERRIDE;
-    virtual Value *parse_regular_expr(parser::RegularExpression *expr, Function *fun) OVERRIDE;
-    virtual Value *parse_fun_expr(parser::FunctionExpression *expr, Function *fun) OVERRIDE;
+    virtual ValueHandle parse_binary_expr(parser::BinaryExpression *expr,
+                                          Function *fun,
+                                          ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_unary_expr(parser::UnaryExpression *expr,
+                                         Function *fun,
+                                         ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_assign_expr(parser::AssignmentExpression *expr,
+                                          Function *fun,
+                                          ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_cond_expr(parser::ConditionalExpression *expr,
+                                        Function *fun,
+                                        ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_prop_expr(parser::PropertyExpression *expr,
+                                        Function *fun,
+                                        ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_call_expr(parser::CallExpression *expr,
+                                        Function *fun,
+                                        ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_call_new_expr(parser::CallNewExpression *expr,
+                                            Function *fun,
+                                            ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_regular_expr(parser::RegularExpression *expr,
+                                           Function *fun,
+                                           ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_fun_expr(parser::FunctionExpression *expr,
+                                       Function *fun,
+                                       ValueAllocator *rva) OVERRIDE;
 
-    virtual Value *parse_this_lit(parser::ThisLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_ident_lit(parser::IdentifierLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_null_lit(parser::NullLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_bool_lit(parser::BoolLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_num_lit(parser::NumberLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_str_lit(parser::StringLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_fun_lit(parser::FunctionLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_var_lit(parser::VariableLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_array_lit(parser::ArrayLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_obj_lit(parser::ObjectLiteral *lit, Function *fun) OVERRIDE;
-    virtual Value *parse_nothing_lit(parser::NothingLiteral *lit, Function *fun) OVERRIDE;
+    virtual ValueHandle parse_this_lit(parser::ThisLiteral *lit,
+                                       Function *fun,
+                                       ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_ident_lit(parser::IdentifierLiteral *lit,
+                                        Function *fun,
+                                        ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_null_lit(parser::NullLiteral *lit,
+                                       Function *fun,
+                                       ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_bool_lit(parser::BoolLiteral *lit,
+                                       Function *fun,
+                                       ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_num_lit(parser::NumberLiteral *lit,
+                                      Function *fun,
+                                      ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_str_lit(parser::StringLiteral *lit,
+                                      Function *fun,
+                                      ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_fun_lit(parser::FunctionLiteral *lit,
+                                      Function *fun,
+                                      ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_var_lit(parser::VariableLiteral *lit,
+                                      Function *fun,
+                                      ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_array_lit(parser::ArrayLiteral *lit,
+                                        Function *fun,
+                                        ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_obj_lit(parser::ObjectLiteral *lit,
+                                      Function *fun,
+                                      ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_nothing_lit(parser::NothingLiteral *lit,
+                                          Function *fun,
+                                          ValueAllocator *rva) OVERRIDE;
 
-    virtual Value *parse_empty_stmt(parser::EmptyStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_expr_stmt(parser::ExpressionStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_block_stmt(parser::BlockStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_if_stmt(parser::IfStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_do_while_stmt(parser::DoWhileStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_while_stmt(parser::WhileStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_for_in_stmt(parser::ForInStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_for_stmt(parser::ForStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_cont_stmt(parser::ContinueStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_break_stmt(parser::BreakStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_ret_stmt(parser::ReturnStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_with_stmt(parser::WithStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_switch_stmt(parser::SwitchStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_throw_stmt(parser::ThrowStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_try_stmt(parser::TryStatement *stmt, Function *fun) OVERRIDE;
-    virtual Value *parse_dbg_stmt(parser::DebuggerStatement *stmt, Function *fun) OVERRIDE;
+    virtual ValueHandle parse_empty_stmt(parser::EmptyStatement *stmt,
+                                         Function *fun,
+                                         ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_expr_stmt(parser::ExpressionStatement *stmt,
+                                        Function *fun,
+                                        ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_block_stmt(parser::BlockStatement *stmt,
+                                         Function *fun,
+                                         ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_if_stmt(parser::IfStatement *stmt,
+                                      Function *fun,
+                                      ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_do_while_stmt(parser::DoWhileStatement *stmt,
+                                            Function *fun,
+                                            ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_while_stmt(parser::WhileStatement *stmt,
+                                         Function *fun,
+                                         ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_for_in_stmt(parser::ForInStatement *stmt,
+                                          Function *fun,
+                                          ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_for_stmt(parser::ForStatement *stmt,
+                                       Function *fun,
+                                       ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_cont_stmt(parser::ContinueStatement *stmt,
+                                        Function *fun,
+                                        ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_break_stmt(parser::BreakStatement *stmt,
+                                         Function *fun,
+                                         ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_ret_stmt(parser::ReturnStatement *stmt,
+                                       Function *fun,
+                                       ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_with_stmt(parser::WithStatement *stmt,
+                                        Function *fun,
+                                        ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_switch_stmt(parser::SwitchStatement *stmt,
+                                          Function *fun,
+                                          ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_throw_stmt(parser::ThrowStatement *stmt,
+                                         Function *fun,
+                                         ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_try_stmt(parser::TryStatement *stmt,
+                                       Function *fun,
+                                       ValueAllocator *rva) OVERRIDE;
+    virtual ValueHandle parse_dbg_stmt(parser::DebuggerStatement *stmt,
+                                       Function *fun,
+                                       ValueAllocator *rva) OVERRIDE;
 
 public:
     Compiler();

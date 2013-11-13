@@ -590,4 +590,494 @@ public:
     virtual T parse_dbg_stmt(DebuggerStatement *stmt, P param) = 0;
 };
 
+/**
+ * @brief AST visitor base class with support for return value and two parameters.
+ */
+template <typename T, typename P1, typename P2>
+class ValueVisitor2 : private Visitor
+{
+private:
+    T value_;
+    P1 param1_;
+    P2 param2_;
+
+protected:
+    virtual ~ValueVisitor2() {}
+
+    T parse(Node *node, P1 param1, P2 param2)
+    {
+        param1_ = param1;
+        param2_ = param2;
+        visit(node);
+        return value_;
+    }
+
+private:
+    virtual void visit_binary_expr(BinaryExpression *expr) OVERRIDE
+    {
+        value_ = parse_binary_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_unary_expr(UnaryExpression *expr) OVERRIDE
+    {
+        value_ = parse_unary_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_assign_expr(AssignmentExpression *expr) OVERRIDE
+    {
+        value_ = parse_assign_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_cond_expr(ConditionalExpression *expr) OVERRIDE
+    {
+        value_ = parse_cond_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_prop_expr(PropertyExpression *expr) OVERRIDE
+    {
+        value_ = parse_prop_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_call_expr(CallExpression *expr) OVERRIDE
+    {
+        value_ = parse_call_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_call_new_expr(CallNewExpression *expr) OVERRIDE
+    {
+        value_ = parse_call_new_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_regular_expr(RegularExpression *expr) OVERRIDE
+    {
+        value_ = parse_regular_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_fun_expr(FunctionExpression *expr) OVERRIDE
+    {
+        value_ = parse_fun_expr(expr, param1_, param2_);
+    }
+
+    virtual void visit_this_lit(ThisLiteral *lit) OVERRIDE
+    {
+        value_ = parse_this_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_ident_lit(IdentifierLiteral *lit) OVERRIDE
+    {
+        value_ = parse_ident_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_null_lit(NullLiteral *lit) OVERRIDE
+    {
+        value_ = parse_null_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_bool_lit(BoolLiteral *lit) OVERRIDE
+    {
+        value_ = parse_bool_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_num_lit(NumberLiteral *lit) OVERRIDE
+    {
+        value_ = parse_num_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_str_lit(StringLiteral *lit) OVERRIDE
+    {
+        value_ = parse_str_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_fun_lit(FunctionLiteral *lit) OVERRIDE
+    {
+        value_ = parse_fun_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_var_lit(VariableLiteral *lit) OVERRIDE
+    {
+        value_ = parse_var_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_array_lit(ArrayLiteral *lit) OVERRIDE
+    {
+        value_ = parse_array_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_obj_lit(ObjectLiteral *lit) OVERRIDE
+    {
+        value_ = parse_obj_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_nothing_lit(NothingLiteral *lit) OVERRIDE
+    {
+        value_ = parse_nothing_lit(lit, param1_, param2_);
+    }
+
+    virtual void visit_empty_stmt(EmptyStatement *stmt) OVERRIDE
+    {
+        value_ = parse_empty_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_expr_stmt(ExpressionStatement *stmt) OVERRIDE
+    {
+        value_ = parse_expr_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_block_stmt(BlockStatement *stmt) OVERRIDE
+    {
+        value_ = parse_block_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_if_stmt(IfStatement *stmt) OVERRIDE
+    {
+        value_ = parse_if_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_do_while_stmt(DoWhileStatement *stmt) OVERRIDE
+    {
+        value_ = parse_do_while_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_while_stmt(WhileStatement *stmt) OVERRIDE
+    {
+        value_ = parse_while_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_for_in_stmt(ForInStatement *stmt) OVERRIDE
+    {
+        value_ = parse_for_in_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_for_stmt(ForStatement *stmt) OVERRIDE
+    {
+        value_ = parse_for_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_cont_stmt(ContinueStatement *stmt) OVERRIDE
+    {
+        value_ = parse_cont_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_break_stmt(BreakStatement *stmt) OVERRIDE
+    {
+        value_ = parse_break_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_ret_stmt(ReturnStatement *stmt) OVERRIDE
+    {
+        value_ = parse_ret_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_with_stmt(WithStatement *stmt) OVERRIDE
+    {
+        value_ = parse_with_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_switch_stmt(SwitchStatement *stmt) OVERRIDE
+    {
+        value_ = parse_switch_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_throw_stmt(ThrowStatement *stmt) OVERRIDE
+    {
+        value_ = parse_throw_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_try_stmt(TryStatement *stmt) OVERRIDE
+    {
+        value_ = parse_try_stmt(stmt, param1_, param2_);
+    }
+
+    virtual void visit_dbg_stmt(DebuggerStatement *stmt) OVERRIDE
+    {
+        value_ = parse_dbg_stmt(stmt, param1_, param2_);
+    }
+
+public:
+    virtual T parse_binary_expr(BinaryExpression *expr, P1 param1, P2 param2) = 0;
+    virtual T parse_unary_expr(UnaryExpression *expr, P1 param1, P2 param2) = 0;
+    virtual T parse_assign_expr(AssignmentExpression *expr, P1 param1, P2 param2) = 0;
+    virtual T parse_cond_expr(ConditionalExpression *expr, P1 param1, P2 param2) = 0;
+    virtual T parse_prop_expr(PropertyExpression *expr, P1 param1, P2 param2) = 0;
+    virtual T parse_call_expr(CallExpression *expr, P1 param1, P2 param2) = 0;
+    virtual T parse_call_new_expr(CallNewExpression *expr, P1 param1, P2 param2) = 0;
+    virtual T parse_regular_expr(RegularExpression *expr, P1 param1, P2 param2) = 0;
+    virtual T parse_fun_expr(FunctionExpression *expr, P1 param1, P2 param2) = 0;
+
+    virtual T parse_this_lit(ThisLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_ident_lit(IdentifierLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_null_lit(NullLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_bool_lit(BoolLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_num_lit(NumberLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_str_lit(StringLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_fun_lit(FunctionLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_var_lit(VariableLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_array_lit(ArrayLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_obj_lit(ObjectLiteral *lit, P1 param1, P2 param2) = 0;
+    virtual T parse_nothing_lit(NothingLiteral *lit, P1 param1, P2 param2) = 0;
+
+    virtual T parse_empty_stmt(EmptyStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_expr_stmt(ExpressionStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_block_stmt(BlockStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_if_stmt(IfStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_do_while_stmt(DoWhileStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_while_stmt(WhileStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_for_in_stmt(ForInStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_for_stmt(ForStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_cont_stmt(ContinueStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_break_stmt(BreakStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_ret_stmt(ReturnStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_with_stmt(WithStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_switch_stmt(SwitchStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_throw_stmt(ThrowStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_try_stmt(TryStatement *stmt, P1 param1, P2 param2) = 0;
+    virtual T parse_dbg_stmt(DebuggerStatement *stmt, P1 param1, P2 param2) = 0;
+};
+
+/**
+ * @brief AST visitor base class with support for return value and two parameters.
+ */
+template <typename T, typename P1, typename P2, typename P3>
+class ValueVisitor3 : private Visitor
+{
+private:
+    T value_;
+    P1 param1_;
+    P2 param2_;
+    P3 param3_;
+
+protected:
+    virtual ~ValueVisitor3() {}
+
+    T parse(Node *node, P1 param1, P2 param2, P3 param3)
+    {
+        param1_ = param1;
+        param2_ = param2;
+        param3_ = param3;
+        visit(node);
+        return value_;
+    }
+
+private:
+    virtual void visit_binary_expr(BinaryExpression *expr) OVERRIDE
+    {
+        value_ = parse_binary_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_unary_expr(UnaryExpression *expr) OVERRIDE
+    {
+        value_ = parse_unary_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_assign_expr(AssignmentExpression *expr) OVERRIDE
+    {
+        value_ = parse_assign_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_cond_expr(ConditionalExpression *expr) OVERRIDE
+    {
+        value_ = parse_cond_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_prop_expr(PropertyExpression *expr) OVERRIDE
+    {
+        value_ = parse_prop_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_call_expr(CallExpression *expr) OVERRIDE
+    {
+        value_ = parse_call_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_call_new_expr(CallNewExpression *expr) OVERRIDE
+    {
+        value_ = parse_call_new_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_regular_expr(RegularExpression *expr) OVERRIDE
+    {
+        value_ = parse_regular_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_fun_expr(FunctionExpression *expr) OVERRIDE
+    {
+        value_ = parse_fun_expr(expr, param1_, param2_, param3_);
+    }
+
+    virtual void visit_this_lit(ThisLiteral *lit) OVERRIDE
+    {
+        value_ = parse_this_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_ident_lit(IdentifierLiteral *lit) OVERRIDE
+    {
+        value_ = parse_ident_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_null_lit(NullLiteral *lit) OVERRIDE
+    {
+        value_ = parse_null_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_bool_lit(BoolLiteral *lit) OVERRIDE
+    {
+        value_ = parse_bool_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_num_lit(NumberLiteral *lit) OVERRIDE
+    {
+        value_ = parse_num_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_str_lit(StringLiteral *lit) OVERRIDE
+    {
+        value_ = parse_str_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_fun_lit(FunctionLiteral *lit) OVERRIDE
+    {
+        value_ = parse_fun_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_var_lit(VariableLiteral *lit) OVERRIDE
+    {
+        value_ = parse_var_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_array_lit(ArrayLiteral *lit) OVERRIDE
+    {
+        value_ = parse_array_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_obj_lit(ObjectLiteral *lit) OVERRIDE
+    {
+        value_ = parse_obj_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_nothing_lit(NothingLiteral *lit) OVERRIDE
+    {
+        value_ = parse_nothing_lit(lit, param1_, param2_, param3_);
+    }
+
+    virtual void visit_empty_stmt(EmptyStatement *stmt) OVERRIDE
+    {
+        value_ = parse_empty_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_expr_stmt(ExpressionStatement *stmt) OVERRIDE
+    {
+        value_ = parse_expr_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_block_stmt(BlockStatement *stmt) OVERRIDE
+    {
+        value_ = parse_block_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_if_stmt(IfStatement *stmt) OVERRIDE
+    {
+        value_ = parse_if_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_do_while_stmt(DoWhileStatement *stmt) OVERRIDE
+    {
+        value_ = parse_do_while_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_while_stmt(WhileStatement *stmt) OVERRIDE
+    {
+        value_ = parse_while_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_for_in_stmt(ForInStatement *stmt) OVERRIDE
+    {
+        value_ = parse_for_in_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_for_stmt(ForStatement *stmt) OVERRIDE
+    {
+        value_ = parse_for_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_cont_stmt(ContinueStatement *stmt) OVERRIDE
+    {
+        value_ = parse_cont_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_break_stmt(BreakStatement *stmt) OVERRIDE
+    {
+        value_ = parse_break_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_ret_stmt(ReturnStatement *stmt) OVERRIDE
+    {
+        value_ = parse_ret_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_with_stmt(WithStatement *stmt) OVERRIDE
+    {
+        value_ = parse_with_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_switch_stmt(SwitchStatement *stmt) OVERRIDE
+    {
+        value_ = parse_switch_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_throw_stmt(ThrowStatement *stmt) OVERRIDE
+    {
+        value_ = parse_throw_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_try_stmt(TryStatement *stmt) OVERRIDE
+    {
+        value_ = parse_try_stmt(stmt, param1_, param2_, param3_);
+    }
+
+    virtual void visit_dbg_stmt(DebuggerStatement *stmt) OVERRIDE
+    {
+        value_ = parse_dbg_stmt(stmt, param1_, param2_, param3_);
+    }
+
+public:
+    virtual T parse_binary_expr(BinaryExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_unary_expr(UnaryExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_assign_expr(AssignmentExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_cond_expr(ConditionalExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_prop_expr(PropertyExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_call_expr(CallExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_call_new_expr(CallNewExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_regular_expr(RegularExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_fun_expr(FunctionExpression *expr, P1 param1, P2 param2, P3 param3) = 0;
+
+    virtual T parse_this_lit(ThisLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_ident_lit(IdentifierLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_null_lit(NullLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_bool_lit(BoolLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_num_lit(NumberLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_str_lit(StringLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_fun_lit(FunctionLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_var_lit(VariableLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_array_lit(ArrayLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_obj_lit(ObjectLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_nothing_lit(NothingLiteral *lit, P1 param1, P2 param2, P3 param3) = 0;
+
+    virtual T parse_empty_stmt(EmptyStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_expr_stmt(ExpressionStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_block_stmt(BlockStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_if_stmt(IfStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_do_while_stmt(DoWhileStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_while_stmt(WhileStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_for_in_stmt(ForInStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_for_stmt(ForStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_cont_stmt(ContinueStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_break_stmt(BreakStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_ret_stmt(ReturnStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_with_stmt(WithStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_switch_stmt(SwitchStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_throw_stmt(ThrowStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_try_stmt(TryStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+    virtual T parse_dbg_stmt(DebuggerStatement *stmt, P1 param1, P2 param2, P3 param3) = 0;
+};
+
 }

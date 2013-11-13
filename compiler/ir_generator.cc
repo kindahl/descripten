@@ -363,15 +363,15 @@ void IrGenerator::visit_instr_val(ir::ValueInstruction *instr)
         }
 
         case ir::ValueInstruction::FROM_BOOLEAN:
-            out() << value(instr) << " = " << "val.from_boolean "
+            out() << value(instr->result()) << " = " << "val.from_boolean "
                   << value(instr->value()) << "\n";
             break;
         case ir::ValueInstruction::FROM_DOUBLE:
-            out() << value(instr) << " = " << "val.from_double "
+            out() << value(instr->result()) << " = " << "val.from_double "
                   << value(instr->value()) << "\n";
             break;
         case ir::ValueInstruction::FROM_STRING:
-            out() << value(instr) << " = val.from_string "
+            out() << value(instr->result()) << " = val.from_string "
                   << value(instr->value()) << "\n";
             break;
 
@@ -486,7 +486,7 @@ void IrGenerator::visit_instr_ctx_del(ir::ContextDeleteInstruction *instr)
 
 void IrGenerator::visit_instr_ex_save_state(ir::ExceptionSaveStateInstruction *instr)
 {
-    out() << value(instr) << " = " << "ex.save_state\n";
+    out() << value(instr->result()) << " = " << "ex.save_state\n";
 }
 
 void IrGenerator::visit_instr_ex_load_state(ir::ExceptionLoadStateInstruction *instr)
@@ -654,14 +654,14 @@ void IrGenerator::visit_instr_prp_del_slow(ir::PropertyDeleteSlowInstruction *in
 
 void IrGenerator::visit_instr_es_new_arr(ir::EsNewArrayInstruction *instr)
 {
-    out() << value(instr) << " = " << "es.new_arr "
+    out() << value(instr->result()) << " = " << "es.new_arr "
           << instr->length() << " "
           << value(instr->values()) << "\n";
 }
 
 void IrGenerator::visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstruction *instr)
 {
-    out() << value(instr) << " = " << "es.new_fun_decl "
+    out() << value(instr->result()) << " = " << "es.new_fun_decl "
           << instr->function()->name() << " "
           << boolean(instr->is_strict()) << " "
           << instr->parameter_count() << "\n";
@@ -669,7 +669,7 @@ void IrGenerator::visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstru
 
 void IrGenerator::visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruction *instr)
 {
-    out() << value(instr) << " = " << "es.new_fun_expr "
+    out() << value(instr->result()) << " = " << "es.new_fun_expr "
           << instr->function()->name() << " "
           << boolean(instr->is_strict()) << " "
           << instr->parameter_count() << "\n";
@@ -677,12 +677,12 @@ void IrGenerator::visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruc
 
 void IrGenerator::visit_instr_es_new_obj(ir::EsNewObjectInstruction *instr)
 {
-    out() << value(instr) << " = " << "es.new_obj\n";
+    out() << value(instr->result()) << " = " << "es.new_obj\n";
 }
 
 void IrGenerator::visit_instr_es_new_rex(ir::EsNewRegexInstruction *instr)
 {
-    out() << value(instr) << " = " << "es.new_rex "
+    out() << value(instr->result()) << " = " << "es.new_rex "
           << string(instr->pattern()) << " "
           << string(instr->flags()) << "\n";
 }

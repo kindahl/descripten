@@ -18,7 +18,6 @@
 
 #pragma once
 #include <cassert>
-#include <vector>
 #include "common/string.hh"
 #include "container.hh"
 

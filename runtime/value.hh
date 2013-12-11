@@ -19,18 +19,18 @@
 #pragma once
 #include "common/string.hh"
 #include "types.hh"
-#include "value_base.hh"
+#include "value_boxed_base.hh"
 
 class EsObject;
 
 /**
  * @brief Holds a primitive value or a pointer to an object.
  */
-class EsValue : public EsValueBase
+class EsValue : public EsValueBoxedBase
 {
 private:
     EsValue(Type type)
-        : EsValueBase(type) {}
+        : EsValueBoxedBase(type) {}
 
 public:
     EsValue() {}

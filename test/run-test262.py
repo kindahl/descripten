@@ -22,6 +22,7 @@ GCC_COMPILE=str.join(' ', [
     '/usr/lib/ccache/bin/g++' if is_linux else '/opt/local/libexec/ccache/g++',
     '-arch x86_64' if is_darwin else '',
     '-std=c++11',
+    '-Werror=unused-variable',
     #'-O3',
     '-g',
     '-I' + os.path.join(os.getcwd(), '../'),

@@ -97,6 +97,12 @@ test_blacklist = [
     'test262/test/suite/ch15/15.10/15.10.2/15.10.2.12/S15.10.2.12_A1_T1.js',    # \s class problem.
     'test262/test/suite/ch15/15.10/15.10.2/15.10.2.12/S15.10.2.12_A1_T2.js',    # \s class problem.
     'test262/test/suite/ch15/15.10/15.10.6/15.10.6.2/S15.10.6.2_A1_T6.js',      # FIXME: regular expression.
+    'test262/test/suite/ch15/15.9/15.9.3/S15.9.3.1_A5_T1.js',   # time zone dependent.
+    'test262/test/suite/ch15/15.9/15.9.3/S15.9.3.1_A5_T2.js',   # time zone dependent.
+    'test262/test/suite/ch15/15.9/15.9.3/S15.9.3.1_A5_T3.js',   # time zone dependent.
+    'test262/test/suite/ch15/15.9/15.9.3/S15.9.3.1_A5_T4.js',   # time zone dependent.
+    'test262/test/suite/ch15/15.9/15.9.3/S15.9.3.1_A5_T5.js',   # time zone dependent.
+    'test262/test/suite/ch15/15.9/15.9.3/S15.9.3.1_A5_T6.js',   # time zone dependent.
 ]
 
 # tests marked @negative but that should parse and fail at runtime.

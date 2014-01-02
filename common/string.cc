@@ -37,10 +37,10 @@ String::String(const char *str)
     set(str);
 }
 
-String::String(const char *raw, size_t size)
+String::String(const char *str, size_t size)
     : data_(NULL), len_(0), hash_(0)
 {
-    set(raw, size);
+    set(str, size);
 }
 
 String::String(uni_char c)
@@ -80,21 +80,21 @@ void String::set(const char *str)
     set(str, strlen(str));
 }
 
-void String::set(const char *raw, size_t size)
+void String::set(const char *str, size_t size)
 {
-    assert(raw);
+    assert(str);
     
     data_ = NULL;
     len_ = 0;
 
-    size_t len = utf8_len(reinterpret_cast<const byte *>(raw), size);
+    size_t len = utf8_len(reinterpret_cast<const byte *>(str), size);
     if (len > 0)
     {
         uni_char *data = static_cast<uni_char *>(GC_MALLOC_ATOMIC((len + 1) * sizeof(uni_char)));
         if (!data)
             THROW(MemoryException);
         
-        const byte *ptr = reinterpret_cast<const byte *>(raw);
+        const byte *ptr = reinterpret_cast<const byte *>(str);
         for (size_t i = 0; i < len; i++)
             data[i] = utf8_dec(ptr);
 
@@ -121,9 +121,9 @@ void String::set(uni_char c)
     len_ = 1;
 }
 
-void String::set(const uni_char *ptr, size_t len)
+void String::set(const uni_char *str, size_t len)
 {
-    assert(ptr);
+    assert(str);
 
     data_ = NULL;
     len_ = 0;
@@ -134,7 +134,7 @@ void String::set(const uni_char *ptr, size_t len)
         if (!data)
             THROW(MemoryException);
 
-        memcpy(data, ptr, len * sizeof(uni_char));
+        memcpy(data, str, len * sizeof(uni_char));
         data[len] = 0;
 
         data_ = data;
@@ -160,16 +160,7 @@ String String::take(size_t num) const
 {
     size_t len = num > len_ ? len_ : num;
     if (len > 0)
-    {
-        uni_char *data = static_cast<uni_char *>(GC_MALLOC_ATOMIC((len + 1) * sizeof(uni_char)));
-        if (!data)
-            THROW(MemoryException);
-
-        memcpy(data, data_, len * sizeof(uni_char));
-        data[len] = '\0';
-
-        return String::wrap(data, len);
-    }
+        return String(data_, len);
 
     return String();
 }
@@ -180,14 +171,7 @@ String String::skip(size_t num) const
         return String();
 
     size_t len = len_ - num;
-    uni_char *data = static_cast<uni_char *>(GC_MALLOC_ATOMIC((len + 1) * sizeof(uni_char)));
-    if (!data)
-        THROW(MemoryException);
-
-    memcpy(data, data_ + num, len * sizeof(uni_char));
-    data[len] = '\0';
-
-    return String::wrap(data, len);
+    return String(data_ + num, len);
 }
 
 String String::substr(size_t start, size_t num) const
@@ -199,14 +183,7 @@ String String::substr(size_t start, size_t num) const
     if (len > num)
         len = num;
 
-    uni_char *data = static_cast<uni_char *>(GC_MALLOC_ATOMIC((len + 1) * sizeof(uni_char)));
-    if (!data)
-        THROW(MemoryException);
-
-    memcpy(data, data_ + start, len * sizeof(uni_char));
-    data[len] = '\0';
-
-    return String::wrap(data, len);
+    return String(data_ + start, len);
 }
 
 String String::lower() const

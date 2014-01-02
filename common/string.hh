@@ -58,14 +58,14 @@ private:
 
     void clear();
     void set(const char *str);
-    void set(const char *raw, size_t size);
+    void set(const char *str, size_t size);
     void set(uni_char c);
-    void set(const uni_char *ptr, size_t len);
+    void set(const uni_char *str, size_t len);
 
 public:
     String();
     explicit String(const char *str);
-    explicit String(const char *raw, size_t size);
+    explicit String(const char *str, size_t size);
     explicit String(uni_char c);
     explicit String(const uni_char *data);
     explicit String(const uni_char *data, size_t len);

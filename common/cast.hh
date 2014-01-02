@@ -74,13 +74,6 @@ inline const char *lexical_cast(ssize_t val)
     return lex_cast_buf_;
 }
 
-template <>
-inline const char *lexical_cast(size_t val)
-{
-    sprintf(lex_cast_buf_, "%zd", val);
-    return lex_cast_buf_;
-}
-
 template <typename T, typename S>
 inline T safe_cast(S val)
 {

@@ -1326,7 +1326,7 @@ ValueHandle Compiler::parse_unary_expr(parser::UnaryExpression *expr,
                 Block *done_block = new (GC)Block(NameGenerator::instance().next());
                 Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-                R = parse(prop->obj(), fun, &temporaries);
+                R = parse(prop->object(), fun, &temporaries);
                 o = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
                 _ = fun->last_block()->push_prp_del(o, get_prp_key(immediate_key_str), X);
@@ -1355,7 +1355,7 @@ ValueHandle Compiler::parse_unary_expr(parser::UnaryExpression *expr,
                 R = parse(prop->key(), fun, &temporaries);
                 k = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-                R = parse(prop->obj(), fun, &temporaries);
+                R = parse(prop->object(), fun, &temporaries);
                 o = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
                 _ = fun->last_block()->push_prp_del_slow(o, k, X);
@@ -1857,7 +1857,7 @@ ValueHandle Compiler::parse_prop_expr(parser::PropertyExpression *expr,
 
         assert(rva);
 
-        R = parse(expr->obj(), fun, rva);
+        R = parse(expr->object(), fun, rva);
         // FIXME: We must use temporaries.parent() because rva might re-use the
         //        same value for multiple calls to get.
         //o = expand_ref_get_lazy(R, fun, done_block, expt_block, *rva);
@@ -1894,7 +1894,7 @@ ValueHandle Compiler::parse_prop_expr(parser::PropertyExpression *expr,
         k = expand_ref_get_inplace_lazy(R, fun, expt_block,
                                         *temporaries.parent());
 
-        R = parse(expr->obj(), fun, rva);
+        R = parse(expr->object(), fun, rva);
         // FIXME: We must use temporaries.parent() because rva might re-use the
         //        same value for multiple calls to get.
         //o = expand_ref_get_inplace_lazy(R, fun, expt_block, *rva);
@@ -1974,7 +1974,7 @@ ValueHandle Compiler::parse_call_expr(parser::CallExpression *expr,
         {
             ValueHandle o;
 
-            R = parse(prop->obj(), fun, &temporaries);
+            R = parse(prop->object(), fun, &temporaries);
             o = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
             _ = fun->last_block()->push_call_keyed(
@@ -1989,7 +1989,7 @@ ValueHandle Compiler::parse_call_expr(parser::CallExpression *expr,
             R = parse(prop->key(), fun, &temporaries);
             k = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-            R = parse(prop->obj(), fun, &temporaries);
+            R = parse(prop->object(), fun, &temporaries);
             o = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
             fun->last_block()->push_call_keyed_slow(
@@ -2299,7 +2299,7 @@ ValueHandle Compiler::parse_obj_lit(parser::ObjectLiteral *lit,
             R = parse(prop->key(), fun, &sva_k);
             k = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-            R = parse(prop->val(), fun, &sva_v);
+            R = parse(prop->value(), fun, &sva_v);
             v = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
             _ = fun->last_block()->push_prp_def_data(X, k, v);
@@ -2316,7 +2316,7 @@ ValueHandle Compiler::parse_obj_lit(parser::ObjectLiteral *lit,
 
             Block *done_block = new (GC)Block(NameGenerator::instance().next());
 
-            R = parse(prop->val(), fun, &sva_v);
+            R = parse(prop->value(), fun, &sva_v);
             v = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
             _ = fun->last_block()->push_prp_def_accessor(

@@ -441,7 +441,7 @@ public:
         , obj_(obj)
         , key_(key) {}
 
-    Expression *obj() const
+    Expression *object() const
     {
         return obj_;
     }
@@ -937,7 +937,7 @@ public:
             return key_;
         }
 
-        Expression *val() const
+        Expression *value() const
         {
             return val_;
         }

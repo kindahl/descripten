@@ -338,7 +338,7 @@ void Analyzer::visit_prop_expr(parser::PropertyExpression *expr)
 {
     visit(expr->key());
 
-    visit(expr->obj());
+    visit(expr->object());
 }
 
 void Analyzer::visit_call_expr(parser::CallExpression *expr)
@@ -487,11 +487,11 @@ void Analyzer::visit_obj_lit(parser::ObjectLiteral *lit)
         if (prop->type() == parser::ObjectLiteral::Property::DATA)
         {
             visit(prop->key());
-            visit(prop->val());
+            visit(prop->value());
         }
         else
         {
-            visit(prop->val());
+            visit(prop->value());
         }
     }
 }

@@ -591,7 +591,7 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
                 return key_res;
             EsReferenceOrValue key = key_res.value();
 
-            Completion obj_res = parse(prop->obj());
+            Completion obj_res = parse(prop->object());
             if (obj_res.is_abrupt())
                 return obj_res;
             EsReferenceOrValue obj = obj_res.value();
@@ -895,7 +895,7 @@ Completion Evaluator::parse_prop_expr(PropertyExpression *expr)
         return key_res;
     EsReferenceOrValue key = key_res.value();
 
-    Completion obj_res = parse(expr->obj());
+    Completion obj_res = parse(expr->object());
     if (obj_res.is_abrupt())
         return obj_res;
     EsReferenceOrValue obj_ref = obj_res.value();
@@ -955,7 +955,7 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
             return key_res;
         EsReferenceOrValue key = key_res.value();
 
-        Completion obj_res = parse(prop->obj());
+        Completion obj_res = parse(prop->object());
         if (obj_res.is_abrupt())
             return obj_res;
         EsReferenceOrValue obj = obj_res.value();
@@ -1165,7 +1165,7 @@ Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
                 return Completion(Completion::TYPE_THROW,
                                   EsContextStack::instance().top()->get_pending_exception());
 
-            Completion val_res = parse(prop->val());
+            Completion val_res = parse(prop->value());
             if (val_res.is_abrupt())
                 return val_res;
 
@@ -1180,7 +1180,7 @@ Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
         }
         else
         {
-            Completion val_res = parse(prop->val());
+            Completion val_res = parse(prop->value());
             if (val_res.is_abrupt())
                 return val_res;
 

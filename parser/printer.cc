@@ -105,7 +105,7 @@ void Printer::visit_cond_expr(ConditionalExpression *expr)
 
 void Printer::visit_prop_expr(PropertyExpression *expr)
 {
-    visit(expr->obj());
+    visit(expr->object());
     out_ << "[";
     visit(expr->key());
     out_ << "]";
@@ -269,11 +269,11 @@ void Printer::visit_obj_lit(ObjectLiteral *lit)
         {
             visit(prop->key());
             out_ << ": ";
-            visit(prop->val());
+            visit(prop->value());
         }
         else
         {
-            visit(prop->val());
+            visit(prop->value());
         }
     }
 

@@ -596,7 +596,7 @@ Token Lexer::next(bool skipped_line_term)
 
     switch (c0)
     {
-        case -1:
+        case static_cast<uni_char>(-1):
             return Token(Token::EOI   , String() , Location(beg_pos, stream_.position()), skipped_line_term);
         case '{':
             return Token(Token::LBRACE, _USTR("{"), Location(beg_pos, stream_.position()), skipped_line_term);

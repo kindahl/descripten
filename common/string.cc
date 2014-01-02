@@ -298,8 +298,8 @@ String String::trim(bool (*filter)(uni_char c)) const
     }
 
     // Find end of trimmed string.
-    size_t end = len_ - 1;
-    for (; end >= 0; end--)
+    size_t end = len_;
+    for (; end-- > 0;)
     {
         if (!filter(data_[end]))
             break;

@@ -1335,15 +1335,9 @@ ES_API_FUN(es_std_arr_proto_index_of)
 
     uint32_t k = 0;
     if (n >= 0)
-    {
         k = static_cast<uint32_t>(n);
-    }
     else
-    {
-        k = len - std::abs(static_cast<uint32_t>(n));
-        if (k < 0)
-            k = 0;
-    }
+        k = len - static_cast<uint32_t>(std::abs(n));
 
     for (;k < len; k++)
     {
@@ -4316,11 +4310,14 @@ ES_API_FUN(es_std_str_proto_replace)
             {
                 EsRegExp::MatchResult *res = NULL;
 
-                for (size_t i = last_index; i >= 0 && i <= s.length(); i++)
+                if (last_index >= 0)
                 {
-                    res = rx->match(s, i);
-                    if (res != NULL)
-                        break;
+                    for (size_t i = last_index; i <= s.length(); i++)
+                    {
+                        res = rx->match(s, i);
+                        if (res != NULL)
+                            break;
+                    }
                 }
 
                 last_index = res ? res->end_index() : 0;

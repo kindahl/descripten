@@ -131,6 +131,9 @@ public:
     Meta(int beg, int end)
         : beg_(beg)
         , end_(end) {}
+
+    inline int begin() const { return beg_; }
+    inline int end() const { return end_; }
 };
 
 /**

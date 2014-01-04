@@ -42,8 +42,10 @@ StringId Strings::intern(const String &str)
 
 void Strings::unsafe_intern(const String &str, StringId id)
 {
+#ifdef DEBUG
     StringInternMap::iterator it = interns_.find(str);
     assert(it == interns_.end());
+#endif
 
     // FIXME: Limit next_id_ depending on id.
     interns_.insert(std::make_pair(str, id));

@@ -155,7 +155,7 @@ public:
      * @return If str is found the string, its position is returned, if str is
      *         not found -1 is returned.
      */
-    ssize_t index_of(const String &str, size_t start = 0);
+    ssize_t index_of(const String &str, size_t start = 0) const;
 
     /**
      * Returns the index of str in the string, occurring after the offset
@@ -166,7 +166,7 @@ public:
      * @return If str is found the string, its position is returned, if str is
      *         not found -1 is returned.
      */
-    ssize_t last_index_of(const String &str, size_t start = 0);
+    ssize_t last_index_of(const String &str, size_t start = 0) const;
 
     /**
      * Compares the current string with another string.

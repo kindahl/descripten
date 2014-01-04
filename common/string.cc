@@ -286,7 +286,7 @@ String String::trim(bool (*filter)(uni_char c)) const
     return substr(start, end - start + 1);
 }
 
-ssize_t String::index_of(const String &str, size_t start)
+ssize_t String::index_of(const String &str, size_t start) const
 {
     if (empty() || str.empty())
         return -1;
@@ -319,7 +319,7 @@ ssize_t String::index_of(const String &str, size_t start)
     return -1;
 }
 
-ssize_t String::last_index_of(const String &str, size_t start)
+ssize_t String::last_index_of(const String &str, size_t start) const
 {
     if (empty() || str.empty())
         return -1;
@@ -454,7 +454,7 @@ String String::operator+(const String &rhs) const
     
     memcpy(data, data_, len_ * sizeof(uni_char));
     memcpy(data + len_, rhs.data_, rhs.len_ * sizeof(uni_char));
-    data[len] = '\0';
+    data[len] = 0;
 
     return String::wrap(data, len);
 }

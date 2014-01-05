@@ -354,7 +354,7 @@ bool es_to_property_descriptor(const EsValue &val, EsPropertyDescriptor &desc)
     {
         if (value || writable)
         {
-            ES_THROW(EsTypeError, EsString::create());      // FIXME: What's this?
+            ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_CONV));
             return false;
         }
 

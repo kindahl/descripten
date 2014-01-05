@@ -67,6 +67,7 @@ static const char *es_messages_[] =
     "cannot put value.",
     "cannot read default value.",
     "flags cannot be specified when specifying a RegExp object pattern.",
+    "object cannot be converted to a property.",
     "getter is not callable or undefined, cannot convert object to property.",
     "setter is not callable or undefined, cannot convert object to property.",
     "built-in objects cannot be used as constructors.",

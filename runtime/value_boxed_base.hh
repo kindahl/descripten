@@ -18,7 +18,6 @@
 
 #pragma once
 #include <cassert>
-#include "common/cast.hh"
 #include "types.hh"
 
 class EsFunction;

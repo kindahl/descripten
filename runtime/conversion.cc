@@ -85,8 +85,6 @@ extern "C" char *dtoa(double d, int mode, int ndigits,
 
 const EsString *es_num_to_str(double m, int num_digits)
 {
-    // FIXME: Use a string builder.
-
     // 9.8.1
     if (std::isnan(m))
         return _ESTR("NaN");
@@ -110,11 +108,13 @@ const EsString *es_num_to_str(double m, int num_digits)
                          &point, &sign, &end_ptr);
     
     int length = static_cast<int>(end_ptr - beg_ptr);
+
+    EsStringBuilder sb;
     
     // 9.8.1:6
     if (length <= point && point <= 21)
     {
-        const EsString *res = EsString::create_from_utf8(beg_ptr, length);
+        sb.append(beg_ptr, length);
         
         int pad_len = point - length;
         char zeros[] = "00000000000000000000000000000000";
@@ -124,28 +124,27 @@ const EsString *es_num_to_str(double m, int num_digits)
             int cur_pad_len = pad_len > static_cast<int>(sizeof(zeros))
                 ? static_cast<int>(sizeof(zeros)) : pad_len;
 
-            res = res->concat(EsString::create_from_utf8(zeros, cur_pad_len));
+            sb.append(zeros, cur_pad_len);
             pad_len -= cur_pad_len;
         }
         
-        return res;
+        return sb.string();
     }
     
     // 9.8.1:7
     if (0 < point && point <= 21)
     {
-        const EsString *res = EsString::create_from_utf8(beg_ptr, point);
-        res = res->concat(_ESTR("."));
-        res = res->concat(EsString::create_from_utf8(
-                beg_ptr + point, length - point));
+        sb.append(beg_ptr, point);
+        sb.append(_ESTR("."));
+        sb.append(beg_ptr + point, length - point);
         
-        return res;
+        return sb.string();
     }
     
     // 9.8.1:8
     if (point <= 0 && point > -6)
     {
-        const EsString *res = _ESTR("0.");
+        sb.append(_ESTR("0."));
         
         int pad_len = -point;
         char zeros[] = "00000000000000000000000000000000";
@@ -155,21 +154,20 @@ const EsString *es_num_to_str(double m, int num_digits)
             int cur_pad_len = pad_len > static_cast<int>(sizeof(zeros))
                 ? static_cast<int>(sizeof(zeros)) : pad_len;
             
-            res = res->concat(EsString::create_from_utf8(zeros, cur_pad_len));
+            sb.append(zeros, cur_pad_len);
             pad_len -= cur_pad_len;
         }
         
-        res = res->concat(EsString::create_from_utf8(beg_ptr, length));
-        
-        return res;
+        sb.append(beg_ptr, length);
+        return sb.string();
     }
     
     // 9.8.1:9-10
-    const EsString *res = EsString::create(static_cast<uni_char>(beg_ptr[0]));
+    sb.append(static_cast<uni_char>(beg_ptr[0]));
     if (length != 1)
     {
-        res = res->concat(_ESTR("."));
-        res = res->concat(EsString::create_from_utf8(beg_ptr + 1, length - 1));
+        sb.append(_ESTR("."));
+        sb.append(beg_ptr + 1, length - 1);
     }
     
     char buffer2[2 + 64] = { 'e', point >= 0 ? '+' : '-' };
@@ -198,8 +196,8 @@ const EsString *es_num_to_str(double m, int num_digits)
         number /= 10;
     }
     
-    res = res->concat(EsString::create_from_utf8(buffer2, buffer2_pos));
-    return res;
+    sb.append(buffer2, buffer2_pos);
+    return sb.string();
 }
 
 const EsString *es_date_to_str(struct tm *timeinfo)

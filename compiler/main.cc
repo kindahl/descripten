@@ -25,7 +25,7 @@
 #include "parser/lexer.hh"
 #include "parser/parser.hh"
 #include "parser/utility.hh"
-#include "cc_generator.hh"
+#include "c_generator.hh"
 #include "ir_generator.hh"
 
 using ir::Compiler;
@@ -50,7 +50,7 @@ int main (int argc, const char *argv[])
     }
     
     // Parse program options.
-    std::string dst_path = "a.cc";
+    std::string dst_path = "a.c";
     std::vector<std::string> src_paths;
 
     for (int i = 1; i < argc; i++)
@@ -121,7 +121,7 @@ int main (int argc, const char *argv[])
     }
 
     // Generate IR code from the IR.
-    try
+    /*try
     {
         IrGenerator generator;
         generator.generate(module, dst_path + ".ir");
@@ -129,12 +129,12 @@ int main (int argc, const char *argv[])
     catch (Exception &e)
     {
         std::cerr << "error: " << e.what() << std::endl;
-    }
+    }*/
 
     // Generate code from the IR.
     try
     {
-        CcGenerator generator;
+        Cgenerator generator;
         generator.generate(module, dst_path);
     }
     catch (Exception &e)

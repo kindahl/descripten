@@ -30,6 +30,11 @@ AC_SUBST(RICHMOND_VERSION)
 AC_SUBST(DEPS_CFLAGS)
 AC_SUBST(DEPS_LIBS)
 
+#CC=clang
+#CXX=clang++
+#CXXFLAGS="$CXXFLAGS -stdlib=libc++"
+#LDFLAGS="$LDFLAGS -stdlib=libc++"
+
 CXXFLAGS="$CXXFLAGS -std=c++11"
 
 CXXFLAGS="$CXXFLAGS `pkg-config --cflags bdw-gc libpcre`"

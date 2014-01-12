@@ -21,9 +21,12 @@ RCC='../compiler/compiler'
 EVL='../tools/evaluator'
 
 GCC_COMPILE=str.join(' ', [
-    '/usr/lib/ccache/bin/g++',
+    #'/usr/lib/ccache/bin/g++',
+    #'clang++',
+    '/usr/lib/ccache/bin/gcc',
     '-arch x86_64' if is_darwin else '',
-    '-std=c++11',
+    #'-std=c++11',
+    '-std=c11',
     '-Werror=unused-variable',
     #'-O3',
     '-g',
@@ -37,7 +40,9 @@ GCC_COMPILE=str.join(' ', [
 ])
 
 GCC_LINK=str.join(' ', [
-    '/usr/lib/ccache/bin/g++',
+    #'/usr/lib/ccache/bin/g++',
+    #'clang++',
+    '/usr/lib/ccache/bin/gcc',
     '-L' + os.path.join(os.getcwd(), '../common/.libs/'),
     '-L' + os.path.join(os.getcwd(), '../parser/.libs/'),
     '-L' + os.path.join(os.getcwd(), '../runtime/.libs/'),

@@ -27,7 +27,7 @@ extern "C" {
 struct EsContext;
 
 typedef void (*EsDataEntry)();
-typedef bool (*EsMainEntry)(EsContext *ctx, uint32_t argc,
+typedef bool (*EsMainEntry)(struct EsContext *ctx, uint32_t argc,
                             EsValueData *fp, EsValueData *vp);
 
 bool esr_init(EsDataEntry data_entry);

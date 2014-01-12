@@ -24,23 +24,28 @@
 extern "C" {
 #endif
 
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
 #define ESA_BOOL            uint8_t
 #define ESA_TRUE            1
 #define ESA_FALSE           0
 
-#define ESA_FUN_PTR(name)   bool (* name)(EsContext *ctx, uint32_t argc,\
+#define ESA_FUN_PTR(name)   bool (* name)(struct EsContext *ctx,\
+                                          uint32_t argc,\
                                           EsValueData *fp, EsValueData *vp)
 
 struct EsContext;
 struct EsPropertyIterator;
 struct EsString;
 
-void esa_str_intern(const EsString *str, uint32_t id);
+void esa_str_intern(const struct EsString *str, uint32_t id);
 
 bool esa_val_to_bool(EsValueData val_data);
 bool esa_val_to_num(EsValueData val_data, double *num);
-const EsString *esa_val_to_str(EsValueData val_data);
-EsObject *esa_val_to_obj(EsValueData val_data);
+const struct EsString *esa_val_to_str(EsValueData val_data);
+struct EsObject *esa_val_to_obj(EsValueData val_data);
 bool esa_val_chk_coerc(EsValueData val_data);
 
 // FIXME: Rename to esa_frm_alloc instead? Since we're allocating in the call frame.
@@ -67,7 +72,7 @@ void esa_init_args(EsValueData dst_data[], uint32_t argc,
  *
  * @see esa_args_obj_link()
  */
-EsValueData esa_args_obj_init(EsContext *ctx, uint32_t argc,
+EsValueData esa_args_obj_init(struct EsContext *ctx, uint32_t argc,
                               EsValueData *fp_data, EsValueData *vp_data);
 void esa_args_obj_link(EsValueData args_data, uint32_t i,
                        EsValueData *val_data);
@@ -95,40 +100,44 @@ void esa_args_obj_link(EsValueData args_data, uint32_t i,
  * @return Pointer to extra bindings in memory. Is guaranteed to have enough
  *         memory for @a num_extra bindings.
  */
-EsValueData *esa_bnd_extra_init(EsContext *ctx, uint32_t num_extra);
+EsValueData *esa_bnd_extra_init(struct EsContext *ctx, uint32_t num_extra);
 EsValueData *esa_bnd_extra_ptr(uint32_t argc, EsValueData *fp_data,
                                EsValueData *vp_data, uint32_t hops);
 
 // Context related functions.
-bool esa_ctx_decl_fun(EsContext *ctx, bool is_eval, bool is_strict,
+bool esa_ctx_decl_fun(struct EsContext *ctx, bool is_eval, bool is_strict,
                       uint64_t fn, EsValueData fo_data);
-bool esa_ctx_decl_var(EsContext *ctx, bool is_eval, bool is_strict,
+bool esa_ctx_decl_var(struct EsContext *ctx, bool is_eval, bool is_strict,
                       uint64_t vn);
-bool esa_ctx_decl_prm(EsContext *ctx, bool is_strict, uint64_t pn,
+bool esa_ctx_decl_prm(struct EsContext *ctx, bool is_strict, uint64_t pn,
                       EsValueData po_data);
-void esa_ctx_link_fun(EsContext *ctx, uint64_t fn, EsValueData *fo_data);    // May not be called from eval context.
-void esa_ctx_link_var(EsContext *ctx, uint64_t vn, EsValueData *vo_data);    // May not be called from eval context.
-void esa_ctx_link_prm(EsContext *ctx, uint64_t vn, EsValueData *po_data);    // May not be called from eval context.
-bool esa_ctx_get(EsContext *ctx, uint64_t raw_key, EsValueData *result_data,
-                 uint16_t cid);
-bool esa_ctx_put(EsContext *ctx, uint64_t raw_key, EsValueData val_data,
-                 uint16_t cid);
-bool esa_ctx_del(EsContext *ctx, uint64_t raw_key, EsValueData *result_data);
-void esa_ctx_set_strict(EsContext *ctx, bool strict);
-bool esa_ctx_enter_with(EsContext *ctx, EsValueData val_data);
-bool esa_ctx_enter_catch(EsContext *ctx, uint64_t raw_key);
+void esa_ctx_link_fun(struct EsContext *ctx, uint64_t fn,
+                      EsValueData *fo_data);    // May not be called from eval context.
+void esa_ctx_link_var(struct EsContext *ctx, uint64_t vn,
+                      EsValueData *vo_data);    // May not be called from eval context.
+void esa_ctx_link_prm(struct EsContext *ctx, uint64_t vn,
+                      EsValueData *po_data);    // May not be called from eval context.
+bool esa_ctx_get(struct EsContext *ctx, uint64_t raw_key,
+                 EsValueData *result_data, uint16_t cid);
+bool esa_ctx_put(struct EsContext *ctx, uint64_t raw_key,
+                 EsValueData val_data, uint16_t cid);
+bool esa_ctx_del(struct EsContext *ctx, uint64_t raw_key,
+                 EsValueData *result_data);
+void esa_ctx_set_strict(struct EsContext *ctx, bool strict);
+bool esa_ctx_enter_with(struct EsContext *ctx, EsValueData val_data);
+bool esa_ctx_enter_catch(struct EsContext *ctx, uint64_t raw_key);
 void esa_ctx_leave();
-EsContext *esa_ctx_running();
+struct EsContext *esa_ctx_running();
 
-EsValueData esa_ex_save_state(EsContext *ctx);
-void esa_ex_load_state(EsContext *ctx, EsValueData state_data);
-EsValueData esa_ex_get(EsContext *ctx);
-void esa_ex_set(EsContext *ctx, EsValueData exception_data);
-void esa_ex_clear(EsContext *ctx);
+EsValueData esa_ex_save_state(struct EsContext *ctx);
+void esa_ex_load_state(struct EsContext *ctx, EsValueData state_data);
+EsValueData esa_ex_get(struct EsContext *ctx);
+void esa_ex_set(struct EsContext *ctx, EsValueData exception_data);
+void esa_ex_clear(struct EsContext *ctx);
 
 // Object related functions.
-EsPropertyIterator *esa_prp_it_new(EsValueData val_data);
-bool esa_prp_it_next(EsPropertyIterator *it, EsValueData *result_data);
+struct EsPropertyIterator *esa_prp_it_new(EsValueData val_data);
+bool esa_prp_it_next(struct EsPropertyIterator *it, EsValueData *result_data);
 bool esa_prp_def_data(EsValueData obj_data, EsValueData key_data,
                       EsValueData val_data);
 bool esa_prp_def_accessor(EsValueData obj_data, uint64_t raw_key,
@@ -137,14 +146,14 @@ bool esa_prp_get_slow(EsValueData src_data, EsValueData key_data,
                       EsValueData *result_data, uint16_t cid);
 bool esa_prp_get(EsValueData src_data, uint64_t raw_key,
                  EsValueData *result_data, uint16_t cid);
-bool esa_prp_put_slow(EsContext *ctx, EsValueData dst_data,
+bool esa_prp_put_slow(struct EsContext *ctx, EsValueData dst_data,
                       EsValueData key_data, EsValueData val_data,
                       uint16_t cid);
-bool esa_prp_put(EsContext *ctx, EsValueData dst_data, uint64_t raw_key,
+bool esa_prp_put(struct EsContext *ctx, EsValueData dst_data, uint64_t raw_key,
                  EsValueData val_data, uint16_t cid);
-bool esa_prp_del_slow(EsContext *ctx, EsValueData src_data,
+bool esa_prp_del_slow(struct EsContext *ctx, EsValueData src_data,
                       EsValueData key_data, EsValueData *result_data);
-bool esa_prp_del(EsContext *ctx, EsValueData src_data, uint64_t raw_key,
+bool esa_prp_del(struct EsContext *ctx, EsValueData src_data, uint64_t raw_key,
                  EsValueData *result_data);
 
 bool esa_call(EsValueData fun_data, uint32_t argc, EsValueData *result_data);
@@ -157,13 +166,14 @@ bool esa_call_new(EsValueData fun_data, uint32_t argc,
                   EsValueData *result_data);
 
 // Literal functions.
-const EsString *esa_new_str(const void *str, uint32_t len);
+const struct EsString *esa_new_str(const void *str, uint32_t len);
 EsValueData esa_new_arr(uint32_t count, EsValueData items_data[]);
 EsValueData esa_new_obj();
-EsValueData esa_new_reg_exp(const EsString *pattern, const EsString *flags);
-EsValueData esa_new_fun_decl(EsContext *ctx, ESA_FUN_PTR(fun),
+EsValueData esa_new_reg_exp(const struct EsString *pattern,
+                            const struct EsString *flags);
+EsValueData esa_new_fun_decl(struct EsContext *ctx, ESA_FUN_PTR(fun),
                              bool strict, uint32_t prmc);
-EsValueData esa_new_fun_expr(EsContext *ctx, ESA_FUN_PTR(fun),
+EsValueData esa_new_fun_expr(struct EsContext *ctx, ESA_FUN_PTR(fun),
                              bool strict, uint32_t prmc);
 
 // Unary functions.

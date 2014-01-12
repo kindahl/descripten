@@ -140,7 +140,13 @@ std::string Generator::escape(const String &str)
                 else
                 {
                     char buffer[16];
-                    sprintf(buffer, "\\U%.8x", str[i]);
+                    // The GNU C compiler, in constrast to the GNU C++ compiler
+                    // appears to be validating unicode points at compile time.
+                    // But we want to pass invalid Unicodes to the runtime and
+                    // let it handle the problem so we pass hex numbers
+                    // instead.
+                    //sprintf(buffer, "\\U%.8x", str[i]);
+                    sprintf(buffer, "\\x%.8x\"U\"", str[i]);
                     res.append(buffer);
                 }
                 break;

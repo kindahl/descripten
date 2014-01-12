@@ -7,7 +7,8 @@ libruntime_la_SOURCES = algorithm.cc api.cc context.cc conversion.cc \
 						platform.cc profiler.cc property.cc property_array.cc \
 						property_key.cc prototype.cc resources.cc shape.cc \
 						standard.cc string.cc stringbuilder.cc strings.cc \
-						test.cc types.cc unique.cc uri.cc utility.cc value.cc
+						test.cc types.cc unique.cc uri.cc utility.cc value.cc \
+						value_data.c
 libruntime_la_CXXFLAGS = -I.. \
 						 -DECMA262_EXT_FUNC_STMT
 libruntime_la_LDFLAGS = -version-info $(PEREGRINE_VERSION)

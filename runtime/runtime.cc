@@ -34,7 +34,7 @@
 
 std::string err_msg_;
 
-bool esr_init(GlobalDataEntry data_entry)
+bool esr_init(EsDataEntry data_entry)
 {
     // Initialize garbage collector.
     GC_INIT();
@@ -64,7 +64,7 @@ bool esr_init(GlobalDataEntry data_entry)
     return true;
 }
 
-bool esr_run(GlobalMainEntry main_entry)
+bool esr_run(EsMainEntry main_entry)
 {
     bool result = true;
 

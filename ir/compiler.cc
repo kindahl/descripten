@@ -617,7 +617,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                               bool is_global)
 {
     const std::string &fun_name = is_global
-        ? RUNTIME_GLOBAL_FUNCTION_NAME
+        ? RUNTIME_MAIN_FUNCTION_NAME
         : NameGenerator::instance().next(lit->name().utf8());
 
     Function *fun = new (GC)Function(fun_name, is_global);

@@ -261,7 +261,7 @@ std::string CcGenerator::uint64(uint64_t val)
 
 void CcGenerator::visit_module(ir::Module *module)
 {
-    main_out_->stream() << "void _global_data()\n";
+    main_out_->stream() << "void " RUNTIME_DATA_FUNCTION_NAME "()\n";
     main_out_->stream() << "{" << "\n";
     for (const ir::Resource *res : module->resources())
         ir::Resource::Visitor::visit(const_cast<ir::Resource *>(res));

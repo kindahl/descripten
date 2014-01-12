@@ -19,19 +19,19 @@
 #include <iostream>
 #include "runtime.hh"
 
-void _global_data();
-bool _global_main(EsContext *ctx, uint32_t argc,
-                  EsValueData *fp, EsValueData *vp);
+void __es_data();
+bool __es_main(EsContext *ctx, uint32_t argc,
+               EsValueData *fp, EsValueData *vp);
 
 int main(int argc, const char *argv[])
 {
-    if (!esr_init(_global_data))
+    if (!esr_init(__es_data))
     {
         std::cerr << esr_error() << std::endl;
         return 1;
     }
     
-    if (!esr_run(_global_main))
+    if (!esr_run(__es_main))
     {
         std::cerr << esr_error() << std::endl;
         return 1;

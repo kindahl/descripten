@@ -26,12 +26,12 @@ extern "C" {
 
 struct EsContext;
 
-typedef void (*GlobalDataEntry)();
-typedef bool (*GlobalMainEntry)(EsContext *ctx, uint32_t argc,
-                                EsValueData *fp, EsValueData *vp);
+typedef void (*EsDataEntry)();
+typedef bool (*EsMainEntry)(EsContext *ctx, uint32_t argc,
+                            EsValueData *fp, EsValueData *vp);
 
-bool esr_init(GlobalDataEntry data_entry);
-bool esr_run(GlobalMainEntry main_entry);
+bool esr_init(EsDataEntry data_entry);
+bool esr_run(EsMainEntry main_entry);
 const char *esr_error();
 
 #ifdef __cplusplus

@@ -17,7 +17,7 @@
  */
 
 #pragma once
-#include "operation.hh"
+#include "operation.h"
 #include "value_data.h"
 
 #ifdef __cplusplus

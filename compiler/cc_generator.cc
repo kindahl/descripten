@@ -1021,8 +1021,8 @@ void CcGenerator::generate(ir::Module *module, const std::string &file_path)
     main_out_ = out_.fork();
 
     // Generate include conditions.
-    decl_out_->stream() << "#include <stddef.h>" << "\n";
-    decl_out_->stream() << "#include \"runtime.hh\"" << "\n";
+    decl_out_->stream() << "#include <cstddef>" << "\n";
+    decl_out_->stream() << "#include \"runtime.h\"" << "\n";
 
     // Write body.
     try

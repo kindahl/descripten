@@ -36,7 +36,7 @@
 #include "json.hh"
 #include "messages.hh"
 #include "native.hh"
-#include "operation.hh"
+#include "operation.h"
 #include "platform.hh"
 #include "property.hh"
 #include "prototype.hh"

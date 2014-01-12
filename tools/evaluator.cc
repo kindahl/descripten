@@ -27,7 +27,7 @@
 #include "runtime/eval.hh"
 #include "runtime/global.hh"
 #include "runtime/frame.hh"
-#include "runtime/runtime.hh"
+#include "runtime/runtime.h"
 
 using parser::FunctionLiteral;
 using parser::Lexer;

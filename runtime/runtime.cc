@@ -25,7 +25,7 @@
 #include "global.hh"
 #include "property_key.hh"
 #include "prototype.hh"
-#include "runtime.hh"
+#include "runtime.h"
 #include "utility.hh"
 
 #ifdef PROFILE

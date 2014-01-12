@@ -17,7 +17,7 @@
  */
 
 #include <iostream>
-#include "runtime.hh"
+#include "runtime.h"
 
 void __es_data();
 bool __es_main(EsContext *ctx, uint32_t argc,

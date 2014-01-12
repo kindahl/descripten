@@ -26,4 +26,4 @@ endif
 
 library_includedir = $(includedir)/runtime
 library_include_HEADERS = api.hh context.hh utility.hh \
-						  operation.hh
+						  operation.h

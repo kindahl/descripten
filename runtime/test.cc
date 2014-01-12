@@ -34,7 +34,7 @@
 #include "global.hh"
 #include "messages.hh"
 #include "native.hh"
-#include "operation.hh"
+#include "operation.h"
 #include "property.hh"
 #include "prototype.hh"
 #include "test.hh"

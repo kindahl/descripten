@@ -25,7 +25,7 @@
 #include "error.hh"
 #include "eval.hh"
 #include "frame.hh"
-#include "operation.hh"
+#include "operation.h"
 #include "property.hh"
 #include "utility.hh"
 

@@ -15,6 +15,8 @@ import time
 is_linux = platform.uname()[0] == 'Linux'
 is_darwin = platform.uname()[0] == 'Darwin'
 
+EXT='c'
+
 RCC='../compiler/compiler'
 EVL='../tools/evaluator'
 
@@ -67,20 +69,20 @@ for env in env_vars:
 def test_compile(paths):
     if (len(paths) == 1):
         path = ''.join(paths)
-        path_cpp = os.path.splitext(path)[0] + '.cc'
+        path_src = os.path.splitext(path)[0] + '.' + EXT
         path_obj = os.path.splitext(path)[0] + '.o'
         path_bin = os.path.splitext(path)[0]
     else:
         path = ' '.join(paths)
-        path_cpp = 'v8/all.cc'
+        path_src = 'v8/all.' + EXT
         path_obj = 'v8/all.o'
         path_bin = 'v8/all'
 
-    cmdline = RCC + ' v8/base.js ' + path + ' v8/run.js -o ' + path_cpp
+    cmdline = RCC + ' v8/base.js ' + path + ' v8/run.js -o ' + path_src
     if (subprocess.call(cmdline, shell=True) == 1):
         return 1
 
-    res = subprocess.call(GCC_COMPILE + ' ' + path_cpp + ' -o ' + path_obj, shell=True)
+    res = subprocess.call(GCC_COMPILE + ' ' + path_src + ' -o ' + path_obj, shell=True)
     if (res != 0):
         return res
 
@@ -143,8 +145,8 @@ def main():
         print('error: invalid usage.')
         exit(1)
 
-    if (subprocess.call(GCC_COMPILE + ' main.cc -o main.o', shell=True) != 0):
-        print('error: unable to compile main.cc.')
+    if (subprocess.call(GCC_COMPILE + ' main.' + EXT + ' -o main.o', shell=True) != 0):
+        print('error: unable to compile main.' + EXT + '.')
         exit(1)
 
     # test if we should run all tests or a single one.

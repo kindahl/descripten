@@ -15,6 +15,8 @@ import time
 is_linux = platform.uname()[0] == 'Linux'
 is_darwin = platform.uname()[0] == 'Darwin'
 
+EXT='c'
+
 RCC='../compiler/compiler'
 EVL='../tools/evaluator'
 
@@ -358,7 +360,7 @@ def test_pp(path):
 
 # compile single test.
 def test_compile(path, verbose=True):
-    path_cpp = os.path.splitext(path)[0] + '.cc'
+    path_src = os.path.splitext(path)[0] + '.' + EXT
     path_obj = os.path.splitext(path)[0] + '.o'
     path_bin = os.path.splitext(path)[0]
 
@@ -366,9 +368,9 @@ def test_compile(path, verbose=True):
     if (not subprocess.call('grep -q \'$INCLUDE\' ' + path, shell=True)):
         test_pp(path)
         path_pp = os.path.splitext(path)[0] + '.pp'
-        cmdline = RCC + ' ' + path_pp + ' -o ' + path_cpp
+        cmdline = RCC + ' ' + path_pp + ' -o ' + path_src
     else:
-        cmdline = RCC + ' ' + path + ' -o ' + path_cpp
+        cmdline = RCC + ' ' + path + ' -o ' + path_src
 
     if (not verbose):
         cmdline += ' > /dev/null 2>&1'
@@ -376,7 +378,7 @@ def test_compile(path, verbose=True):
     if (subprocess.call(cmdline, shell=True) != 0):
         return 1
 
-    res = subprocess.call(GCC_COMPILE + ' ' + path_cpp + ' -o ' + path_obj, shell=True)
+    res = subprocess.call(GCC_COMPILE + ' ' + path_src + ' -o ' + path_obj, shell=True)
     if (res != 0):
         return res
 
@@ -528,8 +530,8 @@ def main():
         print('error: invalid usage.')
         exit(1)
 
-    if (subprocess.call(GCC_COMPILE + ' main.cc -o main.o', shell=True) != 0):
-        print('error: unable to compile main.cc.')
+    if (subprocess.call(GCC_COMPILE + ' main.' + EXT + ' -o main.o', shell=True) != 0):
+        print('error: unable to compile main.' + EXT + '.')
         exit(1)
 
     for o, a in opts:

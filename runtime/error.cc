@@ -210,7 +210,7 @@ bool EsErrorConstructor<T>::constructT(EsCallFrame &frame)
     EsValue msg = frame.arg(0);
     if (!msg.is_undefined())
     {
-        msg_str = msg.to_string();
+        msg_str = msg.to_stringT();
         if (!msg_str)
             return false;
     }

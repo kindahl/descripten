@@ -444,7 +444,7 @@ public:
      * @return Current value converted into a string on success, a NULL-pointer
      *         if an exception was thrown.
      */
-    const EsString *to_string() const;
+    const EsString *to_stringT() const;
 
     /**
      * Converts the current value into an object.

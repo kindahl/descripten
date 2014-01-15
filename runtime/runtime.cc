@@ -87,7 +87,7 @@ namespace runtime
                 assert(EsContextStack::instance().top()->has_pending_exception());
                 EsValue e = EsContextStack::instance().top()->get_pending_exception();
 
-                const EsString *err_msg = e.to_string();
+                const EsString *err_msg = e.to_stringT();
                 assert(err_msg);
 
                 err_msg_ = err_msg->utf8();
@@ -97,7 +97,7 @@ namespace runtime
         {
             assert(false);
 
-            const EsString *err_msg = e.to_string();
+            const EsString *err_msg = e.to_stringT();
             assert(err_msg);
 
             err_msg_ = err_msg->utf8();

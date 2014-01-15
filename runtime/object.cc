@@ -2691,7 +2691,7 @@ bool EsFunctionConstructor::constructT(EsCallFrame &frame)
             if (i > 0)
                 p.append(',');
 
-            const EsString *str = argv[i].to_string();
+            const EsString *str = argv[i].to_stringT();
             if (!str)
                 return false;
 
@@ -2700,7 +2700,7 @@ bool EsFunctionConstructor::constructT(EsCallFrame &frame)
         p.append(") {}");
     }
 
-    const EsString *body_str = body.to_string();
+    const EsString *body_str = body.to_stringT();
     if (!body_str)
         return false;
 
@@ -2896,7 +2896,7 @@ bool EsStringConstructor::constructT(EsCallFrame &frame)
 
     if (frame.argc() > 0)
     {
-        value = frame.fp()[0].to_string();
+        value = frame.fp()[0].to_stringT();
         if (!value)
             return false;
     }
@@ -2959,14 +2959,14 @@ bool EsRegExpConstructor::constructT(EsCallFrame &frame)
         {
             if (!pattern_arg.is_undefined())
             {
-                pattern = pattern_arg.to_string();
+                pattern = pattern_arg.to_stringT();
                 if (!pattern)
                     return false;
             }
 
             if (!flags_arg.is_undefined())
             {
-                flags = flags_arg.to_string();
+                flags = flags_arg.to_stringT();
                 if (!flags)
                     return false;
             }
@@ -2976,14 +2976,14 @@ bool EsRegExpConstructor::constructT(EsCallFrame &frame)
     {
         if (!pattern_arg.is_undefined())
         {
-            pattern = pattern_arg.to_string();
+            pattern = pattern_arg.to_stringT();
             if (!pattern)
                 return false;
         }
 
         if (!flags_arg.is_undefined())
         {
-            flags = flags_arg.to_string();
+            flags = flags_arg.to_stringT();
             if (!flags)
                 return false;
         }

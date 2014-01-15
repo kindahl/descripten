@@ -54,7 +54,7 @@ ES_API_FUN(es_std_print)
     if (argc == 0)
         return true;
 
-    const EsString *msg = frame.arg(0).to_string();
+    const EsString *msg = frame.arg(0).to_stringT();
     if (!msg)
         return false;
 
@@ -69,7 +69,7 @@ ES_API_FUN(es_std_error)
     if (argc == 0)
         return true;
     
-    const EsString *msg = frame.arg(0).to_string();
+    const EsString *msg = frame.arg(0).to_stringT();
     if (!msg)
         return false;
 
@@ -109,7 +109,7 @@ ES_API_FUN(es_std_fn_exists)
 
     ES_API_PARAMETER(0, name_arg);
 
-    const EsString *name = name_arg.to_string();
+    const EsString *name = name_arg.to_stringT();
     if (!name)
         return false;
 
@@ -316,7 +316,7 @@ ES_API_FUN(es_std_decode_uri)
 
     ES_API_PARAMETER(0, encoded_uri);
 
-    const EsString *encoded_uri_str = encoded_uri.to_string();
+    const EsString *encoded_uri_str = encoded_uri.to_stringT();
     if (!encoded_uri_str)
         return false;
 
@@ -336,7 +336,7 @@ ES_API_FUN(es_std_decode_uri_component)
     ES_API_PARAMETER(0, encoded_uri_component);
 
     const EsString *encoded_uri_component_str =
-        encoded_uri_component.to_string();
+        encoded_uri_component.to_stringT();
     if (!encoded_uri_component_str)
         return false;
 
@@ -356,7 +356,7 @@ ES_API_FUN(es_std_encode_uri)
 
     ES_API_PARAMETER(0, uri);
 
-    const EsString *uri_str = uri.to_string();
+    const EsString *uri_str = uri.to_stringT();
     if (!uri_str)
         return false;
 
@@ -375,7 +375,7 @@ ES_API_FUN(es_std_encode_uri_component)
 
     ES_API_PARAMETER(0, uri_component);
 
-    const EsString *uri_component_str = uri_component.to_string();
+    const EsString *uri_component_str = uri_component.to_stringT();
     if (!uri_component_str)
         return false;
 
@@ -429,7 +429,7 @@ ES_API_FUN(es_std_parse_float)
 
     ES_API_PARAMETER(0, string);
 
-    const EsString *input_str = string.to_string();
+    const EsString *input_str = string.to_stringT();
     if (!input_str)
         return false;
 
@@ -456,7 +456,7 @@ ES_API_FUN(es_std_parse_int)
     ES_API_PARAMETER(0, string);
     ES_API_PARAMETER(1, radix);
 
-    const EsString *input_str = string.to_string();
+    const EsString *input_str = string.to_stringT();
     if (!input_str)
         return false;
 
@@ -627,7 +627,7 @@ ES_API_FUN(es_std_arr_proto_to_locale_str)
         if (!fun.as_function()->callT(fun_frame))
             return false;
 
-        r = fun_frame.result().to_string();     // CUSTOM: to_string().
+        r = fun_frame.result().to_stringT();    // CUSTOM: to_stringT().
         if (!r)
             return false;
     }
@@ -662,7 +662,7 @@ ES_API_FUN(es_std_arr_proto_to_locale_str)
             if (!fun.as_function()->callT(next_frame))
                 return false;
 
-            next = next_frame.result().to_string();     // CUSTOM: to_string().
+            next = next_frame.result().to_stringT();    // CUSTOM: to_stringT().
             if (!next)
                 return false;
         }
@@ -768,7 +768,7 @@ ES_API_FUN(es_std_arr_proto_join)
     const EsString *sep = NULL;
     if (!separator.is_undefined())
     {
-        sep = separator.to_string();
+        sep = separator.to_stringT();
         if (!sep)
             return false;
     }
@@ -790,7 +790,7 @@ ES_API_FUN(es_std_arr_proto_join)
     const EsString *r = EsString::create();
     if (!element0.is_undefined() && !element0.is_null())
     {
-        r = element0.to_string();
+        r = element0.to_stringT();
         if (!r)
             return false;
     }
@@ -806,7 +806,7 @@ ES_API_FUN(es_std_arr_proto_join)
         const EsString *next = EsString::create();
         if (!element.is_undefined() && !element.is_null())
         {
-            next = element.to_string();
+            next = element.to_stringT();
             if (!next)
                 return false;
         }
@@ -2409,7 +2409,7 @@ ES_API_FUN(es_std_date_constr_parse)
 
     ES_API_PARAMETER(0, string);
 
-    const EsString *s = string.to_string();
+    const EsString *s = string.to_stringT();
     if (!s)
         return false;
 
@@ -2467,7 +2467,7 @@ ES_API_FUN(es_std_err_proto_to_str)
     }
     else
     {
-        name = name_val.to_string();
+        name = name_val.to_stringT();
         if (!name)
             return false;
     }
@@ -2479,7 +2479,7 @@ ES_API_FUN(es_std_err_proto_to_str)
     const EsString *msg = EsString::create();
     if (!msg_val.is_undefined())
     {
-        msg = msg_val.to_string();
+        msg = msg_val.to_stringT();
         if (!msg)
             return false;
     }
@@ -2645,7 +2645,7 @@ ES_API_FUN(es_std_json_parse)
     ES_API_PARAMETER(0, text);
     ES_API_PARAMETER(1, reviver);
 
-    const EsString *text_str = text.to_string();
+    const EsString *text_str = text.to_stringT();
     if (!text_str)
         return false;
 
@@ -2726,7 +2726,7 @@ ES_API_FUN(es_std_json_stringify)
                     String class_name = v.as_object()->class_name();
                     if (class_name == _USTR("String") || class_name == _USTR("Number"))
                     {
-                        const EsString *v_str = v.to_string();
+                        const EsString *v_str = v.to_stringT();
                         if (!v_str)
                             return false;
 
@@ -3276,7 +3276,7 @@ ES_API_FUN(es_std_num_proto_to_str)
     // NOTE: This might result in endless recursion which is dangerous, don't
     //       handle this special case but process base 10 as any other.
     //if (radix == 10)
-    //    return frame.this_value().to_string();
+    //    return frame.this_value().to_stringT();
     
     if (radix < 2 || radix > 36)
     {
@@ -3510,7 +3510,7 @@ ES_API_FUN(es_std_obj_proto_has_own_prop)
 
     ES_API_PARAMETER(0, v);
 
-    const EsString *p = v.to_string();
+    const EsString *p = v.to_stringT();
     if (!p)
         return false;
 
@@ -3568,7 +3568,7 @@ ES_API_FUN(es_std_obj_proto_prop_is_enum)
 
     ES_API_PARAMETER(0, v);
 
-    const EsString *p = v.to_string();
+    const EsString *p = v.to_stringT();
     if (!p)
         return false;
 
@@ -3635,7 +3635,7 @@ ES_API_FUN(es_std_obj_get_own_prop_desc)
 
     EsObject *o_obj = o.as_object();
 
-    const EsString *name = p.to_string();
+    const EsString *name = p.to_stringT();
     if (!name)
         return false;
 
@@ -3736,7 +3736,7 @@ ES_API_FUN(es_std_obj_def_prop)
 
     EsObject *o_obj = o.as_object();
 
-    const EsString *name = p.to_string();
+    const EsString *name = p.to_stringT();
     if (!name)
         return false;
 
@@ -4039,7 +4039,7 @@ ES_API_FUN(es_std_str_proto_char_at)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
     
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4066,7 +4066,7 @@ ES_API_FUN(es_std_str_proto_char_code_at)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
     
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4090,13 +4090,13 @@ ES_API_FUN(es_std_str_proto_concat)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *r = frame.this_value().to_string();
+    const EsString *r = frame.this_value().to_stringT();
     if (!r)
         return false;
 
     for (const EsValue &arg : frame.arguments())
     {
-        const EsString *str = arg.to_string();
+        const EsString *str = arg.to_stringT();
         if (!str)
             return false;
 
@@ -4117,11 +4117,11 @@ ES_API_FUN(es_std_str_proto_index_of)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
-    const EsString *search_str = search_string.to_string();
+    const EsString *search_str = search_string.to_stringT();
     if (!search_str)
         return false;
 
@@ -4146,11 +4146,11 @@ ES_API_FUN(es_std_str_proto_last_index_of)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
-    const EsString *search_str = search_string.to_string();
+    const EsString *search_str = search_string.to_stringT();
     if (!search_str)
         return false;
 
@@ -4174,10 +4174,10 @@ ES_API_FUN(es_std_str_proto_locale_compare)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
-    const EsString *t = that.to_string();
+    const EsString *t = that.to_stringT();
     if (!t)
         return false;
 
@@ -4197,14 +4197,14 @@ ES_API_FUN(es_std_str_proto_match)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
     EsRegExp *rx = es_as_reg_exp(regexp);
     if (!rx)
     {
-        const EsString *regexp_str = regexp.to_string();
+        const EsString *regexp_str = regexp.to_stringT();
         if (!regexp_str)
             return false;
 
@@ -4305,7 +4305,7 @@ ES_API_FUN(es_std_str_proto_replace)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4379,7 +4379,7 @@ ES_API_FUN(es_std_str_proto_replace)
     }
     else
     {
-        const EsString *search_str = search_value.to_string();
+        const EsString *search_str = search_value.to_stringT();
         if (!search_str)
             return false;
 
@@ -4442,7 +4442,7 @@ ES_API_FUN(es_std_str_proto_replace)
             if (!replace_value.as_function()->callT(fun_frame))
                 return false;
 
-            const EsString *fun_res_str = fun_frame.result().to_string();
+            const EsString *fun_res_str = fun_frame.result().to_stringT();
             if (!fun_res_str)
                 return false;
 
@@ -4450,7 +4450,7 @@ ES_API_FUN(es_std_str_proto_replace)
         }
         else
         {
-            const EsString *replace_str = replace_value.to_string();
+            const EsString *replace_str = replace_value.to_stringT();
             if (!replace_str)
                 return false;
 
@@ -4561,14 +4561,14 @@ ES_API_FUN(es_std_str_proto_search)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
     EsRegExp *rx = es_as_reg_exp(regexp);
     if (!rx)
     {
-        const EsString *regexp_str = regexp.to_string();
+        const EsString *regexp_str = regexp.to_stringT();
         if (!regexp_str)
             return false;
 
@@ -4604,7 +4604,7 @@ ES_API_FUN(es_std_str_proto_slice)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4640,7 +4640,7 @@ ES_API_FUN(es_std_str_proto_split)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4654,7 +4654,7 @@ ES_API_FUN(es_std_str_proto_split)
     const EsString *r_str = EsString::create();
     if (r_reg == NULL)
     {
-        r_str = separator.to_string();
+        r_str = separator.to_stringT();
         if (!r_str)
             return false;
     }
@@ -4757,7 +4757,7 @@ ES_API_FUN(es_std_str_proto_substr)
     ES_API_PARAMETER(0, start);
     ES_API_PARAMETER(1, length);
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4796,7 +4796,7 @@ ES_API_FUN(es_std_str_proto_substring)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4827,7 +4827,7 @@ ES_API_FUN(es_std_str_proto_to_lower_case)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4842,7 +4842,7 @@ ES_API_FUN(es_std_str_proto_to_locale_lower_case)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4857,7 +4857,7 @@ ES_API_FUN(es_std_str_proto_to_upper_case)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4872,7 +4872,7 @@ ES_API_FUN(es_std_str_proto_to_locale_upper_case)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4892,7 +4892,7 @@ ES_API_FUN(es_std_str_proto_trim)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    const EsString *s = frame.this_value().to_string();
+    const EsString *s = frame.this_value().to_stringT();
     if (!s)
         return false;
 
@@ -4908,7 +4908,7 @@ ES_API_FUN(es_std_str)
     const EsString *str = EsString::create();
     if (argc > 0)
     {
-        str = frame.arg(0).to_string();
+        str = frame.arg(0).to_stringT();
         if (!str)
             return false;
     }
@@ -4959,7 +4959,7 @@ ES_API_FUN(es_std_reg_exp_proto_exec)
         return false;
     }
 
-    const EsString *s = string.to_string();
+    const EsString *s = string.to_stringT();
     if (!s)
         return false;
 
@@ -5052,7 +5052,7 @@ ES_API_FUN(es_std_reg_exp_proto_test)
         return false;
     }
 
-    const EsString *s = string.to_string();
+    const EsString *s = string.to_stringT();
     if (!s)
         return false;
 

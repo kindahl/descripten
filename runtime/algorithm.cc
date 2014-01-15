@@ -334,10 +334,10 @@ namespace algorithm
             return true;
         }
 
-        const EsString *x_str = x.to_string();
+        const EsString *x_str = x.to_stringT();
         if (!x_str)
             return false;
-        const EsString *y_str = y.to_string();
+        const EsString *y_str = y.to_stringT();
         if (!y_str)
             return false;
 
@@ -485,7 +485,7 @@ namespace algorithm
             }
             if (val_obj->class_name() == _USTR("String"))
             {
-                const EsString *str = val.to_string();
+                const EsString *str = val.to_stringT();
                 if (!str)
                     return false;
 
@@ -647,11 +647,11 @@ namespace algorithm
             }
             else
             {
-                const EsString *str = str_p.to_string();
+                const EsString *str = str_p.to_stringT();
                 if (!str)
                     return false;
 
-                partial.push_back(str); // CUSTOM: to_string.
+                partial.push_back(str); // CUSTOM: to_stringL.
             }
         }
 
@@ -759,11 +759,11 @@ namespace algorithm
                 if (!state.gap->empty())
                     member.append(' ');
 
-                const EsString *str = str_p.to_string();
+                const EsString *str = str_p.to_stringT();
                 if (!str)
                     return false;
 
-                member.append(str); // CUSTOM: to_string.
+                member.append(str); // CUSTOM: to_stringL.
 
                 partial.push_back(member.string());
             }

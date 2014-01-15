@@ -917,7 +917,7 @@ Completion Evaluator::parse_prop_expr(PropertyExpression *expr)
         return Completion(Completion::TYPE_THROW,
                           EsContextStack::instance().top()->get_pending_exception());
 
-    const EsString *key_str = key_val.to_string();
+    const EsString *key_str = key_val.to_stringT();
     if (!key_str)
         return Completion(Completion::TYPE_THROW,
                           EsContextStack::instance().top()->get_pending_exception());

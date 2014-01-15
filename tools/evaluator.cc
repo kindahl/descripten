@@ -119,7 +119,7 @@ int main (int argc, const char *argv[])
         assert(EsContextStack::instance().top()->has_pending_exception());
         EsValue e = EsContextStack::instance().top()->get_pending_exception();
 
-        const EsString *err_msg = e.to_string();
+        const EsString *err_msg = e.to_stringT();
         assert(err_msg);
 
         std::cerr << err_msg->utf8() << std::endl;

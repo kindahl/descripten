@@ -207,7 +207,7 @@ bool EsValue::to_uint32(uint32_t &result) const
     return true;
 }
 
-const EsString *EsValue::to_string() const
+const EsString *EsValue::to_stringT() const
 {
     switch (type())
     {
@@ -227,7 +227,7 @@ const EsString *EsValue::to_string() const
             if (!to_primitive(ES_HINT_STRING, v))
                 return NULL;
 
-            return v.to_string();
+            return v.to_stringT();
         }
         default:
             assert(false);

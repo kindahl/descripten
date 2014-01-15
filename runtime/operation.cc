@@ -721,7 +721,7 @@ bool op_prp_def_data(EsValue &obj_val, const EsValue &key, const EsValue &val)
 {
     assert(obj_val.is_object());
 
-    const EsString *name = key.to_string();
+    const EsString *name = key.to_stringT();
     if (!name)
         return false;
 
@@ -772,7 +772,7 @@ bool op_prp_get(const EsValue &obj_val, const EsValue &key_val,
                           result, cid);
     }
 
-    const EsString *key_str = key_val.to_string();
+    const EsString *key_str = key_val.to_stringT();
     if (!key_str)
         return false;
 
@@ -916,7 +916,7 @@ bool op_prp_put(EsContext *ctx, const EsValue &obj_val, const EsValue &key_val,
                           EsPropertyKey::from_u32(key_idx).as_raw(), val, cid);
     }
 
-    const EsString *key_str = key_val.to_string();
+    const EsString *key_str = key_val.to_stringT();
     if (!key_str)
         return false;
 
@@ -948,7 +948,7 @@ bool op_prp_del(EsContext *ctx, EsValue &obj_val, const EsValue &key_val,
                           EsPropertyKey::from_u32(key_idx).as_raw(), result);
     }
 
-    const EsString *key_str = key_val.to_string();
+    const EsString *key_str = key_val.to_stringT();
     if (!key_str)
         return false;
 
@@ -1046,7 +1046,7 @@ bool op_call_keyed(const EsValue &obj_val, const EsValue &key_val, int argc,
                           argc, result);
     }
 
-    const EsString *key_str = key_val.to_string();
+    const EsString *key_str = key_val.to_stringT();
     if (!key_str)
         return false;
 
@@ -1428,7 +1428,7 @@ bool op_c_in(const EsValue &lval, const EsValue &rval, EsValue &result)
         return false;
     }
     
-    const EsString *lstr = lval.to_string();
+    const EsString *lstr = lval.to_stringT();
     if (!lstr)
         return false;
 

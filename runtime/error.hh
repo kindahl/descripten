@@ -56,7 +56,7 @@ inline void es_throw(const String &message)
 class EsError : public EsObject
 {
 public:
-    static EsFunction::function_type default_fun_;  ///< Function to call when calling constructor as a function.
+    static EsFunction::NativeFunction default_fun_;  ///< Function to call when calling constructor as a function.
     
     static EsObject *prototype();
     
@@ -100,7 +100,7 @@ template <typename T>
 class EsNativeError : public EsError
 {
 public:
-    static EsFunction::function_type default_fun_;  ///< Function to call when calling constructor as a function.
+    static EsFunction::NativeFunction default_fun_;  ///< Function to call when calling constructor as a function.
 
 private:    
     static EsFunction *default_constr_;     // Points to the default constructor, initialized lazily.
@@ -205,7 +205,7 @@ template <typename T>
 class EsErrorConstructor : public EsFunction
 {
 private:
-    EsErrorConstructor(EsLexicalEnvironment *scope, function_type func, int len, bool strict);
+    EsErrorConstructor(EsLexicalEnvironment *scope, NativeFunction func, int len, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -213,5 +213,5 @@ public:
     /**
      * @copydoc EsFunction::construct
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };

@@ -178,9 +178,9 @@ void Block::push_instr(Instruction *instr)
     instrs_.push_back(instr);
 }
 
-Value *Block::push_args_obj_init(int argc)
+Value *Block::push_args_obj_init()
 {
-    Instruction *instr = new (GC)ArgumentsObjectInitInstruction(argc);
+    Instruction *instr = new (GC)ArgumentsObjectInitInstruction();
     push_instr(instr);
     return instr;
 }
@@ -257,44 +257,43 @@ Value *Block::push_bnd_extra_ptr(int hops)
     return instr;
 }
 
-Value *Block::push_call(Value *fun, int argc, Value *argv, Value *res)
+Value *Block::push_call(Value *fun, int argc, Value *res)
 {
     Instruction *instr =
-        new (GC)CallInstruction(CallInstruction::NORMAL, fun, argc, argv, res);
+        new (GC)CallInstruction(CallInstruction::NORMAL, fun, argc, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_call_keyed(Value *obj, uint64_t key, int argc, Value *argv,
-                              Value *res)
+Value *Block::push_call_keyed(Value *obj, uint64_t key, int argc, Value *res)
 {
     Instruction *instr =
-        new (GC)CallKeyedInstruction(obj, key, argc, argv, res);
+        new (GC)CallKeyedInstruction(obj, key, argc, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_call_keyed_slow(Value *obj, Value *key, int argc, Value *argv,
+Value *Block::push_call_keyed_slow(Value *obj, Value *key, int argc,
                                    Value *res)
 {
     Instruction *instr =
-        new (GC)CallKeyedSlowInstruction(obj, key, argc, argv, res);
+        new (GC)CallKeyedSlowInstruction(obj, key, argc, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_call_named(uint64_t key, int argc, Value *argv, Value *res)
+Value *Block::push_call_named(uint64_t key, int argc, Value *res)
 {
     Instruction *instr =
-        new (GC)CallNamedInstruction(key, argc, argv, res);
+        new (GC)CallNamedInstruction(key, argc, res);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_call_new(Value *fun, int argc, Value *argv, Value *res)
+Value *Block::push_call_new(Value *fun, int argc, Value *res)
 {
     Instruction *instr =
-        new (GC)CallInstruction(CallInstruction::NEW, fun, argc, argv, res);
+        new (GC)CallInstruction(CallInstruction::NEW, fun, argc, res);
     push_instr(instr);
     return instr;
 }
@@ -320,6 +319,27 @@ Value *Block::push_mem_elm_ptr(Value *val, size_t index)
     val->make_persistent();
 
     Instruction *instr = new (GC)MemoryElementPointerInstruction(val, index);
+    push_instr(instr);
+    return instr;
+}
+
+Value *Block::push_stk_alloc(size_t count)
+{
+    Instruction *instr = new (GC)StackAllocInstruction(count);
+    push_instr(instr);
+    return instr;
+}
+
+Value *Block::push_stk_free(size_t count)
+{
+    Instruction *instr = new (GC)StackFreeInstruction(count);
+    push_instr(instr);
+    return instr;
+}
+
+Value *Block::push_stk_push(Value *val)
+{
+    Instruction *instr = new (GC)StackPushInstruction(val);
     push_instr(instr);
     return instr;
 }
@@ -560,13 +580,6 @@ Value *Block::push_ctx_leave()
     return instr;
 }
 
-Value *Block::push_ctx_this()
-{
-    Instruction *instr = new (GC)ContextThisInstruction();
-    push_instr(instr);
-    return instr;
-}
-
 Value *Block::push_ctx_get(uint64_t key, Value *res, uint16_t cid)
 {
     Instruction *instr = new (GC)ContextGetInstruction(key, res, cid);
@@ -620,13 +633,6 @@ Value *Block::push_ex_clear()
 Value *Block::push_init_args(Value *dst, int prmc)
 {
     Instruction *instr = new (GC)InitArgumentsInstruction(dst, prmc);
-    push_instr(instr);
-    return instr;
-}
-
-Value *Block::push_init_args_obj(int prmc, Value *prmv)
-{
-    Instruction *instr = new (GC)InitArgumentsObjectInstruction(prmc, prmv);
     push_instr(instr);
     return instr;
 }
@@ -931,14 +937,8 @@ Instruction::~Instruction()
 {
 }
 
-ArgumentsObjectInitInstruction::ArgumentsObjectInitInstruction(int argc)
-    : argc_(argc)
+ArgumentsObjectInitInstruction::ArgumentsObjectInitInstruction()
 {
-}
-
-int ArgumentsObjectInitInstruction::argc() const
-{
-    return argc_;
 }
 
 const Type *ArgumentsObjectInitInstruction::type() const
@@ -1079,11 +1079,10 @@ const Type *BindExtraPtrInstruction::type() const
 }
 
 CallInstruction::CallInstruction(Operation op, Value *fun, int argc,
-                                 Value *argv, Value *res)
+                                 Value *res)
     : op_(op)
     , fun_(fun)
     , argc_(argc)
-    , argv_(argv)
     , res_(res)
 {
 }
@@ -1103,11 +1102,6 @@ int CallInstruction::argc() const
     return argc_;
 }
 
-Value *CallInstruction::argv() const
-{
-    return argv_;
-}
-
 Value *CallInstruction::result() const
 {
     return res_;
@@ -1119,11 +1113,10 @@ const Type *CallInstruction::type() const
 }
 
 CallKeyedInstruction::CallKeyedInstruction(Value *obj, uint64_t key, int argc,
-                                           Value *argv, Value *res)
+                                           Value *res)
     : obj_(obj)
     , key_(key)
     , argc_(argc)
-    , argv_(argv)
     , res_(res)
 {
 }
@@ -1143,11 +1136,6 @@ int CallKeyedInstruction::argc() const
     return argc_;
 }
 
-Value *CallKeyedInstruction::argv() const
-{
-    return argv_;
-}
-
 Value *CallKeyedInstruction::result() const
 {
     return res_;
@@ -1159,12 +1147,10 @@ const Type *CallKeyedInstruction::type() const
 }
 
 CallKeyedSlowInstruction::CallKeyedSlowInstruction(Value *obj, Value *key,
-                                                   int argc, Value *argv,
-                                                   Value *res)
+                                                   int argc, Value *res)
     : obj_(obj)
     , key_(key)
     , argc_(argc)
-    , argv_(argv)
     , res_(res)
 {
 }
@@ -1184,11 +1170,6 @@ int CallKeyedSlowInstruction::argc() const
     return argc_;
 }
 
-Value *CallKeyedSlowInstruction::argv() const
-{
-    return argv_;
-}
-
 Value *CallKeyedSlowInstruction::result() const
 {
     return res_;
@@ -1200,10 +1181,9 @@ const Type *CallKeyedSlowInstruction::type() const
 }
 
 CallNamedInstruction::CallNamedInstruction(uint64_t key, int argc,
-                                           Value *argv, Value *res)
+                                           Value *res)
     : key_(key)
     , argc_(argc)
-    , argv_(argv)
     , res_(res)
 {
 }
@@ -1216,11 +1196,6 @@ uint64_t CallNamedInstruction::key() const
 int CallNamedInstruction::argc() const
 {
     return argc_;
-}
-
-Value *CallNamedInstruction::argv() const
-{
-    return argv_;
 }
 
 Value *CallNamedInstruction::result() const
@@ -1439,6 +1414,52 @@ const Type *MemoryElementPointerInstruction::type() const
     return new (GC)PointerType(static_cast<const PointerType *>(val_->type())->type());
 }
 
+StackAllocInstruction::StackAllocInstruction(size_t count)
+    : count_(count)
+{
+}
+
+size_t StackAllocInstruction::count() const
+{
+    return count_;
+}
+
+const Type *StackAllocInstruction::type() const
+{
+    return Type::_void();
+}
+
+StackFreeInstruction::StackFreeInstruction(size_t count)
+    : count_(count)
+{
+}
+
+size_t StackFreeInstruction::count() const
+{
+    return count_;
+}
+
+const Type *StackFreeInstruction::type() const
+{
+    return Type::_void();
+}
+
+StackPushInstruction::StackPushInstruction(Value *val)
+    : val_(val)
+{
+    assert(val_->type()->is_value());
+}
+
+Value *StackPushInstruction::value() const
+{
+    return val_;
+}
+
+const Type *StackPushInstruction::type() const
+{
+    return Type::_void();
+}
+
 MetaContextLoadInstruction::MetaContextLoadInstruction(uint64_t key)
     : key_(key)
 {
@@ -1523,11 +1544,6 @@ const Type *ContextEnterWithInstruction::type() const
 const Type *ContextLeaveInstruction::type() const
 {
     return Type::_void();
-}
-
-const Type *ContextThisInstruction::type() const
-{
-    return Type::value();
 }
 
 ContextGetInstruction::ContextGetInstruction(uint64_t key, Value *res,
@@ -1672,27 +1688,6 @@ int InitArgumentsInstruction::parameter_count() const
 }
 
 const Type *InitArgumentsInstruction::type() const
-{
-    return Type::_void();
-}
-
-InitArgumentsObjectInstruction::InitArgumentsObjectInstruction(int prmc, Value *prmv)
-    : prmc_(prmc)
-    , prmv_(prmv)
-{
-}
-
-int InitArgumentsObjectInstruction::parameter_count() const
-{
-    return prmc_;
-}
-
-Value *InitArgumentsObjectInstruction::parameter_array() const
-{
-    return prmv_;
-}
-
-const Type *InitArgumentsObjectInstruction::type() const
 {
     return Type::_void();
 }

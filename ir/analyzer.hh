@@ -39,8 +39,8 @@ public:
     enum Storage
     {
         STORAGE_UNALLOCATED,
-        STORAGE_LOCAL,
-        STORAGE_LOCAL_EXTRA,
+        STORAGE_LOCAL,          // FIXME: STORAGE_STACK?
+        STORAGE_LOCAL_EXTRA,    // FIXME: STORAGE_HEAP?
         STORAGE_CONTEXT
     };
 

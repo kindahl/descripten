@@ -138,6 +138,18 @@ void Optimizer::visit_instr_mem_elm_ptr(MemoryElementPointerInstruction *instr)
 {
 }
 
+void Optimizer::visit_instr_stk_alloc(StackAllocInstruction *instr)
+{
+}
+
+void Optimizer::visit_instr_stk_free(StackFreeInstruction *instr)
+{
+}
+
+void Optimizer::visit_instr_stk_push(StackPushInstruction *instr)
+{
+}
+
 void Optimizer::visit_instr_ctx_set_strict(ContextSetStrictInstruction *instr)
 {
 }
@@ -151,10 +163,6 @@ void Optimizer::visit_instr_ctx_enter_with(ContextEnterWithInstruction *instr)
 }
 
 void Optimizer::visit_instr_ctx_leave(ContextLeaveInstruction *instr)
-{
-}
-
-void Optimizer::visit_instr_ctx_this(ContextThisInstruction *instr)
 {
 }
 
@@ -187,10 +195,6 @@ void Optimizer::visit_instr_ex_clear(ExceptionClearInstruction *instr)
 }
 
 void Optimizer::visit_instr_init_args(InitArgumentsInstruction *instr)
-{
-}
-
-void Optimizer::visit_instr_init_args_obj(InitArgumentsObjectInstruction *instr)
 {
 }
 

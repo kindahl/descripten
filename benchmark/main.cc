@@ -2,10 +2,10 @@
 #include "runtime.hh"
 
 void _global_data();
-bool _global_main(EsContext *ctx, EsFunction *callee,
-                  int argc, EsValue argv[], EsValue &result);
+bool _global_main(EsContext *ctx, int argc,
+                  EsValue *fp, EsValue *vp);
 
-int main(int argc,const char * arv[])
+int main(int argc, const char * arv[])
 {
     if (!runtime::init(_global_data))
     {

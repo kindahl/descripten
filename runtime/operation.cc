@@ -31,6 +31,7 @@
 #include "debug.hh"
 #include "environment.hh"
 #include "error.hh"
+#include "frame.hh"
 #include "global.hh"
 #include "messages.hh"
 #include "native.hh"
@@ -83,6 +84,21 @@ void data_reg_str(const String &str, uint32_t id)
     strings().unsafe_intern(str, id);
 }
 
+void op_stk_alloc(size_t count)
+{
+    g_call_stack.alloc(count);
+}
+
+void op_stk_free(size_t count)
+{
+    g_call_stack.free(count);
+}
+
+void op_stk_push(const EsValue &val)
+{
+    g_call_stack.push(val);
+}
+
 void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc)
 {
     int i = 0;
@@ -101,9 +117,11 @@ void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc)
     }
 }
 
-EsValue op_args_obj_init(EsContext *ctx, EsFunction *callee,
-                         int argc, const EsValue argv[])
+EsValue op_args_obj_init(EsContext *ctx, int argc,
+                         EsValue *fp, EsValue *vp)
 {
+    EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
+
     assert(ctx->var_env()->env_rec()->is_decl_env());
     EsDeclarativeEnvironmentRecord *env =
         static_cast<EsDeclarativeEnvironmentRecord *>(
@@ -111,9 +129,8 @@ EsValue op_args_obj_init(EsContext *ctx, EsFunction *callee,
 
     if (!env->has_binding(property_keys.arguments))
     {
-        EsArguments *args_obj = EsArguments::create_inst(callee,
-                                                         ctx->is_strict(),
-                                                         argc, argv);
+        EsArguments *args_obj = EsArguments::create_inst(
+            frame.callee().as_function(), argc, fp);
         if (ctx->is_strict())
         {
             env->create_immutable_binding(property_keys.arguments,
@@ -143,6 +160,8 @@ void op_args_obj_link(EsValue &args, int i, EsValue *val)
 EsValue *op_bnd_extra_init(EsContext *ctx, int num_extra)
 {
     EsValue *extra = new (GC)EsValue[num_extra];
+    for (int i = 0; i < num_extra; i++)
+        extra[i] = EsValue::undefined;
 
     assert(ctx->var_env()->env_rec()->is_decl_env());
     EsDeclarativeEnvironmentRecord *env =
@@ -153,9 +172,11 @@ EsValue *op_bnd_extra_init(EsContext *ctx, int num_extra)
     return extra;
 }
 
-EsValue *op_bnd_extra_ptr(EsFunction *fun, int hops)
+EsValue *op_bnd_extra_ptr(int argc, EsValue *fp, EsValue *vp, int hops)
 {
-    EsLexicalEnvironment *env = fun->scope();
+    EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
+
+    EsLexicalEnvironment *env = frame.callee().as_function()->scope();
     for (int i = 1; i < hops; i++)
         env = env->outer();
 
@@ -465,11 +486,6 @@ bool op_ctx_del(EsContext *ctx, uint64_t raw_key, EsValue &result)
 
     result = EsValue::from_bool(true);
     return true;
-}
-
-EsValue op_ctx_this(EsContext *ctx)
-{
-    return ctx->this_binding();
 }
 
 void op_ctx_set_strict(EsContext *ctx, bool strict)
@@ -955,49 +971,43 @@ bool op_prp_del(EsContext *ctx, EsValue &obj_val, uint64_t raw_key,
     return true;
 }
 
-bool op_call(const EsValue &fun, int argc, EsValue argv[], EsValue &result)
+bool op_call(const EsValue &fun, int argc, EsValue &result)
 {
+    EsCallStackGuard guard(argc);
+
     if (!fun.is_callable())
     {
         ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_NO_FUN));
         return false;
     }
 
-    return fun.as_function()->callT(EsValue::undefined, argc, argv, result, 0);
-}
+    guard.release();
 
-bool op_call_keyed(const EsValue &obj_val, const EsValue &key_val, int argc,
-                   EsValue argv[], EsValue &result)
-{
-    uint32_t key_idx = 0;
-    if (key_val.is_number() && es_num_to_index(key_val.as_number(), key_idx))
-    {
-        return op_call_keyed(obj_val, EsPropertyKey::from_u32(key_idx).as_raw(),
-                             argc, argv, result);
-    }
-
-    String key_str;
-    if (!key_val.to_string(key_str))
+    EsCallFrame frame = EsCallFrame::push_function_excl_args(
+        argc, fun.as_function(), EsValue::undefined);
+    if (!fun.as_function()->callT(frame))
         return false;
 
-    return op_call_keyed(obj_val, EsPropertyKey::from_str(key_str).as_raw(), argc,
-                         argv, result);
+    result = frame.result();
+    return true;
 }
 
-bool op_call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
-                   EsValue argv[], EsValue &result)
+bool call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
+                EsValue &result)
 {
+    EsCallStackGuard guard(argc);
+
     EsPropertyKey key = EsPropertyKey::from_raw(raw_key);
 
     EsObject *obj = obj_val.to_objectT();
     if (!obj)
         return false;
 
-    EsValue fun;
-    if (!obj->getT(key, fun))
+    EsValue fun_val;
+    if (!obj->getT(key, fun_val))
         return false;
 
-    if (!fun.is_callable())
+    if (!fun_val.is_callable())
     {
         ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_NO_FUN));
         return false;
@@ -1009,12 +1019,52 @@ bool op_call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
     if (key == property_keys.eval)
         flags |= EsFunction::CALL_DIRECT_EVAL;
 
-    return fun.as_function()->callT(this_value, argc, argv, result, flags);
+    guard.release();
+
+    EsFunction *fun = fun_val.as_function();
+
+    EsCallFrame frame = EsCallFrame::push_function_excl_args(
+        argc, fun, this_value);
+    if (!fun->callT(frame, flags))
+        return false;
+
+    result = frame.result();
+    return true;
+}
+
+bool op_call_keyed(const EsValue &obj_val, const EsValue &key_val, int argc,
+                   EsValue &result)
+{
+    EsCallStackGuard guard(argc);
+
+    uint32_t key_idx = 0;
+    if (key_val.is_number() && es_num_to_index(key_val.as_number(), key_idx))
+    {
+        guard.release();
+        return call_keyed(obj_val, EsPropertyKey::from_u32(key_idx).as_raw(),
+                          argc, result);
+    }
+
+    String key_str;
+    if (!key_val.to_string(key_str))
+        return false;
+
+    guard.release();
+    return call_keyed(obj_val, EsPropertyKey::from_str(key_str).as_raw(),
+                      argc, result);
+}
+
+bool op_call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
+                   EsValue &result)
+{
+    return call_keyed(obj_val, raw_key, argc, result);
 }
 
 bool op_call_named(uint64_t raw_key, int argc,
-                   EsValue argv[], EsValue &result)
+                   EsValue &result)
 {
+    EsCallStackGuard guard(argc);
+
     EsPropertyKey key = EsPropertyKey::from_raw(raw_key);
 
     EsContext *ctx = EsContextStack::instance().top();
@@ -1042,11 +1092,21 @@ bool op_call_named(uint64_t raw_key, int argc,
     if (key == property_keys.eval)
         flags |= EsFunction::CALL_DIRECT_EVAL;
 
-    return fun.as_function()->callT(this_value, argc, argv, result, flags);
+    guard.release();
+
+    EsCallFrame frame = EsCallFrame::push_function_excl_args(
+        argc, fun.as_function(), this_value);
+    if (!fun.as_function()->callT(frame, flags))
+        return false;
+
+    result = frame.result();
+    return true;
 }
 
-bool op_call_new(const EsValue &fun, int argc, EsValue argv[], EsValue &result)
+bool op_call_new(const EsValue &fun, int argc, EsValue &result)
 {
+    EsCallStackGuard guard(argc);
+
     // FIXME: Do we need this check?
     if (!fun.is_object())
     {
@@ -1060,7 +1120,15 @@ bool op_call_new(const EsValue &fun, int argc, EsValue argv[], EsValue &result)
         return false;
     }
 
-    return fun.as_function()->constructT(argc, argv, result);
+    guard.release();
+
+    EsCallFrame frame = EsCallFrame::push_function_excl_args(
+        argc, fun.as_function(), EsValue::null);
+    if (!fun.as_function()->constructT(frame))
+        return false;
+
+    result = frame.result();
+    return true;
 }
 
 EsValue op_new_arr(int count, EsValue items[])

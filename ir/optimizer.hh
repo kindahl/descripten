@@ -46,11 +46,13 @@ private:
     virtual void visit_instr_mem_alloc(MemoryAllocInstruction *instr) OVERRIDE;
     virtual void visit_instr_mem_store(MemoryStoreInstruction *instr) OVERRIDE;
     virtual void visit_instr_mem_elm_ptr(MemoryElementPointerInstruction *instr) OVERRIDE;
+    virtual void visit_instr_stk_alloc(StackAllocInstruction *instr) OVERRIDE;
+    virtual void visit_instr_stk_free(StackFreeInstruction *instr) OVERRIDE;
+    virtual void visit_instr_stk_push(StackPushInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_set_strict(ContextSetStrictInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_enter_catch(ContextEnterCatchInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_enter_with(ContextEnterWithInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_leave(ContextLeaveInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_this(ContextThisInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_get(ContextGetInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_put(ContextPutInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_del(ContextDeleteInstruction *instr) OVERRIDE;
@@ -59,7 +61,6 @@ private:
     virtual void visit_instr_ex_set(ExceptionSetInstruction *instr) OVERRIDE;
     virtual void visit_instr_ex_clear(ExceptionClearInstruction *instr) OVERRIDE;
     virtual void visit_instr_init_args(InitArgumentsInstruction *instr) OVERRIDE;
-    virtual void visit_instr_init_args_obj(InitArgumentsObjectInstruction *instr) OVERRIDE;
     virtual void visit_instr_decl(Declaration *instr) OVERRIDE;
     virtual void visit_instr_link(Link *instr) OVERRIDE;
     virtual void visit_instr_prp_def_data(PropertyDefineDataInstruction *instr) OVERRIDE;

@@ -485,28 +485,19 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
     // Locals, extra and temporary registers.
-    Value *l = NULL, *e = NULL, *t = NULL;
+    Value *e = NULL, *t = NULL;
 
-    size_t start_locals = 0;    // Start of first non-parameter local in locals array.
+    Value *fp = new (GC)FramePointer();
+    Value *vp = new (GC)ValuePointer();
+
     size_t start_extras = 0;    // Start of first non-parameter extra in extras array.
 
     if (!lit->needs_args_obj())
     {
-        // Allocate locals stack.
-        size_t num_params = lit->parameters().size();
+        // Allocate locals.
         size_t num_locals = analyzed_fun->num_locals();
-        if (num_locals > 0 || num_params > 0)
-        {
-            l = fun->last_block()->push_mem_alloc(
-                new (GC)ArrayType(Type::value(), num_params + num_locals)); // FIXME: Doesn't this allocate too much?
-            l->make_persistent();
-        }
-
-        // Copy parameters into locals array.
-        if (num_params > 0)
-            t = fun->last_block()->push_init_args(l, static_cast<int>(num_params));
-
-        start_locals = num_params;
+        if (num_locals > 0)
+            fun->last_block()->push_stk_alloc(num_locals);
 
         // Initialize locals extra stack.
         size_t num_extra = analyzed_fun->num_extra();
@@ -525,12 +516,8 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         }
 
         // Allocate parameters.
-        start_extras = 0;
-
-        AnalyzedVariableSet::const_iterator it_var;
-        for (it_var = analyzed_fun->variables().begin(); it_var != analyzed_fun->variables().end(); ++it_var)
+        for (const AnalyzedVariable *var : analyzed_fun->variables())
         {
-            const AnalyzedVariable *var = *it_var;
             if (!var->is_parameter())
                 continue;
 
@@ -541,11 +528,11 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
             {
                 case AnalyzedVariable::STORAGE_LOCAL:
                 {
-                    scope->add_local(var->name(), new (GC)ArrayElementConstant(l, var->parameter_index()));
+                    scope->add_local(var->name(), new (GC)ArrayElementConstant(fp, var->parameter_index()));
 
                     if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                     {
-                        t = fun->last_block()->push_mem_elm_ptr(l, var->parameter_index());
+                        t = fun->last_block()->push_mem_elm_ptr(fp, var->parameter_index());
                         t = fun->last_block()->push_link_var(get_prp_key(var->name()), lit->is_strict_mode(), t);
                     }
                     break;
@@ -556,7 +543,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                     Value *v = new (GC)ArrayElementConstant(e, start_extras++);
                     scope->add_local(var->name(), v);
 
-                    t = fun->last_block()->push_mem_store(v, new (GC)ArrayElementConstant(l, var->parameter_index()));
+                    t = fun->last_block()->push_mem_store(v, new (GC)ArrayElementConstant(fp, var->parameter_index()));
                     break;
                 }
 
@@ -565,7 +552,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                     Block *blk0_block = new (GC)Block(NameGenerator::instance().next());
 
                     t = fun->last_block()->push_decl_prm(get_prp_key(var->name()), lit->is_strict_mode(),
-                                                         var->parameter_index(), l);
+                                                         var->parameter_index(), fp);
                     t = fun->last_block()->push_trm_br(t, blk0_block, expt_block);
 
                     fun->push_block(blk0_block);
@@ -580,14 +567,10 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
     }
     else
     {
-        // Allocate locals stack.
+        // Allocate locals.
         size_t num_locals = analyzed_fun->num_locals();
         if (num_locals > 0)
-        {
-            l = fun->last_block()->push_mem_alloc(
-                new (GC)ArrayType(Type::value(), num_locals));
-            l->make_persistent();
-        }
+            fun->last_block()->push_stk_alloc(num_locals);  // FIXME: We should be able to pass this information when constructing the object.
 
         // Initialize locals extra stack.
         size_t num_extra = analyzed_fun->num_extra();
@@ -618,13 +601,11 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         // Initialize the arguments object.
         Value *a = NULL;
 
-        a = fun->last_block()->push_args_obj_init(0);
+        a = fun->last_block()->push_args_obj_init();
 
         // Allocate parameters.
-        AnalyzedVariableSet::const_iterator it_var;
-        for (it_var = analyzed_fun->variables().begin(); it_var != analyzed_fun->variables().end(); ++it_var)
+        for (const AnalyzedVariable *var : analyzed_fun->variables())
         {
-            const AnalyzedVariable *var = *it_var;
             if (!var->is_parameter())
                 continue;
 
@@ -665,14 +646,12 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         }
     }
 
-    size_t locals_index = start_locals;
-    size_t extras_index = start_extras;
+    size_t vp_index = 0;
+    size_t ep_index = start_extras;
 
     // Allocate callee access.
-    AnalyzedVariableSet::const_iterator it_var;
-    for (it_var = analyzed_fun->variables().begin(); it_var != analyzed_fun->variables().end(); ++it_var)
+    for (const AnalyzedVariable *var : analyzed_fun->variables())
     {
-        const AnalyzedVariable *var = *it_var;
         if (!var->is_callee())
             continue;
 
@@ -683,17 +662,14 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         {
             case AnalyzedVariable::STORAGE_LOCAL:
             {
-                Value *v = new (GC)ArrayElementConstant(l, locals_index++);
-                t = fun->last_block()->push_mem_store(v, new (GC)CalleeConstant());
-
-                scope->add_local(var->name(), v);
+                scope->add_local(var->name(), new (GC)ArrayElementConstant(vp, -3));    // FIXME: Use constant offset.
                 break;
             }
 
             case AnalyzedVariable::STORAGE_LOCAL_EXTRA:
             {
-                Value *v = new (GC)ArrayElementConstant(e, extras_index++);
-                t = fun->last_block()->push_mem_store(v, new (GC)CalleeConstant());
+                Value *v = new (GC)ArrayElementConstant(e, ep_index++);
+                t = fun->last_block()->push_mem_store(v, new (GC)ArrayElementConstant(vp, -3));
 
                 scope->add_local(var->name(), v);
                 break;
@@ -702,9 +678,8 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
     }
 
     // Allocate function declarations.
-    for (it_var = analyzed_fun->variables().begin(); it_var != analyzed_fun->variables().end(); ++it_var)
+    for (const AnalyzedVariable *var : analyzed_fun->variables())
     {
-        const AnalyzedVariable *var = *it_var;
         if (!var->is_declaration())
             continue;
 
@@ -719,22 +694,21 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         {
             case AnalyzedVariable::STORAGE_LOCAL:
             {
-                scope->add_local(var->name(), new (GC)ArrayElementConstant(l, locals_index++));
+                scope->add_local(var->name(), new (GC)ArrayElementConstant(vp, vp_index++));
                 break;
             }
 
             case AnalyzedVariable::STORAGE_LOCAL_EXTRA:
             {
-                scope->add_local(var->name(), new (GC)ArrayElementConstant(e, extras_index++));
+                scope->add_local(var->name(), new (GC)ArrayElementConstant(e, ep_index++));
                 break;
             }
         }
     }
 
     // Allocate variable declarations.
-    for (it_var = analyzed_fun->variables().begin(); it_var != analyzed_fun->variables().end(); ++it_var)
+    for (const AnalyzedVariable *var : analyzed_fun->variables())
     {
-        const AnalyzedVariable *var = *it_var;
         if (!var->is_declaration())
             continue;
 
@@ -749,25 +723,25 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         {
             case AnalyzedVariable::STORAGE_LOCAL:
             {
-                scope->add_local(var->name(), new (GC)ArrayElementConstant(l, locals_index++));
+                scope->add_local(var->name(), new (GC)ArrayElementConstant(vp, vp_index++));
                 break;
             }
 
             case AnalyzedVariable::STORAGE_LOCAL_EXTRA:
             {
-                scope->add_local(var->name(), new (GC)ArrayElementConstant(e, extras_index++));
+                scope->add_local(var->name(), new (GC)ArrayElementConstant(e, ep_index++));
                 break;
             }
         }
     }
 
-    locals_index = start_locals;
-    extras_index = start_extras;
+    vp_index = 0;
+    ep_index = start_extras;
 
     // Increment storage indexes for callee allocation.
-    for (it_var = analyzed_fun->variables().begin(); it_var != analyzed_fun->variables().end(); ++it_var)
+    // FIXME: What's this?
+    for (const AnalyzedVariable *var : analyzed_fun->variables())
     {
-        const AnalyzedVariable *var = *it_var;
         if (!var->is_callee())
             continue;
 
@@ -776,20 +750,15 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
 
         switch (var->storage())
         {
-            case AnalyzedVariable::STORAGE_LOCAL:
-                locals_index++;
-                break;
-
             case AnalyzedVariable::STORAGE_LOCAL_EXTRA:
-                extras_index++;
+                ep_index++;
                 break;
         }
     }
 
     // Parse function declarations.
-    for (it_var = analyzed_fun->variables().begin(); it_var != analyzed_fun->variables().end(); ++it_var)
+    for (const AnalyzedVariable *var : analyzed_fun->variables())
     {
-        const AnalyzedVariable *var = *it_var;
         if (!var->is_declaration())
             continue;
 
@@ -806,27 +775,27 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         {
             case AnalyzedVariable::STORAGE_LOCAL:
             {
-                t = fun->last_block()->push_arr_put(locals_index, l, f);
+                t = fun->last_block()->push_arr_put(vp_index, vp, f);
                 if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                 {
-                    t = fun->last_block()->push_mem_elm_ptr(l, locals_index);
+                    t = fun->last_block()->push_mem_elm_ptr(vp, vp_index);
                     t = fun->last_block()->push_link_fun(get_prp_key(var->name()), lit->is_strict_mode(), t);
                 }
 
-                locals_index++;
+                vp_index++;
                 break;
             }
 
             case AnalyzedVariable::STORAGE_LOCAL_EXTRA:
             {
-                t = fun->last_block()->push_arr_put(extras_index, e, f);
+                t = fun->last_block()->push_arr_put(ep_index, e, f);
                 if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                 {
-                    t = fun->last_block()->push_mem_elm_ptr(e, extras_index);
+                    t = fun->last_block()->push_mem_elm_ptr(e, ep_index);
                     t = fun->last_block()->push_link_fun(get_prp_key(var->name()), lit->is_strict_mode(), t);
                 }
 
-                extras_index++;
+                ep_index++;
                 break;
             }
 
@@ -848,9 +817,8 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
     }
 
     // Parse variable declarations.
-    for (it_var = analyzed_fun->variables().begin(); it_var != analyzed_fun->variables().end(); ++it_var)
+    for (const AnalyzedVariable *var : analyzed_fun->variables())
     {
-        const AnalyzedVariable *var = *it_var;
         if (!var->is_declaration())
             continue;
 
@@ -867,29 +835,25 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         {
             case AnalyzedVariable::STORAGE_LOCAL:
             {
-                t = fun->last_block()->push_arr_put(locals_index, l,
-                                                    new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED));
                 if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                 {
-                    t = fun->last_block()->push_mem_elm_ptr(l, locals_index);
+                    t = fun->last_block()->push_mem_elm_ptr(vp, vp_index);
                     t = fun->last_block()->push_link_var(get_prp_key(var->name()), lit->is_strict_mode(), t);
                 }
 
-                locals_index++;
+                vp_index++;
                 break;
             }
 
             case AnalyzedVariable::STORAGE_LOCAL_EXTRA:
             {
-                t = fun->last_block()->push_arr_put(extras_index, e,
-                                                    new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED));
                 if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                 {
-                    t = fun->last_block()->push_mem_elm_ptr(e, extras_index);
+                    t = fun->last_block()->push_mem_elm_ptr(e, ep_index);
                     t = fun->last_block()->push_link_var(get_prp_key(var->name()), lit->is_strict_mode(), t);
                 }
 
-                extras_index++;
+                ep_index++;
                 break;
             }
 
@@ -924,11 +888,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
 
     // Make sure the function return something.
     if (fun->last_block()->empty() || !fun->last_block()->last_instr()->is_terminating())
-    {
-        fun->last_block()->push_mem_store(new (GC)ReturnConstant(),
-                                          new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED));
         fun->last_block()->push_trm_ret(new (GC)BooleanConstant(true));
-    }
 
     return fun;
 }
@@ -1616,22 +1576,24 @@ Value *Compiler::parse_prop_expr(parser::PropertyExpression *expr,
 Value *Compiler::parse_call_expr(parser::CallExpression *expr,
                                  Function *fun)
 {
-    // Result, temporary, function and arguments values.
-    Value *r = NULL, *t = NULL, *a = NULL;
+    // Result, temporary and function values.
+    Value *r = NULL, *t = NULL;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
-    a = fun->last_block()->push_mem_alloc(
-        new (GC)ArrayType(Type::value(), expr->arguments().size()));
-
-    size_t i = 0;
     parser::ExpressionVector::const_iterator it;
     for (it = expr->arguments().begin(); it != expr->arguments().end(); ++it)
     {
+        // FIXME: What to do if the second or later argument throws? The stack
+        //        must be restored somehow.
+        //
+        //        We only have to act if the exception is catched in this
+        //        function or the stack will be cleaned up when the frame is
+        //        popped.
         t = parse(*it, fun);
         t = expand_ref_get(t, fun, expt_block);
-        t = fun->last_block()->push_arr_put(i++, a, t);
+        t = fun->last_block()->push_stk_push(t);
     }
 
     if (parser::PropertyExpression *prop =
@@ -1659,7 +1621,7 @@ Value *Compiler::parse_call_expr(parser::CallExpression *expr,
 
             r = fun->last_block()->push_mem_alloc(Type::value());
             t = fun->last_block()->push_call_keyed(obj, get_prp_key(immediate_key_str),
-                                                   static_cast<int>(expr->arguments().size()), a, r);
+                                                   static_cast<int>(expr->arguments().size()), r);
             t = fun->last_block()->push_trm_br(t, done_block, expt_block);
         }
         else
@@ -1668,8 +1630,8 @@ Value *Compiler::parse_call_expr(parser::CallExpression *expr,
             Value *obj = expand_ref_get(parse(prop->obj(), fun), fun, expt_block);
 
             r = fun->last_block()->push_mem_alloc(Type::value());
-            t = fun->last_block()->push_call_keyed_slow(obj, key,
-                                                        static_cast<int>(expr->arguments().size()), a, r);
+            t = fun->last_block()->push_call_keyed_slow(
+                obj, key, static_cast<int>(expr->arguments().size()), r);
             t = fun->last_block()->push_trm_br(t, done_block, expt_block);
         }
     }
@@ -1681,12 +1643,12 @@ Value *Compiler::parse_call_expr(parser::CallExpression *expr,
         t = get_local(ident->value(), fun);
         if (t)
         {
-            t = fun->last_block()->push_call(t, static_cast<int>(expr->arguments().size()), a, r);
+            t = fun->last_block()->push_call(t, static_cast<int>(expr->arguments().size()), r);
         }
         else
         {
             t = fun->last_block()->push_call_named(get_prp_key(ident->value()),
-                                                   static_cast<int>(expr->arguments().size()), a, r);
+                                                   static_cast<int>(expr->arguments().size()), r);
         }
         t = fun->last_block()->push_trm_br(t, done_block, expt_block);
     }
@@ -1696,7 +1658,7 @@ Value *Compiler::parse_call_expr(parser::CallExpression *expr,
         assert(!f->type()->is_reference());
 
         r = fun->last_block()->push_mem_alloc(Type::value());
-        t = fun->last_block()->push_call(f, static_cast<int>(expr->arguments().size()), a, r);
+        t = fun->last_block()->push_call(f, static_cast<int>(expr->arguments().size()), r);
         t = fun->last_block()->push_trm_br(t, done_block, expt_block);
     }
 
@@ -1710,27 +1672,24 @@ Value *Compiler::parse_call_expr(parser::CallExpression *expr,
 Value *Compiler::parse_call_new_expr(parser::CallNewExpression *expr,
                                      Function *fun)
 {
-    // Result, temporary, function and arguments values.
-    Value *r = NULL, *t = NULL, *f = NULL, *a = NULL;
+    // Result, temporary, and function values.
+    Value *r = NULL, *t = NULL, *f = NULL;
 
     Block *done_block = new (GC)Block(NameGenerator::instance().next());
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
     f = expand_ref_get(parse(expr->expression(), fun), fun, expt_block);
-    a = fun->last_block()->push_mem_alloc(
-        new (GC)ArrayType(Type::value(), expr->arguments().size()));
 
-    size_t i = 0;
     parser::ExpressionVector::const_iterator it;
     for (it = expr->arguments().begin(); it != expr->arguments().end(); ++it)
     {
         t = parse(*it, fun);
         t = expand_ref_get(t, fun, expt_block);
-        t = fun->last_block()->push_arr_put(i++, a, t);
+        t = fun->last_block()->push_stk_push(t);
     }
 
     r = fun->last_block()->push_mem_alloc(Type::value());
-    t = fun->last_block()->push_call_new(f, static_cast<int>(expr->arguments().size()), a, r);
+    t = fun->last_block()->push_call_new(f, static_cast<int>(expr->arguments().size()), r);
     t = fun->last_block()->push_trm_br(t, done_block, expt_block);
 
     fun->push_block(expt_block);
@@ -1764,9 +1723,9 @@ Value *Compiler::parse_fun_expr(parser::FunctionExpression *expr,
 Value *Compiler::parse_this_lit(parser::ThisLiteral *lit,
                                 Function *fun)
 {
-    Value *r = NULL;
-    r = fun->last_block()->push_ctx_this();
-    return r;
+    Value *vp = new (GC)ValuePointer();
+
+    return new (GC)ArrayElementConstant(vp, -2);
 }
 
 Value *Compiler::parse_ident_lit(parser::IdentifierLiteral *lit,
@@ -2344,9 +2303,11 @@ Value *Compiler::parse_break_stmt(parser::BreakStatement *stmt,
 Value *Compiler::parse_ret_stmt(parser::ReturnStatement *stmt,
                                 Function *fun)
 {
+    Value *vp = new (GC)ValuePointer();
+
     Value *r = NULL, *t = NULL;
 
-    r = new (GC)ReturnConstant();
+    r = new (GC)ArrayElementConstant(vp, -1);   // FIXME: Use constant offset.
 
     if (stmt->has_expression())
     {
@@ -2365,9 +2326,6 @@ Value *Compiler::parse_ret_stmt(parser::ReturnStatement *stmt,
     }
     else
     {
-        t = fun->last_block()->push_mem_store(r,
-            new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED));
-
         unroll_for_return(fun);
         t = fun->last_block()->push_trm_ret(new (GC)BooleanConstant(true));
     }

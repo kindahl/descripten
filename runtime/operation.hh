@@ -20,11 +20,15 @@
 #include "api.hh"
 
 class EsContext;
-class EsFunction;
 class EsPropertyIterator;
 class EsValue;
 
 void data_reg_str(const String &str, uint32_t id);
+
+// FIXME: Rename to op_frm_alloc instead? Since we're allocating in the call frame.
+void op_stk_alloc(size_t count);
+void op_stk_free(size_t count);
+void op_stk_push(const EsValue &val);
 
 void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc);
 
@@ -37,16 +41,15 @@ void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc);
  * parameters using op_args_obj_link().
  *
  * @param [in] ctx Context to which the arguments object should be linked.
- * @param [in] callee Callee object to expose through <em>arguments.callee</em>
- *                    for non-strict contexts.
  * @param [in] argc Number of arguments.
- * @param [in] argv Argument vector.
+ * @param [in] fp Frame pointer.
+ * @param [in] vp Value pointer.
  * @return Pointer to arguments object wrapped in a value.
  *
  * @see op_args_obj_link()
  */
-EsValue op_args_obj_init(EsContext *ctx, EsFunction *callee,
-                         int argc, const EsValue argv[]);
+EsValue op_args_obj_init(EsContext *ctx, int argc,
+                         EsValue *fp, EsValue *vp);
 void op_args_obj_link(EsValue &args, int i, EsValue *val);
 
 /**
@@ -61,6 +64,9 @@ void op_args_obj_link(EsValue &args, int i, EsValue *val);
  *   }
  * }
  *
+ * All values allocated in extra bindings memory will be default initialized to
+ * undefined.
+ *
  * NOTE: A function scope may contain a combination of regular bindings and
  *       extra bindings.
  *
@@ -70,7 +76,7 @@ void op_args_obj_link(EsValue &args, int i, EsValue *val);
  *         memory for @a num_extra bindings.
  */
 EsValue *op_bnd_extra_init(EsContext *ctx, int num_extra);
-EsValue *op_bnd_extra_ptr(EsFunction *fun, int hops);
+EsValue *op_bnd_extra_ptr(int argc, EsValue *fp, EsValue *vp, int hops);
 
 // Context related functions.
 bool op_ctx_decl_fun(EsContext *ctx, bool is_eval, bool is_strict,
@@ -87,7 +93,6 @@ bool op_ctx_get(EsContext *ctx, uint64_t raw_key, EsValue &result,
 bool op_ctx_put(EsContext *ctx, uint64_t raw_key, const EsValue &val,
                 uint16_t cid);
 bool op_ctx_del(EsContext *ctx, uint64_t raw_key, EsValue &result);
-EsValue op_ctx_this(EsContext *ctx);
 void op_ctx_set_strict(EsContext *ctx, bool strict);
 bool op_ctx_enter_with(EsContext *ctx, const EsValue &val);
 bool op_ctx_enter_catch(EsContext *ctx, uint64_t raw_key);
@@ -119,15 +124,13 @@ bool op_prp_del(EsContext *ctx, EsValue &obj_val, const EsValue &key_val,
 bool op_prp_del(EsContext *ctx, EsValue &obj_val, uint64_t raw_key,
                 EsValue &result);
 
-bool op_call(const EsValue &fun, int argc, EsValue argv[], EsValue &result);
+bool op_call(const EsValue &fun, int argc, EsValue &result);
 bool op_call_keyed(const EsValue &obj_val, const EsValue &key_val, int argc,
-                   EsValue argv[], EsValue &result);
+                   EsValue &result);
 bool op_call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
-                   EsValue argv[], EsValue &result);
-bool op_call_named(uint64_t raw_key, int argc,
-                   EsValue argv[], EsValue &result);
-bool op_call_new(const EsValue &fun, int argc, EsValue argv[],
-                 EsValue &result);
+                   EsValue &result);
+bool op_call_named(uint64_t raw_key, int argc, EsValue &result);
+bool op_call_new(const EsValue &fun, int argc, EsValue &result);
 
 // Literal functions.
 EsValue op_new_obj();

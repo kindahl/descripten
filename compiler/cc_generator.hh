@@ -45,11 +45,13 @@ namespace ir {
     class MemoryAllocInstruction;
     class MemoryStoreInstruction;
     class MemoryElementPointerInstruction;
+    class StackAllocInstruction;
+    class StackFreeInstruction;
+    class StackPushInstruction;
     class ContextSetStrictInstruction;
     class ContextEnterCatchInstruction;
     class ContextEnterWithInstruction;
     class ContextLeaveInstruction;
-    class ContextThisInstruction;
     class ContextGetInstruction;
     class ContextPutInstruction;
     class ContextDeleteInstruction;
@@ -58,7 +60,6 @@ namespace ir {
     class ExceptionSetInstruction;
     class ExceptionClearInstruction;
     class InitArgumentsInstruction;
-    class InitArgumentsObjectInstruction;
     class Declaration;
     class Link;
     class PropertyDefineDataInstruction;
@@ -79,8 +80,6 @@ namespace ir {
     class EsBinaryInstruction;
     class EsUnaryInstruction;
     class ArrayElementConstant;
-    class CalleeConstant;
-    class ReturnConstant;
     class NullConstant;
     class BooleanConstant;
     class DoubleConstant;
@@ -156,11 +155,13 @@ private:
     virtual void visit_instr_mem_alloc(ir::MemoryAllocInstruction *instr) OVERRIDE;
     virtual void visit_instr_mem_store(ir::MemoryStoreInstruction *instr) OVERRIDE;
     virtual void visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *instr) OVERRIDE;
+    virtual void visit_instr_stk_alloc(ir::StackAllocInstruction *instr) OVERRIDE;
+    virtual void visit_instr_stk_free(ir::StackFreeInstruction *instr) OVERRIDE;
+    virtual void visit_instr_stk_push(ir::StackPushInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_enter_catch(ir::ContextEnterCatchInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_enter_with(ir::ContextEnterWithInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_this(ir::ContextThisInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_get(ir::ContextGetInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_put(ir::ContextPutInstruction *instr) OVERRIDE;
     virtual void visit_instr_ctx_del(ir::ContextDeleteInstruction *instr) OVERRIDE;
@@ -169,7 +170,6 @@ private:
     virtual void visit_instr_ex_set(ir::ExceptionSetInstruction *instr) OVERRIDE;
     virtual void visit_instr_ex_clear(ir::ExceptionClearInstruction *instr) OVERRIDE;
     virtual void visit_instr_init_args(ir::InitArgumentsInstruction *instr) OVERRIDE;
-    virtual void visit_instr_init_args_obj(ir::InitArgumentsObjectInstruction *instr) OVERRIDE;
     virtual void visit_instr_decl(ir::Declaration *instr) OVERRIDE;
     virtual void visit_instr_link(ir::Link *instr) OVERRIDE;
     virtual void visit_instr_prp_def_data(ir::PropertyDefineDataInstruction *instr) OVERRIDE;

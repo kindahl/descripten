@@ -54,12 +54,14 @@ class ReturnInstruction;
 class MemoryAllocInstruction;
 class MemoryStoreInstruction;
 class MemoryElementPointerInstruction;
+class StackAllocInstruction;
+class StackFreeInstruction;
+class StackPushInstruction;
 class ContextSetStrictInstruction;
 class ContextEnterCatchInstruction;
 class ContextEnterWithInstruction;
 class ContextLeaveInstruction;
 class ContextLookupInstruction;
-class ContextThisInstruction;
 class ContextGetInstruction;
 class ContextPutInstruction;
 class ContextDeleteInstruction;
@@ -90,8 +92,8 @@ class EsNewRegexInstruction;
 class EsBinaryInstruction;
 class EsUnaryInstruction;
 class ArrayElementConstant;
-class CalleeConstant;
-class ReturnConstant;
+class FramePointer;
+class ValuePointer;
 class NullConstant;
 class BooleanConstant;
 class DoubleConstant;
@@ -808,7 +810,7 @@ public:
      */
     Instruction *last_instr() const;
 
-    Value *push_args_obj_init(int argc);
+    Value *push_args_obj_init();
     Value *push_args_obj_link(Value *args, int index, Value *val);
     Value *push_arr_get(size_t index, Value *arr);
     Value *push_arr_put(size_t index, Value *arr, Value *val);
@@ -818,16 +820,17 @@ public:
     Value *push_bin_eq(Value *op1, Value *op2);
     Value *push_bnd_extra_init(int num_extra);
     Value *push_bnd_extra_ptr(int hops);
-    Value *push_call(Value *fun, int argc, Value *argv, Value *res);
-    Value *push_call_keyed(Value *obj, uint64_t key, int argc, Value *argv,
-                           Value *res);
-    Value *push_call_keyed_slow(Value *obj, Value *key, int argc, Value *argv,
-                                Value *res);
-    Value *push_call_named(uint64_t key, int argc, Value *argv, Value *res);
-    Value *push_call_new(Value *fun, int argc, Value *argv, Value *res);
+    Value *push_call(Value *fun, int argc, Value *res);
+    Value *push_call_keyed(Value *obj, uint64_t key, int argc, Value *res);
+    Value *push_call_keyed_slow(Value *obj, Value *key, int argc, Value *res);
+    Value *push_call_named(uint64_t key, int argc, Value *res);
+    Value *push_call_new(Value *fun, int argc, Value *res);
     Value *push_mem_alloc(const Type *type);
     Value *push_mem_store(Value *dst, Value *src);
     Value *push_mem_elm_ptr(Value *val, size_t index);
+    Value *push_stk_alloc(size_t count);
+    Value *push_stk_free(size_t count);
+    Value *push_stk_push(Value *val);
 #ifdef UNUSED
     Value *push_phi_2(Block *block1, Value *value1, Block *block2, Value *value2);
 #endif
@@ -860,7 +863,6 @@ public:
     Value *push_ctx_enter_catch(uint64_t key);
     Value *push_ctx_enter_with(Value *val);
     Value *push_ctx_leave();
-    Value *push_ctx_this();
     Value *push_ctx_get(uint64_t key, Value *res, uint16_t cid);
     Value *push_ctx_put(uint64_t key, Value *val, uint16_t cid);
     Value *push_ctx_del(uint64_t key, Value *res);
@@ -869,7 +871,6 @@ public:
     Value *push_ex_set(Value *val);
     Value *push_ex_clear();
     Value *push_init_args(Value *dst, int prmc);
-    Value *push_init_args_obj(int prmc, Value *prmv);
     Value *push_decl_var(uint64_t key, bool is_strict);
     Value *push_decl_fun(uint64_t key, bool is_strict, Value *fun);
     Value *push_decl_prm(uint64_t key, bool is_strict,
@@ -990,11 +991,13 @@ public:
         virtual void visit_instr_mem_alloc(MemoryAllocInstruction *instr) = 0;
         virtual void visit_instr_mem_store(MemoryStoreInstruction *instr) = 0;
         virtual void visit_instr_mem_elm_ptr(MemoryElementPointerInstruction *instr) = 0;
+        virtual void visit_instr_stk_alloc(StackAllocInstruction *instr) = 0;
+        virtual void visit_instr_stk_free(StackFreeInstruction *instr) = 0;
+        virtual void visit_instr_stk_push(StackPushInstruction *instr) = 0;
         virtual void visit_instr_ctx_set_strict(ContextSetStrictInstruction *instr) = 0;
         virtual void visit_instr_ctx_enter_catch(ContextEnterCatchInstruction *instr) = 0;
         virtual void visit_instr_ctx_enter_with(ContextEnterWithInstruction *instr) = 0;
         virtual void visit_instr_ctx_leave(ContextLeaveInstruction *instr) = 0;
-        virtual void visit_instr_ctx_this(ContextThisInstruction *instr) = 0;
         virtual void visit_instr_ctx_get(ContextGetInstruction *instr) = 0;
         virtual void visit_instr_ctx_put(ContextPutInstruction *instr) = 0;
         virtual void visit_instr_ctx_del(ContextDeleteInstruction *instr) = 0;
@@ -1003,7 +1006,6 @@ public:
         virtual void visit_instr_ex_set(ExceptionSetInstruction *instr) = 0;
         virtual void visit_instr_ex_clear(ExceptionClearInstruction *instr) = 0;
         virtual void visit_instr_init_args(InitArgumentsInstruction *instr) = 0;
-        virtual void visit_instr_init_args_obj(InitArgumentsObjectInstruction *instr) = 0;
         virtual void visit_instr_decl(Declaration *instr) = 0;
         virtual void visit_instr_link(Link *instr) = 0;
         virtual void visit_instr_prp_def_data(PropertyDefineDataInstruction *instr) = 0;
@@ -1047,11 +1049,8 @@ public:
  */
 class ArgumentsObjectInitInstruction : public Instruction
 {
-private:
-    int argc_;
-
 public:
-    ArgumentsObjectInitInstruction(int argc);
+    ArgumentsObjectInitInstruction();
 
     /**
      * @return Argument count.
@@ -1299,11 +1298,10 @@ private:
     Operation op_;
     Value *fun_;
     int argc_;
-    Value *argv_;
     Value *res_;
 
 public:
-    CallInstruction(Operation op, Value *fun, int argc, Value *argv, Value *res);
+    CallInstruction(Operation op, Value *fun, int argc, Value *res);
 
     /**
      * @return Type of call.
@@ -1319,11 +1317,6 @@ public:
      * @return Number of arguments.
      */
     int argc() const;
-
-    /**
-     * @return Function argument vector.
-     */
-    Value *argv() const;
 
     /**
      * @return Function result.
@@ -1353,11 +1346,10 @@ private:
     Value *obj_;
     uint64_t key_;
     int argc_;
-    Value *argv_;
     Value *res_;
 
 public:
-    CallKeyedInstruction(Value *obj, uint64_t key, int argc, Value *argv,
+    CallKeyedInstruction(Value *obj, uint64_t key, int argc,
                          Value *res);
 
     /**
@@ -1374,11 +1366,6 @@ public:
      * @return Number of arguments.
      */
     int argc() const;
-
-    /**
-     * @return Function argument vector.
-     */
-    Value *argv() const;
 
     /**
      * @return Function result.
@@ -1408,12 +1395,11 @@ private:
     Value *obj_;
     Value *key_;
     int argc_;
-    Value *argv_;
     Value *res_;
 
 public:
     CallKeyedSlowInstruction(Value *obj, Value *key, int argc,
-                             Value *argv, Value *res);
+                             Value *res);
 
     /**
      * @return Object.
@@ -1429,11 +1415,6 @@ public:
      * @return Number of arguments.
      */
     int argc() const;
-
-    /**
-     * @return Function argument vector.
-     */
-    Value *argv() const;
 
     /**
      * @return Function result.
@@ -1462,11 +1443,10 @@ class CallNamedInstruction : public Instruction
 private:
     uint64_t key_;
     int argc_;
-    Value *argv_;
     Value *res_;
 
 public:
-    CallNamedInstruction(uint64_t key, int argc, Value *argv, Value *res);
+    CallNamedInstruction(uint64_t key, int argc, Value *res);
 
     /**
      * @return Function to call.
@@ -1477,11 +1457,6 @@ public:
      * @return Number of arguments.
      */
     int argc() const;
-
-    /**
-     * @return Function argument vector.
-     */
-    Value *argv() const;
 
     /**
      * @return Function result.
@@ -1816,7 +1791,7 @@ public:
     Value *value() const;
 
     /**
-     * @return ELement index.
+     * @return Element index.
      */
     size_t index() const;
 
@@ -1831,6 +1806,96 @@ public:
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_mem_elm_ptr(this);
+    }
+};
+
+/**
+ * @brief Instruction for allocating memory on the stack.
+ */
+class StackAllocInstruction : public Instruction
+{
+private:
+    size_t count_;
+
+public:
+    StackAllocInstruction(size_t count);
+
+    /**
+     * @return Number of values to allocate.
+     */
+    size_t count() const;
+
+    /**
+     * @copydoc Value::type
+     */
+    virtual const Type *type() const OVERRIDE;
+
+    /**
+     * @copydoc Instruction::accept
+     */
+    virtual void accept(Visitor *visitor) OVERRIDE
+    {
+        visitor->visit_instr_stk_alloc(this);
+    }
+};
+
+/**
+ * @brief Instruction for freeing memory from the stack.
+ */
+class StackFreeInstruction : public Instruction
+{
+private:
+    size_t count_;
+
+public:
+    StackFreeInstruction(size_t count);
+
+    /**
+     * @return Number of values to free.
+     */
+    size_t count() const;
+
+    /**
+     * @copydoc Value::type
+     */
+    virtual const Type *type() const OVERRIDE;
+
+    /**
+     * @copydoc Instruction::accept
+     */
+    virtual void accept(Visitor *visitor) OVERRIDE
+    {
+        visitor->visit_instr_stk_free(this);
+    }
+};
+
+/**
+ * @brief Instruction for pushing an element to the stack.
+ */
+class StackPushInstruction : public Instruction
+{
+private:
+    Value *val_;
+
+public:
+    StackPushInstruction(Value *val);
+
+    /**
+     * @return Value.
+     */
+    Value *value() const;
+
+    /**
+     * @copydoc Value::type
+     */
+    virtual const Type *type() const OVERRIDE;
+
+    /**
+     * @copydoc Instruction::accept
+     */
+    virtual void accept(Visitor *visitor) OVERRIDE
+    {
+        visitor->visit_instr_stk_push(this);
     }
 };
 
@@ -2010,26 +2075,6 @@ public:
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_leave(this);
-    }
-};
-
-/**
- * @brief Instruction for accessing the 'this' value.
- */
-class ContextThisInstruction : public Instruction
-{
-public:
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
-    virtual void accept(Visitor *visitor) OVERRIDE
-    {
-        visitor->visit_instr_ctx_this(this);
     }
 };
 
@@ -2292,42 +2337,6 @@ public:
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_init_args(this);
-    }
-};
-
-/**
- * @brief Instruction for creating and initializing the arguments object.
- */
-class InitArgumentsObjectInstruction : public Instruction
-{
-private:
-    int prmc_;
-    Value *prmv_;
-
-public:
-    InitArgumentsObjectInstruction(int prmc, Value *prmv);
-
-    /**
-     * @return Number of parameters that the function expects.
-     */
-    int parameter_count() const;
-
-    /**
-     * @return Parameter array.
-     */
-    Value *parameter_array() const;
-
-    /**
-    * @copydoc Value::type
-    */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-    * @copydoc Instruction::accept
-    */
-    virtual void accept(Visitor *visitor) OVERRIDE
-    {
-        visitor->visit_instr_init_args_obj(this);
     }
 };
 
@@ -3212,8 +3221,8 @@ public:
         void visit(Constant *constant) { constant->accept(this); }
 
         virtual void visit_const_arr_elm(ArrayElementConstant *instr) = 0;
-        virtual void visit_const_callee(CalleeConstant *instr) = 0;
-        virtual void visit_const_ret(ReturnConstant *instr) = 0;
+        virtual void visit_const_fp(FramePointer *instr) = 0;
+        virtual void visit_const_vp(ValuePointer *instr) = 0;
         virtual void visit_const_null(NullConstant *instr) = 0;
         virtual void visit_const_bool(BooleanConstant *instr) = 0;
         virtual void visit_const_double(DoubleConstant *instr) = 0;
@@ -3244,13 +3253,13 @@ class ArrayElementConstant : public Constant
 {
 private:
     Value *array_;
-    size_t index_;
+    int index_;     ///< Array index, may be negative.
 
 public:
     /**
      * FIXME:
      */
-    ArrayElementConstant(Value *array, size_t index)
+    ArrayElementConstant(Value *array, int index)
         : array_(array)
         , index_(index)
     {
@@ -3266,7 +3275,7 @@ public:
     /**
      * @return Array index.
      */
-    size_t index() const { return index_; }
+    int index() const { return index_; }
 
     /**
      * @copydoc Value::type
@@ -3285,43 +3294,37 @@ public:
     }
 };
 
-/**
- * @brief Callee value.
- */
-class CalleeConstant : public Constant
+class FramePointer : public Constant
 {
 public:
     /**
      * @copydoc Value::type
      */
-    virtual const Type *type() const OVERRIDE { return Type::value(); }
+    virtual const Type *type() const OVERRIDE { return new (GC)PointerType(Type::value()); }
 
     /**
      * @copydoc Constant::accept
      */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
-        visitor->visit_const_callee(this);
+        visitor->visit_const_fp(this);
     }
 };
 
-/**
- * @brief Return value.
- */
-class ReturnConstant : public Constant
+class ValuePointer : public Constant
 {
 public:
     /**
      * @copydoc Value::type
      */
-    virtual const Type *type() const OVERRIDE { return Type::value(); }
+    virtual const Type *type() const OVERRIDE { return new (GC)PointerType(Type::value()); }
 
     /**
      * @copydoc Constant::accept
      */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
-        visitor->visit_const_ret(this);
+        visitor->visit_const_vp(this);
     }
 };
 

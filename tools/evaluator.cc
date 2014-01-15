@@ -7,6 +7,8 @@
 #include "parser/utility.hh"
 #include "runtime/context.hh"
 #include "runtime/eval.hh"
+#include "runtime/global.hh"
+#include "runtime/frame.hh"
 #include "runtime/runtime.hh"
 
 using parser::FunctionLiteral;
@@ -25,8 +27,7 @@ int main (int argc, const char *argv[])
     // Initialize garbage collector.
     if (!runtime::init(data))
     {
-        std::cerr << "error: failed to initialize runtime." << std::endl;
-        return 1;
+        std::cerr << "error: failed to initialize runtime." << std::endl; return 1;
     }
 
     if (argc < 2)
@@ -92,9 +93,10 @@ int main (int argc, const char *argv[])
     EsContextStack::instance().push_global(prog->is_strict_mode());
     EsContext *ctx = EsContextStack::instance().top();
 
-    EsValue result;
-    Evaluator eval(prog, Evaluator::TYPE_PROGRAM);
-    if (!eval.exec(ctx, NULL, 0, NULL, result))
+    EsCallFrame eval_frame = EsCallFrame::push_global();
+
+    Evaluator eval(prog, Evaluator::TYPE_PROGRAM, eval_frame);
+    if (!eval.exec(ctx))
     {
         assert(EsContextStack::instance().top()->has_pending_exception());
         EsValue e = EsContextStack::instance().top()->get_pending_exception();

@@ -43,14 +43,14 @@ public:
         res_ = out.str();
     }
 
-    void visit_const_callee(ir::CalleeConstant *instr)
+    void visit_const_fp(ir::FramePointer *instr)
     {
-        res_ = "EsValue::from_obj((EsObject *)callee)";
+        res_ = "fp";
     }
 
-    void visit_const_ret(ir::ReturnConstant *instr)
+    void visit_const_vp(ir::ValuePointer *instr)
     {
-        res_ = "result";
+        res_ = "vp";
     }
 
     void visit_const_null(ir::NullConstant *instr)
@@ -275,10 +275,10 @@ void CcGenerator::visit_module(ir::Module *module)
 void CcGenerator::visit_fun(ir::Function *fun)
 {
     decl_out_->stream() << "bool " << fun->name()
-                        << "(EsContext *ctx, EsFunction *callee, int argc, EsValue argv[], EsValue &result);\n";
+                        << "(EsContext *ctx, int argc, EsValue *fp, EsValue *vp);\n";
 
     main_out_->stream() << "bool " << fun->name()
-                        << "(EsContext *ctx, EsFunction *callee, int argc, EsValue argv[], EsValue &result)\n";
+                        << "(EsContext *ctx, int argc, EsValue *fp, EsValue *vp)\n";
 
     main_out_->stream() << "{" << "\n";
 
@@ -322,7 +322,7 @@ void CcGenerator::visit_block(ir::Block *block)
 
 void CcGenerator::visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_args_obj_init(ctx, callee, argc, argv)"
+    out() << value(instr) << " = " << "op_args_obj_init(ctx, argc, fp, vp)"
           << ";\n";
 }
 
@@ -388,7 +388,7 @@ void CcGenerator::visit_instr_bnd_extra_init(ir::BindExtraInitInstruction *instr
 
 void CcGenerator::visit_instr_bnd_extra_ptr(ir::BindExtraPtrInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_bnd_extra_ptr(callee, "
+    out() << value(instr) << " = " << "op_bnd_extra_ptr(argc, fp, vp, "
           << instr->hops() << ")" << ";\n";
 }
 
@@ -410,7 +410,7 @@ void CcGenerator::visit_instr_call(ir::CallInstruction *instr)
 
     out() << value(instr) << " = "<< kind
           << "(" << value(instr->function()) << ", "
-                 << instr->argc() << ", " << value(instr->argv()) << ", "
+                 << instr->argc() << ", "
                  << value(instr->result()) << ");\n";
 }
 
@@ -419,7 +419,7 @@ void CcGenerator::visit_instr_call_keyed(ir::CallKeyedInstruction *instr)
     out() << value(instr) << " = op_call_keyed("
           << value(instr->object()) << ", "
           << uint64(instr->key()) << ", "
-          << instr->argc() << ", " << value(instr->argv()) << ", "
+          << instr->argc() << ", "
           << value(instr->result()) << ");\n";
 }
 
@@ -428,7 +428,7 @@ void CcGenerator::visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *inst
     out() << value(instr) << " = op_call_keyed("
           << value(instr->object()) << ", "
           << value(instr->key()) << ", "
-          << instr->argc() << ", " << value(instr->argv()) << ", "
+          << instr->argc() << ", "
           << value(instr->result()) << ");\n";
 }
 
@@ -436,7 +436,7 @@ void CcGenerator::visit_instr_call_named(ir::CallNamedInstruction *instr)
 {
     out() << value(instr) << " = op_call_named("
           << uint64(instr->key()) << ", "
-          << instr->argc() << ", " << value(instr->argv()) << ", "
+          << instr->argc() << ", "
           << value(instr->result()) << ");\n";
 }
 
@@ -557,6 +557,21 @@ void CcGenerator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *i
           << "[" << instr->index() << "];\n";
 }
 
+void CcGenerator::visit_instr_stk_alloc(ir::StackAllocInstruction *instr)
+{
+    out() << "op_stk_alloc(" << instr->count() << ");\n";
+}
+
+void CcGenerator::visit_instr_stk_free(ir::StackFreeInstruction *instr)
+{
+    out() << "op_stk_free(" << instr->count() << ");\n";
+}
+
+void CcGenerator::visit_instr_stk_push(ir::StackPushInstruction *instr)
+{
+    out() << "op_stk_push(" << value(instr->value()) << ");\n";
+}
+
 void CcGenerator::visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *instr)
 {
     out() << "op_ctx_set_strict(ctx, " << boolean(instr->strict()) << ");\n";
@@ -580,12 +595,6 @@ void CcGenerator::visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr)
 {
     out() << "op_ctx_leave();\n";
     out() << "ctx = op_ctx_running();\n";
-}
-
-void CcGenerator::visit_instr_ctx_this(ir::ContextThisInstruction *instr)
-{
-    // FIXME: Inline?
-    out() << value(instr) << " = " << "op_ctx_this(ctx);\n";
 }
 
 void CcGenerator::visit_instr_ctx_get(ir::ContextGetInstruction *instr)
@@ -631,15 +640,8 @@ void CcGenerator::visit_instr_ex_clear(ir::ExceptionClearInstruction *instr)
 
 void CcGenerator::visit_instr_init_args(ir::InitArgumentsInstruction *instr)
 {
-    out() << "op_init_args(" << value(instr->destination()) << ", argc, argv, "
+    out() << "op_init_args(" << value(instr->destination()) << ", argc, fp, "
           << instr->parameter_count() << ");" << "\n";
-}
-
-void CcGenerator::visit_instr_init_args_obj(ir::InitArgumentsObjectInstruction *instr)
-{
-    out() << "op_init_args_obj(ctx, callee, argc, argv, "
-          << instr->parameter_count() << ", "
-          << value(instr->parameter_array()) << ");" << "\n";
 }
 
 void CcGenerator::visit_instr_decl(ir::Declaration *instr)

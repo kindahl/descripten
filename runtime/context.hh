@@ -46,12 +46,6 @@ private:
 
     EsLexicalEnvironment *lex_env_;     ///< [[LexicalEnvironment]]
     EsLexicalEnvironment *var_env_;     ///< [[VariableEnvironment]]
-    EsValue this_binding_;              ///< [[ThisBinding]]
-
-    /** Remember the original this value. Built-in functions are allowed to
-     * access the original this value which has not been subjected to the
-     * sanitation process in ECMA-262 10.4.3. */
-    EsValue this_val_;
     
     /** If set to something other than 'nothing' this member flags that an
      * exception has been thrown and not catched. */
@@ -61,14 +55,7 @@ public:
     EsContext(EsContext *outer, Type type,
               bool strict,
               EsLexicalEnvironment *lex_env,
-              EsLexicalEnvironment *var_env,
-              const EsValue &this_binding);
-    EsContext(EsContext *outer, Type type,
-              bool strict,
-              EsLexicalEnvironment *lex_env,
-              EsLexicalEnvironment *var_env,
-              const EsValue &this_binding,
-              const EsValue &this_val);
+              EsLexicalEnvironment *var_env);
     EsContext(EsContext &rhs);
     
     /**
@@ -95,19 +82,6 @@ public:
      */
     EsLexicalEnvironment *var_env();
     
-    /**
-     * @return Value associated with the 'this' keyword within ECMAScript code
-     *         associated with this execution context.
-     */
-    EsValue this_binding();
-
-    /**
-     * @return Original this value supplied when creating the context. This
-     *         value has not been subjected to the process described in
-     *         ECMA-262 10.4.3.
-     */
-    EsValue this_value();
-     
     /**
      * @return true if the context is in strict mode and false otherwise.
      */
@@ -164,9 +138,7 @@ public:
 class EsFunctionContext
 {
 public:
-    EsFunctionContext(bool strict,
-                      EsLexicalEnvironment *scope,
-                      const EsValue &this_val);
+    EsFunctionContext(bool strict, EsLexicalEnvironment *scope);
     ~EsFunctionContext();
 
     operator EsContext *();
@@ -175,7 +147,8 @@ public:
 class EsContextStack
 {
 private:
-    typedef std::vector<EsContext *, gc_allocator<EsContext *> > EsContextVector;
+    typedef std::vector<EsContext *,
+                        gc_allocator<EsContext *> > EsContextVector;
     EsContextVector stack_;
 
     EsContextStack();
@@ -189,10 +162,8 @@ public:
 
     void push_global(bool strict);
     void push_eval(bool strict);
-    void push_fun(bool strict, EsLexicalEnvironment *scope,
-                  const EsValue &this_val);
-    void push_catch(EsPropertyKey key,
-                    const EsValue &c);
+    void push_fun(bool strict, EsLexicalEnvironment *scope);
+    void push_catch(EsPropertyKey key, const EsValue &c);
     bool push_withT(const EsValue &val);
 
     void pop();

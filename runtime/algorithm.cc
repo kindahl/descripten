@@ -24,6 +24,7 @@
 #include "algorithm.hh"
 #include "conversion.hh"
 #include "error.hh"
+#include "frame.hh"
 #include "object.hh"
 #include "property.hh"
 #include "property_key.hh"
@@ -320,15 +321,16 @@ namespace algorithm
 
         if (comparefn)
         {
-            EsValue comparefn_args[2];
-            comparefn_args[0] = x;
-            comparefn_args[1] = y;
+            EsCallFrame frame = EsCallFrame::push_function(
+                2, comparefn, EsValue::undefined);
+            frame.fp()[0] = x;
+            frame.fp()[1] = y;
 
-            EsValue comparefn_res;
-            if (!comparefn->callT(EsValue::undefined, 2, comparefn_args, comparefn_res))
+            if (!comparefn->callT(frame))
                 return false;
-            if (!comparefn_res.to_number(result))
+            if (!frame.result().to_number(result))
                 return false;
+
             return true;
         }
 
@@ -411,10 +413,15 @@ namespace algorithm
             }
         }
 
-        EsValue reviver_args[2];
-        reviver_args[0].set_str(name);
-        reviver_args[1] = val;
-        return reviver->callT(EsValue::from_obj(holder), 2, reviver_args, result);
+        EsCallFrame frame = EsCallFrame::push_function(
+            2, reviver, EsValue::from_obj(holder));
+        frame.fp()[0].set_str(name);
+        frame.fp()[1] = val;
+        if (!reviver->callT(frame))
+            return false;
+
+        result = frame.result();
+        return true;
     }
 
     bool json_str(const String &key, EsObject *holder, JsonState &state,
@@ -434,22 +441,28 @@ namespace algorithm
 
             if (to_json.is_callable())
             {
-                EsValue to_json_args[1];
-                to_json_args[0].set_str(key);
+                EsCallFrame frame = EsCallFrame::push_function(
+                    1, to_json.as_function(), val);
+                frame.fp()[0].set_str(key);
 
-                if (!to_json.as_function()->callT(val, 1, to_json_args, val))
+                if (!to_json.as_function()->callT(frame))
                     return false;
+
+                val = frame.result();
             }
         }
 
         if (state.replacer_fun != NULL)    // NOTE: Using NULL as undefined.
         {
-            EsValue replacer_args[2];
-            replacer_args[0].set_str(key);
-            replacer_args[1] = val;
+            EsCallFrame frame = EsCallFrame::push_function(
+                2, state.replacer_fun, EsValue::from_obj(holder));
+            frame.fp()[0].set_str(key);
+            frame.fp()[1] = val;
 
-            if (!state.replacer_fun->callT(EsValue::from_obj(holder), 2, replacer_args, val))
+            if (!state.replacer_fun->callT(frame))
                 return false;
+
+            val = frame.result();
         }
 
         if (val.is_object())

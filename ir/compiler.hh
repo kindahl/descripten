@@ -27,7 +27,7 @@
 #include "analyzer.hh"
 #include "ir.hh"
 
-/** Name if the function representing the global program. */
+/** Name of the function representing the global program. */
 #define RUNTIME_GLOBAL_FUNCTION_NAME    "_global_main"      // FIXME: Should move to config header.
 
 namespace ir {

@@ -225,7 +225,6 @@ void Allocator::visit_instr_call(ir::CallInstruction *instr)
 {
     touch(instr);
     touch(instr->function());
-    touch(instr->argv());
     touch(instr->result());
 
     assert(cur_fun_);
@@ -236,7 +235,6 @@ void Allocator::visit_instr_call_keyed(ir::CallKeyedInstruction *instr)
 {
     touch(instr);
     touch(instr->object());
-    touch(instr->argv());
     touch(instr->result());
 
     assert(cur_fun_);
@@ -248,7 +246,6 @@ void Allocator::visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *instr)
     touch(instr);
     touch(instr->object());
     touch(instr->key());
-    touch(instr->argv());
     touch(instr->result());
 
     assert(cur_fun_);
@@ -258,7 +255,6 @@ void Allocator::visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *instr)
 void Allocator::visit_instr_call_named(ir::CallNamedInstruction *instr)
 {
     touch(instr);
-    touch(instr->argv());
     touch(instr->result());
 
     assert(cur_fun_);
@@ -347,6 +343,26 @@ void Allocator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *ins
     cur_fun_->cur_pos_++;
 }
 
+void Allocator::visit_instr_stk_alloc(ir::StackAllocInstruction *instr)
+{
+    assert(cur_fun_);
+    cur_fun_->cur_pos_++;
+}
+
+void Allocator::visit_instr_stk_free(ir::StackFreeInstruction *instr)
+{
+    assert(cur_fun_);
+    cur_fun_->cur_pos_++;
+}
+
+void Allocator::visit_instr_stk_push(ir::StackPushInstruction *instr)
+{
+    touch(instr->value());
+
+    assert(cur_fun_);
+    cur_fun_->cur_pos_++;
+}
+
 void Allocator::visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *instr)
 {
     assert(cur_fun_);
@@ -372,14 +388,6 @@ void Allocator::visit_instr_ctx_enter_with(ir::ContextEnterWithInstruction *inst
 
 void Allocator::visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr)
 {
-    assert(cur_fun_);
-    cur_fun_->cur_pos_++;
-}
-
-void Allocator::visit_instr_ctx_this(ir::ContextThisInstruction *instr)
-{
-    touch(instr);
-
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
 }
@@ -444,14 +452,6 @@ void Allocator::visit_instr_ex_clear(ir::ExceptionClearInstruction *instr)
 void Allocator::visit_instr_init_args(ir::InitArgumentsInstruction *instr)
 {
     touch(instr->destination());
-
-    assert(cur_fun_);
-    cur_fun_->cur_pos_++;
-}
-
-void Allocator::visit_instr_init_args_obj(ir::InitArgumentsObjectInstruction *instr)
-{
-    touch(instr->parameter_array());
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;

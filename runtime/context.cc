@@ -31,32 +31,12 @@
 EsContext::EsContext(EsContext *outer, Type type,
                      bool strict,
                      EsLexicalEnvironment *lex_env,
-                     EsLexicalEnvironment *var_env,
-                     const EsValue &this_binding)
+                     EsLexicalEnvironment *var_env)
     : outer_(outer)
     , type_(type)
     , strict_(strict)
     , lex_env_(lex_env)
     , var_env_(var_env)
-    , this_binding_(this_binding)
-    , this_val_(this_binding)
-    , pending_exception_(EsValue::nothing)
-{
-}
-
-EsContext::EsContext(EsContext *outer, Type type,
-                     bool strict,
-                     EsLexicalEnvironment *lex_env,
-                     EsLexicalEnvironment *var_env,
-                     const EsValue &this_binding,
-                     const EsValue &this_val)
-    : outer_(outer)
-    , type_(type)
-    , strict_(strict)
-    , lex_env_(lex_env)
-    , var_env_(var_env)
-    , this_binding_(this_binding)
-    , this_val_(this_val)
     , pending_exception_(EsValue::nothing)
 {
 }
@@ -69,8 +49,6 @@ EsContext::EsContext(EsContext &rhs)
     strict_ = rhs.strict_;
     lex_env_  = rhs.lex_env_;
     var_env_ = rhs.var_env_;
-    this_binding_ = rhs.this_binding_;
-    this_val_ = rhs.this_val_;
     pending_exception_ = rhs.pending_exception_;
 }
 
@@ -102,16 +80,6 @@ EsLexicalEnvironment *EsContext::lex_env()
 EsLexicalEnvironment *EsContext::var_env()
 {
     return var_env_;
-}
-
-EsValue EsContext::this_binding()
-{
-    return this_binding_;
-}
-
-EsValue EsContext::this_value()
-{
-    return this_val_;
 }
 
 bool EsContext::is_strict() const
@@ -175,10 +143,9 @@ EsEvalContext::operator EsContext *()
 }
 
 EsFunctionContext::EsFunctionContext(bool strict,
-                                     EsLexicalEnvironment *scope,
-                                     const EsValue &this_val)
+                                     EsLexicalEnvironment *scope)
 {
-    EsContextStack::instance().push_fun(strict, scope, this_val);
+    EsContextStack::instance().push_fun(strict, scope);
 }
 
 EsFunctionContext::~EsFunctionContext()
@@ -209,8 +176,7 @@ EsContext *EsContextStack::top()
 void EsContextStack::push_global(bool strict)
 {
     stack_.push_back(new (GC)EsContext(top(), EsContext::ES_GLOBAL, strict,
-                                       es_global_env(), es_global_env(),
-                                       EsValue::from_obj(es_global_obj())));
+                                       es_global_env(), es_global_env()));
 }
 
 void EsContextStack::push_eval(bool strict)
@@ -224,7 +190,7 @@ void EsContextStack::push_eval(bool strict)
         EsLexicalEnvironment *strict_var_env = es_new_decl_env(top()->lex_env());
 
         stack_.push_back(new (GC)EsContext(top(), EsContext::ES_EVAL, strict,
-                                           strict_var_env, strict_var_env, top()->this_binding()));
+                                           strict_var_env, strict_var_env));
     }
     else
     {
@@ -232,28 +198,16 @@ void EsContextStack::push_eval(bool strict)
     }
 }
 
-void EsContextStack::push_fun(bool strict, EsLexicalEnvironment *scope,
-                              const EsValue &this_val)
+void EsContextStack::push_fun(bool strict, EsLexicalEnvironment *scope)
 {
     // 10.4.3
-    EsValue this_binding;
-    if (strict)
-        this_binding = this_val;
-    else if (this_val.is_null() || this_val.is_undefined())
-        this_binding = EsValue::from_obj(es_global_obj());
-    else if (!this_val.is_object())
-        this_binding = EsValue::from_obj(this_val.to_objectT());    // Will never throw given the if expression above this one.
-    else
-        this_binding = this_val;
-
     EsLexicalEnvironment *local_env = es_new_decl_env(scope);
 
     stack_.push_back(new (GC)EsContext(top(), EsContext::ES_FUNCTION, strict,
-                                       local_env, local_env, this_binding, this_val));
+                                       local_env, local_env));
 }
 
-void EsContextStack::push_catch(EsPropertyKey key,
-                                const EsValue &c)
+void EsContextStack::push_catch(EsPropertyKey key, const EsValue &c)
 {
     EsLexicalEnvironment *catch_env = es_new_decl_env(top()->lex_env());
 
@@ -265,7 +219,7 @@ void EsContextStack::push_catch(EsPropertyKey key,
     env->set_mutable_binding(key, c);
 
     stack_.push_back(new (GC)EsContext(top(), EsContext::ES_CATCH, top()->is_strict(),
-                                       catch_env, catch_env, top()->this_binding()));
+                                       catch_env, catch_env));
 }
 
 bool EsContextStack::push_withT(const EsValue &val)
@@ -278,7 +232,7 @@ bool EsContextStack::push_withT(const EsValue &val)
     EsLexicalEnvironment *new_env = es_new_obj_env(obj, top()->lex_env(), true);
 
     stack_.push_back(new (GC)EsContext(top(), EsContext::ES_WITH, top()->is_strict(),
-                                       new_env, top()->var_env(), top()->this_binding()));
+                                       new_env, top()->var_env()));
 
     return true;
 }

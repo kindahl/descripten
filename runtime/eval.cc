@@ -23,6 +23,7 @@
 #include "conversion.hh"
 #include "error.hh"
 #include "eval.hh"
+#include "frame.hh"
 #include "operation.hh"
 #include "property.hh"
 #include "utility.hh"
@@ -74,9 +75,10 @@ using parser::WithStatement;
 
 using parser::ValueVisitor;
 
-Evaluator::Evaluator(FunctionLiteral *code, Type type)
+Evaluator::Evaluator(FunctionLiteral *code, Type type, EsCallFrame &frame)
     : code_(code)
     , type_(type)
+    , frame_(frame)
 {
     assert(code_);
 }
@@ -924,8 +926,6 @@ Completion Evaluator::parse_prop_expr(PropertyExpression *expr)
 
 Completion Evaluator::parse_call_expr(CallExpression *expr)
 {
-    EsValueVector args;
-    
     ExpressionVector::const_iterator it;
     for (it = expr->arguments().begin(); it != expr->arguments().end(); ++it)
     {
@@ -938,8 +938,11 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
             return Completion(Completion::TYPE_THROW,
                               EsContextStack::instance().top()->get_pending_exception());
 
-        args.push_back(val);
+        // FIXME: Handle exceptions properly.
+        op_stk_push(val);
     }
+
+    int argc = static_cast<int>(expr->arguments().size());
 
     EsValue r;
     bool success = false;
@@ -971,12 +974,14 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
             return Completion(Completion::TYPE_THROW,
                               EsContextStack::instance().top()->get_pending_exception());
 
-        success = op_call_keyed(obj_val, key_val, static_cast<int>(args.size()), &args[0], r);
+        success = op_call_keyed(obj_val, key_val, argc, r);
     }
     else if (IdentifierLiteral * ident =
         dynamic_cast<IdentifierLiteral *>(expr->expression()))
     {
-        success = op_call_named(EsPropertyKey::from_str(ident->value()).as_raw(), static_cast<int>(args.size()), &args[0], r);
+        success =
+            op_call_named(EsPropertyKey::from_str(ident->value()).as_raw(),
+                          argc, r);
     }
     else
     {
@@ -987,7 +992,7 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
         EsReferenceOrValue fun = expr_res.value();
 
         assert(!fun.is_reference());
-        success = op_call(fun.value(), static_cast<int>(args.size()), &args[0], r);
+        success = op_call(fun.value(), argc, r);
     }
 
     return Completion(success ? Completion::TYPE_NORMAL : Completion::TYPE_THROW,
@@ -1001,7 +1006,6 @@ Completion Evaluator::parse_call_new_expr(CallNewExpression *expr)
         return expr_res;
 
     EsReferenceOrValue fun_ref = expr_res.value();
-    EsValueVector args;
 
     ExpressionVector::const_iterator it;
     for (it = expr->arguments().begin(); it != expr->arguments().end(); ++it)
@@ -1015,7 +1019,8 @@ Completion Evaluator::parse_call_new_expr(CallNewExpression *expr)
             return Completion(Completion::TYPE_THROW,
                               EsContextStack::instance().top()->get_pending_exception());
 
-        args.push_back(val);
+        // FIXME: Handle exceptions properly.
+        op_stk_push(val);
     }
 
     EsValue fun;
@@ -1023,8 +1028,10 @@ Completion Evaluator::parse_call_new_expr(CallNewExpression *expr)
         return Completion(Completion::TYPE_THROW,
                           EsContextStack::instance().top()->get_pending_exception());
 
+    int argc = static_cast<int>(expr->arguments().size());
+
     EsValue r;
-    bool success = op_call_new(fun, static_cast<int>(args.size()), &args[0], r);
+    bool success = op_call_new(fun, argc, r);
     return Completion(success ? Completion::TYPE_NORMAL : Completion::TYPE_THROW,
                       success ? r : EsContextStack::instance().top()->get_pending_exception());
 }
@@ -1044,8 +1051,7 @@ Completion Evaluator::parse_fun_expr(FunctionExpression *expr)
 
 Completion Evaluator::parse_this_lit(ThisLiteral *lit)
 {
-    EsReferenceOrValue t = op_ctx_this(EsContextStack::instance().top());
-    return Completion(Completion::TYPE_NORMAL, t);
+    return Completion(Completion::TYPE_NORMAL, frame_.this_value());
 }
 
 Completion Evaluator::parse_ident_lit(IdentifierLiteral *lit)
@@ -1808,16 +1814,16 @@ void Evaluator::parse_fun_decls(const DeclarationVector &decls)
     }
 }
 
-bool Evaluator::exec(EsContext *ctx, EsFunction *callee,
-                     int argc, EsValue argv[], EsValue &result)
+bool Evaluator::exec(EsContext *ctx)
 {
     AutoScope scope(this, SCOPE_FUNCTION);
+
+    int argc = frame_.argc();
+    EsValue *argv = frame_.fp();
 
     // Function prologue: arguments object and parameters.
     if (type_ == TYPE_FUNCTION && code_->needs_args_obj())
     {
-        assert(callee);
-
         // If we have an arguments object we must allocate the arguments vector
         // on the heap since the arguments object might outlive the function
         // context. As a result we cannot let the arguments object reference
@@ -1827,7 +1833,7 @@ bool Evaluator::exec(EsContext *ctx, EsFunction *callee,
 
         String *prmv = code_->parameters().empty() ? NULL :
             const_cast<String *>(&code_->parameters()[0]);
-        EsValue args = op_args_obj_init(ctx, callee, argc, argv);
+        EsValue args = op_args_obj_init(ctx, argc, frame_.fp(), frame_.vp());
         assert(args.is_object());
 
         EsArguments *args_obj = safe_cast<EsArguments *>(args.as_object());
@@ -1898,7 +1904,7 @@ bool Evaluator::exec(EsContext *ctx, EsFunction *callee,
             case Completion::TYPE_CONTINUE:
                 break;
             case Completion::TYPE_RETURN:
-                result = stmt_res.value().value();
+                frame_.set_result(stmt_res.value().value());
                 return true;
             case Completion::TYPE_THROW:
                 assert(EsContextStack::instance().top()->has_pending_exception());
@@ -1917,6 +1923,6 @@ bool Evaluator::exec(EsContext *ctx, EsFunction *callee,
         }
     }
 
-    result = type_ == TYPE_EVAL ? v : EsValue::undefined;
+    frame_.set_result(type_ == TYPE_EVAL ? v : EsValue::undefined);
     return true;
 }

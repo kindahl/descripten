@@ -21,6 +21,7 @@
 #include "common/exception.hh"
 #include "context.hh"
 #include "conversion.hh"
+#include "frame.hh"
 #include "global.hh"
 #include "property_key.hh"
 #include "prototype.hh"
@@ -39,6 +40,8 @@ namespace runtime
     {
         // Initialize garbage collector.
         GC_INIT();
+
+        g_call_stack.init();
 
         global_data();
 
@@ -76,9 +79,9 @@ namespace runtime
 
         try
         {
-            EsValue dummy;
-
-            result = global_main(EsContextStack::instance().top(), NULL, 0, &dummy, dummy);
+            EsCallFrame frame = EsCallFrame::push_global();
+            result = global_main(EsContextStack::instance().top(), 0,
+                                 frame.fp(), frame.vp());
             if (!result)
             {
                 assert(EsContextStack::instance().top()->has_pending_exception());
@@ -107,6 +110,10 @@ namespace runtime
             
             result = false;
         }
+
+        // Make sure that we have not been sloppy with the stack.
+        //assert(g_call_stack.size() == 0);
+        // FIXME: Make sure stack is empty and do a final collect.
         
 #ifdef PROFILE
         profiler::print_results();

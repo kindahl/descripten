@@ -21,16 +21,14 @@
 /**
  * Expands to an API function header. Can be used for both definitions and
  * declarations.
- * @param [in] Function name.
  * @note es_self points to the function object of the function itself. es_this
  *       points to what ECMA-262 refers to as 'this'.
  */
 #ifndef ES_API_FUN_HDR
 #define ES_API_FUN_HDR(name) bool name(EsContext *ctx,\
-                                       EsFunction *callee,\
                                        int argc,\
-                                       EsValue argv[],\
-                                       EsValue &result)
+                                       EsValue *fp,\
+                                       EsValue *vp)
 #endif
 
 /**
@@ -38,16 +36,14 @@
  * a macro and not a typedef is because we don't want to create an
  * Interdependency between this file and the source header where EsObject and
  * EsFunction is defined.
- * @param [in] Function name.
  * @note es_self points to the function object of the function itself. es_this
  *       points to what ECMA-262 refers to as 'this'.
  */
 #ifndef ES_API_FUN_PTR
 #define ES_API_FUN_PTR(name) bool (* name )(EsContext *ctx,\
-                                            EsFunction *callee,\
                                             int argc,\
-                                            EsValue argv[],\
-                                            EsValue &result)
+                                            EsValue *fp,\
+                                            EsValue *vp)
 #endif
 
 /**
@@ -64,5 +60,5 @@
  * @param [in] name Parameter name.
  */
 #ifndef ES_API_PARAMETER
-#define ES_API_PARAMETER(index, name) EsValue name = argc > (index) ? argv[(index)] : EsValue::undefined;
+#define ES_API_PARAMETER(index, name) EsValue name = argc > (index) ? fp[(index)] : EsValue::undefined;
 #endif

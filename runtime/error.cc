@@ -18,13 +18,14 @@
 
 #include "conversion.hh"
 #include "error.hh"
+#include "frame.hh"
 #include "global.hh"
 #include "property.hh"
 #include "prototype.hh"
 #include "standard.hh"
 #include "utility.hh"
 
-EsFunction::function_type EsError::default_fun_ = es_std_err;
+EsFunction::NativeFunction EsError::default_fun_ = es_std_err;
 
 EsFunction *EsError::default_constr_ = NULL;
 
@@ -176,8 +177,8 @@ EsFunction *EsNativeError<T>::default_constr()
 
 template <typename T>
 EsErrorConstructor<T>::EsErrorConstructor(EsLexicalEnvironment *scope,
-                                          function_type fun, int len, bool strict)
-    : EsFunction(scope, fun, strict)
+                                          NativeFunction fun, int len, bool strict)
+    : EsFunction(scope, fun, strict, 1, false)
 {
 }
 
@@ -202,14 +203,15 @@ EsFunction *EsErrorConstructor<T>::create_inst()
 }
 
 template <typename T>
-bool EsErrorConstructor<T>::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsErrorConstructor<T>::constructT(EsCallFrame &frame)
 {
-    String msg;
-    if (argc > 0 && !argv[0].is_undefined())
-        if (!argv[0].to_string(msg))
-            return false;
+    EsValue msg = frame.arg(0);
+
+    String msg_str;
+    if (!msg.is_undefined() && !msg.to_string(msg_str))
+        return false;
     
-    result = EsValue::from_obj(T::create_inst(msg));
+    frame.set_result(EsValue::from_obj(T::create_inst(msg_str)));
     return true;
 }
 
@@ -245,17 +247,17 @@ EsObject *EsUriError::prototype()
 
 // Template specialization.
 template <>
-EsFunction::function_type EsNativeError<EsEvalError>::default_fun_ = es_std_eval_err;
+EsFunction::NativeFunction EsNativeError<EsEvalError>::default_fun_ = es_std_eval_err;
 template <>
-EsFunction::function_type EsNativeError<EsRangeError>::default_fun_ = es_std_range_err;
+EsFunction::NativeFunction EsNativeError<EsRangeError>::default_fun_ = es_std_range_err;
 template <>
-EsFunction::function_type EsNativeError<EsReferenceError>::default_fun_ = es_std_ref_err;
+EsFunction::NativeFunction EsNativeError<EsReferenceError>::default_fun_ = es_std_ref_err;
 template <>
-EsFunction::function_type EsNativeError<EsSyntaxError>::default_fun_ = es_std_syntax_err;
+EsFunction::NativeFunction EsNativeError<EsSyntaxError>::default_fun_ = es_std_syntax_err;
 template <>
-EsFunction::function_type EsNativeError<EsTypeError>::default_fun_ = es_std_type_err;
+EsFunction::NativeFunction EsNativeError<EsTypeError>::default_fun_ = es_std_type_err;
 template <>
-EsFunction::function_type EsNativeError<EsUriError>::default_fun_ = es_std_uri_err;
+EsFunction::NativeFunction EsNativeError<EsUriError>::default_fun_ = es_std_uri_err;
 
 // Explicit template instantiation.
 template class EsNativeError<EsEvalError>;

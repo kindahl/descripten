@@ -41,6 +41,7 @@
 obj->EsObject::define_own_propertyT((p), EsPropertyDescriptor((enumerable), (configurable), (writable), (v)), false)
 #endif
 
+class EsCallFrame;
 class EsContext;
 class EsEnvironmentRecord;
 class EsLexicalEnvironment;
@@ -54,7 +55,6 @@ namespace parser
 }
 using parser::FunctionLiteral;
 
-// FIXME: Why do only EsBooleanObject, EsNumberObject and EsStringObject contain 'Object' in their names.
 /**
  * The object hierarchy is as follows:
  * 
@@ -206,7 +206,6 @@ public:
 
     static EsObject *create_raw();
     static EsObject *create_inst();
-    static EsObject *create_inst(int argc, EsValue argv[]);
     static EsObject *create_inst_with_class(const String &class_name);
     static EsObject *create_inst_with_prototype(EsObject *prototype);
 
@@ -501,18 +500,15 @@ private:
     
     EsArguments();
     
-    static EsFunction *make_arg_getter(EsLexicalEnvironment *scope,
-                                       EsValue *val);
-    static EsFunction *make_arg_setter(EsLexicalEnvironment *scope,
-                                       EsValue *val);
+    static EsFunction *make_arg_getter(EsValue *val);
+    static EsFunction *make_arg_setter(EsValue *val);
 
 public:    
     virtual ~EsArguments();
 
-    static EsArguments *create_inst(EsFunction *callee, bool strict,
+    static EsArguments *create_inst(EsFunction *callee,
                                     int argc, const EsValue argv[]);
-    static EsArguments *create_inst(EsLexicalEnvironment *scope,
-                                    EsFunction *callee, bool strict,
+    static EsArguments *create_inst(EsFunction *callee,
                                     int argc, EsValue argv[],
                                     int prmc, String prmv[]);
 
@@ -798,8 +794,8 @@ public:
     friend class EsStringObject;
     
 public:
-    typedef bool (*function_type)(EsContext *ctx, EsFunction *callee,
-                                  int argc, EsValue argv[], EsValue &res);
+    typedef bool (*NativeFunction)(EsContext *ctx, int argc,
+                                   EsValue *fp, EsValue *vp);
 
 public:
     /**
@@ -817,16 +813,26 @@ private:
 
 protected:
     bool strict_;
-    function_type fun_;             ///< [[Code]] & [[FormatParameters]] mutually exclusive to code_.
+    uint32_t len_;                  ///< Number of parameters.
+    NativeFunction fun_;            ///< [[Code]] & [[FormatParameters]] mutually exclusive to code_.
     FunctionLiteral *code_;         ///< [[Code]] mutually exclusive to fun_.
     EsLexicalEnvironment *scope_;   ///< [[Scope]]
     
-    bool needs_args_obj_;           ///< true if calling this function requires creating the arguments object.
+    /** true if calling this function requires creating the arguments
+     * object. */
+    bool needs_args_obj_;
+
+    /** true if calling this function requires a this binding rather than a
+     * this value. The this binding is used for accessing 'this' in lexically
+     * created functions; that is functions created by the compiled program,
+     * as well as any code evaluated by eval. */
+    bool needs_this_binding_;
 
 protected:
-    EsFunction(EsLexicalEnvironment *scope, function_type func,
-               bool strict);
-    EsFunction(EsLexicalEnvironment *scope, FunctionLiteral *code);
+    EsFunction(EsLexicalEnvironment *scope, NativeFunction func,
+               bool strict, uint32_t len, bool needs_this_binding);
+    EsFunction(EsLexicalEnvironment *scope, FunctionLiteral *code,
+               bool needs_this_binding);
     
 public:
     virtual ~EsFunction();
@@ -837,7 +843,7 @@ public:
      * @paran [in] has_prototype true if the object should have a prototype property.
      * @pre Object has been created using create_raw().
      */
-    void make_inst(uint32_t len, bool has_prototype = true);
+    void make_inst(bool has_prototype);
 
     /**
      * Turns the object into a function prototype.
@@ -847,9 +853,12 @@ public:
 
     static EsFunction *create_raw(bool strict = false);
     static EsFunction *create_inst(EsLexicalEnvironment *scope,
-                                   function_type func, bool strict, int prmc);
+                                   NativeFunction func, bool strict,
+                                   uint32_t len);
     static EsFunction *create_inst(EsLexicalEnvironment *scope,
                                    FunctionLiteral *code);
+
+    uint32_t length() const { return len_; }
     
     /**
      * @return Default string constructor.
@@ -865,7 +874,7 @@ public:
      * @return Pointer to native function, if this is an interpreted function
      *         NULL is returned.
      */
-    function_type function() const { return fun_; }
+    NativeFunction function() const { return fun_; }
 
     /**
      * @return Pointer to function code, if this is a native function NULL is
@@ -877,17 +886,23 @@ public:
      * @return Function scope.
      */
     EsLexicalEnvironment *scope() const { return scope_; }
+
+    /**
+     * @return true if calling the function requires converting the this value
+     *         into a formal ThisBinding.
+     */
+    bool needs_this_binding() const
+    {
+        return needs_this_binding_;
+    }
     
     /**
      * Calls the function associated with this object.
-     * @param [in] this_obj Pointer to the "this" object.
-     * @param [in] argc Number of function arguments.
-     * @param [in] argv Pointer to function arguments.
-     * @param [out] result Function return value.
+     * @param [in,out] frame Call frame.
+     * @param [in] flags Call flags.
      * @return true on normal return, false if an exception was thrown.
      */
-    virtual bool callT(const EsValue &this_obj, int argc, EsValue argv[],
-                       EsValue &result, int flags = 0);
+    virtual bool callT(EsCallFrame &frame, int flags = 0);
 
     /**
      * @copydoc EsObject::getL
@@ -896,12 +911,10 @@ public:
 
     /**
      * Executes the function constructor.
-     * @param [in] argc Number of constructor arguments.
-     * @param [in] argv Pointer to constructor arguments.
-     * @param [out] result Constructed object.
+     * @param [in,out] frame Call frame.
      *@return true on normal return, false if an exception was thrown.
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result);
+    virtual bool constructT(EsCallFrame &frame);
     
     /**
      * Tests if the function object inherits from the specified value.
@@ -911,17 +924,6 @@ public:
      * @return true on normal return, false if an exception was thrown.
      */
     virtual bool has_instanceT(const EsValue &v, bool &result);
-
-    /**
-     * Utility function that calls the function associated with this object.
-     * @param [in] this_obj Pointer to the "this" object.
-     * @param [out] result Function return value.
-     * @return true on normal return, false if an exception was thrown.
-     */
-    inline bool callT(const EsValue &this_obj, EsValue &result)
-    {
-        return callT(this_obj, 0, NULL, result);
-    }
 };
 
 /**
@@ -930,24 +932,25 @@ public:
 class EsBuiltinFunction : public EsFunction
 {
 protected:
-    EsBuiltinFunction(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsBuiltinFunction(EsLexicalEnvironment *scope, NativeFunction func,
+                      bool strict, uint32_t len, bool needs_this_binding);
 
 public:
     virtual ~EsBuiltinFunction();
 
     static EsBuiltinFunction *create_inst(EsLexicalEnvironment *scope,
-                                          function_type func, int len, bool strict = false);
+                                          NativeFunction func, int len,
+                                          bool strict = false);
 
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(const EsValue &this_obj, int argc, EsValue argv[],
-                       EsValue &result, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
 
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -966,8 +969,7 @@ public:
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(const EsValue &this_obj, int argc, EsValue argv[],
-                       EsValue &result, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
 };
 
 /**
@@ -1119,13 +1121,12 @@ public:
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(const EsValue &this_obj, int argc, EsValue argv[],
-                       EsValue &result, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
     
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
     
     /**
      * @copydoc EsFunction::has_instanceL
@@ -1139,7 +1140,7 @@ public:
 class EsArrayConstructor : public EsFunction
 {
 private:
-    EsArrayConstructor(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsArrayConstructor(EsLexicalEnvironment *scope, NativeFunction func, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -1147,7 +1148,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -1156,7 +1157,7 @@ public:
 class EsBooleanConstructor : public EsFunction
 {
 private:
-    EsBooleanConstructor(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsBooleanConstructor(EsLexicalEnvironment *scope, NativeFunction func, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -1164,7 +1165,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -1173,7 +1174,7 @@ public:
 class EsDateConstructor : public EsFunction
 {
 private:
-    EsDateConstructor(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsDateConstructor(EsLexicalEnvironment *scope, NativeFunction func, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -1181,7 +1182,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -1190,7 +1191,7 @@ public:
 class EsNumberConstructor : public EsFunction
 {
 private:
-    EsNumberConstructor(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsNumberConstructor(EsLexicalEnvironment *scope, NativeFunction func, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -1198,7 +1199,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -1207,7 +1208,7 @@ public:
 class EsFunctionConstructor : public EsFunction
 {
 private:
-    EsFunctionConstructor(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsFunctionConstructor(EsLexicalEnvironment *scope, NativeFunction func, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -1215,7 +1216,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -1224,7 +1225,7 @@ public:
 class EsObjectConstructor : public EsFunction
 {
 private:
-    EsObjectConstructor(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsObjectConstructor(EsLexicalEnvironment *scope, NativeFunction func, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -1232,7 +1233,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -1241,7 +1242,7 @@ public:
 class EsStringConstructor : public EsFunction
 {
 private:
-    EsStringConstructor(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsStringConstructor(EsLexicalEnvironment *scope, NativeFunction func, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -1249,7 +1250,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -1258,7 +1259,7 @@ public:
 class EsRegExpConstructor : public EsFunction
 {
 private:
-    EsRegExpConstructor(EsLexicalEnvironment *scope, function_type func, bool strict);
+    EsRegExpConstructor(EsLexicalEnvironment *scope, NativeFunction func, bool strict);
     
 public:
     static EsFunction *create_inst();
@@ -1266,7 +1267,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(int argc, EsValue argv[], EsValue &result) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
 };
 
 /**
@@ -1277,17 +1278,15 @@ class EsArgumentGetter : public EsFunction
 private:
     EsValue *val_;
 
-    EsArgumentGetter(EsLexicalEnvironment *scope, EsValue *val);
+    EsArgumentGetter(EsValue *val);
 
 public:
-    static EsArgumentGetter *create_inst(EsLexicalEnvironment *scope,
-                                         EsValue *val);
+    static EsArgumentGetter *create_inst(EsValue *val);
 
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(const EsValue &this_obj, int argc, EsValue argv[],
-                       EsValue &result, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
 };
 
 /**
@@ -1298,15 +1297,13 @@ class EsArgumentSetter : public EsFunction
 private:
     EsValue *val_;
 
-    EsArgumentSetter(EsLexicalEnvironment *scope, EsValue *val);
+    EsArgumentSetter(EsValue *val);
 
 public:
-    static EsArgumentSetter *create_inst(EsLexicalEnvironment *scope,
-                                         EsValue *val);
+    static EsArgumentSetter *create_inst(EsValue *val);
 
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(const EsValue &this_obj, int argc, EsValue argv[],
-                       EsValue &result, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
 };

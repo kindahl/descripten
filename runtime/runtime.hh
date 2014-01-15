@@ -25,9 +25,9 @@ class EsContext;
 
 namespace runtime
 {
-    typedef void (*tglobal_data)();   // FIXME: No need to typedef here.
-    typedef bool (*tglobal_main)(EsContext *ctx, EsFunction *callee,
-                                 int argc, EsValue argv[], EsValue &result);   // FIXME: No need to typedef here.
+    typedef void (*tglobal_data)();
+    typedef bool (*tglobal_main)(EsContext *ctx, int argc,
+                                 EsValue *fp, EsValue *vp);
     
     bool init(tglobal_data global_data);
     bool shutdown();

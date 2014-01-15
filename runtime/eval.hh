@@ -67,6 +67,8 @@ using parser::WithStatement;
 
 using parser::ValueVisitor;
 
+class EsCallFrame;
+
 /**
  * @brief Reference specification type.
  */
@@ -307,6 +309,7 @@ private:
 private:
     FunctionLiteral *code_;
     Type type_;
+    EsCallFrame &frame_;
 
     std::vector<Scope> scopes_;
 
@@ -359,8 +362,6 @@ private:
     virtual Completion parse_dbg_stmt(DebuggerStatement *stmt) OVERRIDE;
 
 public:
-    Evaluator(FunctionLiteral *code, Type type);
-    bool exec(EsContext *ctx, EsFunction *callee, int argc, EsValue argv[],
-              EsValue &result);
-
+    Evaluator(FunctionLiteral *code, Type type, EsCallFrame &frame);
+    bool exec(EsContext *ctx);
 };

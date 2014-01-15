@@ -34,6 +34,7 @@
 #include "debug.hh"
 #include "error.hh"
 #include "eval.hh"
+#include "frame.hh"
 #include "global.hh"
 #include "messages.hh"
 #include "native.hh"
@@ -110,21 +111,6 @@ EsObject *EsObject::create_raw()
 
 EsObject *EsObject::create_inst()
 {
-    return create_inst(0, NULL);
-}
-
-EsObject *EsObject::create_inst(int argc, EsValue argv[])
-{
-    if (argc > 0)
-    {
-        const EsValue &val = argv[0];
-        if (val.is_object())
-            return val.as_object();
-        
-        if (val.is_boolean() || val.is_number() || val.is_string())
-            return val.to_objectT();    // Will never throw given the if expression above.
-    }
-    
     EsObject *o = new (GC)EsObject();
     o->make_inst();
     return o;
@@ -132,18 +118,18 @@ EsObject *EsObject::create_inst(int argc, EsValue argv[])
 
 EsObject *EsObject::create_inst_with_class(const String &class_name)
 {
-    EsObject *res = new (GC)EsObject();
-    res->make_inst();
-    res->class_ = class_name;
-    return res;
+    EsObject *o = new (GC)EsObject();
+    o->make_inst();
+    o->class_ = class_name;
+    return o;
 }
 
 EsObject *EsObject::create_inst_with_prototype(EsObject *prototype)
 {
-    EsObject *res = new (GC)EsObject();
-    res->make_inst();
-    res->prototype_ = prototype;
-    return res;
+    EsObject *o = new (GC)EsObject();
+    o->make_inst();
+    o->prototype_ = prototype;
+    return o;
 }
 
 EsFunction *EsObject::default_constr()
@@ -257,7 +243,14 @@ bool EsObject::get_resolveT(const EsPropertyReference &prop, EsValue &v)
     }
 
     assert(getter.is_callable());
-    return getter.as_function()->callT(EsValue::from_obj(this), v);
+
+    EsCallFrame frame = EsCallFrame::push_function(
+        0, getter.as_function(), EsValue::from_obj(this));
+    if (!getter.as_function()->callT(frame))
+        return false;
+
+    v = frame.result();
+    return true;
 }
 
 bool EsObject::can_put(EsPropertyKey p, EsPropertyReference &prop)
@@ -328,11 +321,11 @@ bool EsObject::putT(EsPropertyKey p, const EsValue &v, bool throws)
 
         assert(setter.is_callable());
 
-        EsValue args[1];
-        args[0] = v;
+        EsCallFrame frame = EsCallFrame::push_function(
+            1, setter.as_function(), EsValue::from_obj(this));
+        frame.fp()[0] = v;
 
-        EsValue tmp;
-        return setter.as_function()->callT(EsValue::from_obj(this), 1, args, tmp);  // FIXME: args = &v
+        return setter.as_function()->callT(frame);
     }
     else
     {
@@ -375,11 +368,11 @@ bool EsObject::put_ownT(EsPropertyKey p, EsPropertyReference &current,
 
         assert(setter.is_callable());
 
-        EsValue args[1];
-        args[0] = v;
+        EsCallFrame frame = EsCallFrame::push_function(
+            1, setter.as_function(), EsValue::from_obj(this));
+        frame.fp()[0] = v;
 
-        EsValue tmp;
-        return setter.as_function()->callT(EsValue::from_obj(this), 1, args, tmp);  // FIXME: args = &v
+        return setter.as_function()->callT(frame);
     }
 
     assert(false);
@@ -431,10 +424,12 @@ bool EsObject::default_valueT(EsTypeHint hint, EsValue &result)
 
         if (to_str.is_callable())
         {
-            EsValue str;
-            if (!to_str.as_function()->callT(EsValue::from_obj(this), str))
+            EsCallFrame frame = EsCallFrame::push_function(
+                0, to_str.as_function(), EsValue::from_obj(this));
+            if (!to_str.as_function()->callT(frame))
                 return false;
 
+            EsValue str = frame.result();
             if (str.is_primitive())
             {
                 result = str;
@@ -448,10 +443,12 @@ bool EsObject::default_valueT(EsTypeHint hint, EsValue &result)
 
         if (val_of.is_callable())
         {
-            EsValue val;
-            if (!val_of.as_function()->callT(EsValue::from_obj(this), val))
+            EsCallFrame frame = EsCallFrame::push_function(
+                0, val_of.as_function(), EsValue::from_obj(this));
+            if (!val_of.as_function()->callT(frame))
                 return false;
 
+            EsValue val = frame.result();
             if (val.is_primitive())
             {
                 result = val;
@@ -467,10 +464,12 @@ bool EsObject::default_valueT(EsTypeHint hint, EsValue &result)
 
         if (val_of.is_callable())
         {
-            EsValue val;
-            if (!val_of.as_function()->callT(EsValue::from_obj(this), val))
+            EsCallFrame frame = EsCallFrame::push_function(
+                0, val_of.as_function(), EsValue::from_obj(this));
+            if (!val_of.as_function()->callT(frame))
                 return false;
 
+            EsValue val = frame.result();
             if (val.is_primitive())
             {
                 result = val;
@@ -484,10 +483,12 @@ bool EsObject::default_valueT(EsTypeHint hint, EsValue &result)
 
         if (to_str.is_callable())
         {
-            EsValue str;
-            if (!to_str.as_function()->callT(EsValue::from_obj(this), str))
+            EsCallFrame frame = EsCallFrame::push_function(
+                0, to_str.as_function(), EsValue::from_obj(this));
+            if (!to_str.as_function()->callT(frame))
                 return false;
 
+            EsValue str = frame.result();
             if (str.is_primitive())
             {
                 result = str;
@@ -706,19 +707,17 @@ ES_API_FUN(es_arg_setter)
     THROW(InternalException, "internal error: es_arg_setter is not implemented.");
 }
 
-EsFunction *EsArguments::make_arg_getter(EsLexicalEnvironment *scope,
-                                         EsValue *val)
+EsFunction *EsArguments::make_arg_getter(EsValue *val)
 {
-    return EsArgumentGetter::create_inst(scope, val);
+    return EsArgumentGetter::create_inst(val);
 }
 
-EsFunction *EsArguments::make_arg_setter(EsLexicalEnvironment *scope,
-                                         EsValue *val)
+EsFunction *EsArguments::make_arg_setter(EsValue *val)
 {
-    return EsArgumentSetter::create_inst(scope, val);
+    return EsArgumentSetter::create_inst(val);
 }
 
-EsArguments *EsArguments::create_inst(EsFunction *callee, bool strict,
+EsArguments *EsArguments::create_inst(EsFunction *callee,
                                       int argc, const EsValue argv[])
 {
     EsArguments *a = new (GC)EsArguments();
@@ -740,7 +739,7 @@ EsArguments *EsArguments::create_inst(EsFunction *callee, bool strict,
                                    EsPropertyDescriptor(true, true, true, val));
     }
 
-    if (!strict)
+    if (!callee->is_strict())
     {
         a->define_new_own_property(property_keys.callee,
                                    EsPropertyDescriptor(false, true, true,
@@ -764,8 +763,7 @@ EsArguments *EsArguments::create_inst(EsFunction *callee, bool strict,
     return a;
 }
 
-EsArguments *EsArguments::create_inst(EsLexicalEnvironment *scope,
-                                      EsFunction *callee, bool strict,
+EsArguments *EsArguments::create_inst(EsFunction *callee,
                                       int argc, EsValue argv[],
                                       int prmc, String prmv[])
 {
@@ -792,12 +790,12 @@ EsArguments *EsArguments::create_inst(EsLexicalEnvironment *scope,
         if (i < prmc)
         {
             String name = prmv[i];
-            if (!strict && mapped_names.count(name) == 0)
+            if (!callee->is_strict() && mapped_names.count(name) == 0)
             {
                 mapped_names.insert(name);
 
-                EsFunction *g = make_arg_getter(scope, &argv[i]);
-                EsFunction *p = make_arg_setter(scope, &argv[i]);
+                EsFunction *g = make_arg_getter(&argv[i]);
+                EsFunction *p = make_arg_setter(&argv[i]);
 
                 a->param_map_->define_new_own_property(EsPropertyKey::from_u32(i),
                     EsPropertyDescriptor(Maybe<bool>(), true,
@@ -807,7 +805,7 @@ EsArguments *EsArguments::create_inst(EsLexicalEnvironment *scope,
         }
     }
 
-    if (!strict)
+    if (!callee->is_strict())
     {
         a->define_new_own_property(property_keys.callee,
                                    EsPropertyDescriptor(false, true, true,
@@ -833,8 +831,8 @@ EsArguments *EsArguments::create_inst(EsLexicalEnvironment *scope,
 
 void EsArguments::link_parameter(uint32_t i, EsValue *val)
 {
-    EsFunction *g = make_arg_getter(NULL, val);
-    EsFunction *p = make_arg_setter(NULL, val);
+    EsFunction *g = make_arg_getter(val);
+    EsFunction *p = make_arg_setter(val);
 
     param_map_->define_new_own_property(EsPropertyKey::from_u32(i),
         EsPropertyDescriptor(Maybe<bool>(), true,
@@ -1693,20 +1691,28 @@ EsPropertyReference EsStringObject::get_own_property(EsPropertyKey p)
 EsFunction *EsFunction::default_constr_ = NULL;
 
 EsFunction::EsFunction(EsLexicalEnvironment *scope,
-                       function_type fun, bool strict)
+                       NativeFunction fun, bool strict, uint32_t len,
+                       bool needs_this_binding)
     : strict_(strict)
+    , len_(len)
     , fun_(fun)
     , code_(NULL)
     , scope_(scope)
+    , needs_args_obj_(false)
+    , needs_this_binding_(needs_this_binding)
 {
 }
 
 EsFunction::EsFunction(EsLexicalEnvironment *scope,
-                       FunctionLiteral *code)
+                       FunctionLiteral *code,
+                       bool needs_this_binding)
     : strict_(code->is_strict_mode())
+    , len_(static_cast<uint32_t>(code->parameters().size()))
     , fun_(NULL)
     , code_(code)
     , scope_(scope)
+    , needs_args_obj_(false)
+    , needs_this_binding_(needs_this_binding)
 {
 }
 
@@ -1714,7 +1720,7 @@ EsFunction::~EsFunction()
 {
 }
 
-void EsFunction::make_inst(uint32_t len, bool has_prototype)
+void EsFunction::make_inst(bool has_prototype)
 {
     prototype_ = es_proto_fun();
     class_ = _USTR("Function");
@@ -1726,7 +1732,7 @@ void EsFunction::make_inst(uint32_t len, bool has_prototype)
         EsPropertyDescriptor(false, true, true, EsValue::from_obj(this)));
 
     define_new_own_property(property_keys.length,
-        EsPropertyDescriptor(false, false, false, EsValue::from_u32(len)));         // VERIFIED: 15.3.5.1
+        EsPropertyDescriptor(false, false, false, EsValue::from_u32(len_)));        // VERIFIED: 15.3.5.1
     
     if (has_prototype)
     {
@@ -1768,15 +1774,15 @@ void EsFunction::make_proto()
 
 EsFunction *EsFunction::create_raw(bool strict)
 {
-    return new (GC)EsFunction(NULL, NULL, strict);
+    return new (GC)EsFunction(NULL, NULL, strict, 0, false);
 }
 
 EsFunction *EsFunction::create_inst(EsLexicalEnvironment *scope,
-                                    function_type fun, bool strict,
-                                    int prmc)
+                                    NativeFunction fun, bool strict,
+                                    uint32_t len)
 {
-    EsFunction *f = new (GC)EsFunction(scope, fun, strict);
-    f->make_inst(prmc);
+    EsFunction *f = new (GC)EsFunction(scope, fun, strict, len, true);
+    f->make_inst(true);
     
     return f;
 }
@@ -1784,9 +1790,8 @@ EsFunction *EsFunction::create_inst(EsLexicalEnvironment *scope,
 EsFunction *EsFunction::create_inst(EsLexicalEnvironment *scope,
                                     FunctionLiteral *code)
 {
-    EsFunction *f = new (GC)EsFunction(scope, code);
-    f->make_inst(code->parameters().size());
-    
+    EsFunction *f = new (GC)EsFunction(scope, code, true);
+    f->make_inst(true);
     return f;
 }
 
@@ -1798,37 +1803,23 @@ EsFunction *EsFunction::default_constr()
     return default_constr_;
 }
 
-bool EsFunction::callT(const EsValue &this_obj, int argc, EsValue argv[],
-                       EsValue &result, int flags)
+bool EsFunction::callT(EsCallFrame &frame, int flags)
 {
-    bool strict = false;
-    if (!fun_ && code_)
-        strict = code_->is_strict_mode();
-    else
-        strict = EsContextStack::instance().top()->is_strict() || strict_;
-
-    EsFunctionContext ctx(strict, scope_, this_obj);
-
-    // 10.5:1 & 10.5:2 & 10.5:3
-
-    // 10.5:4: Parameters are initialized in the function prologue, see
-    //         op_init_args.
-
-    // 10.5:6 & 10.5:7: Arguments object is initialized in teh function
-    //                  prologue see op_init_args_obj.
+    // FIXME: What about fast calls, where this step is not needed?
+    EsFunctionContext ctx(strict_, scope_);
 
     // Invoke the function code.
     if (fun_)
     {
-        return fun_(EsContextStack::instance().top(), this, argc, argv, result);
+        return fun_(EsContextStack::instance().top(),
+                    frame.argc(), frame.fp(), frame.vp());
     }
     else if (code_)
     {
-        Evaluator eval(code_, Evaluator::TYPE_FUNCTION);
-        return eval.exec(EsContextStack::instance().top(), this, argc, argv, result);
+        Evaluator eval(code_, Evaluator::TYPE_FUNCTION, frame);
+        return eval.exec(EsContextStack::instance().top());
     }
 
-    result = EsValue::undefined;
     return true;
 }
 
@@ -1843,7 +1834,7 @@ bool EsFunction::getT(EsPropertyKey p, EsPropertyReference &prop)
     return EsObject::getT(p, prop);
 }
 
-bool EsFunction::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsFunction::constructT(EsCallFrame &frame)
 {
     // 13.2.2
     EsObject *obj = NULL;
@@ -1857,13 +1848,14 @@ bool EsFunction::constructT(int argc, EsValue argv[], EsValue &result)
     else
         obj = EsObject::create_inst_with_prototype(es_proto_obj());
     
-    assert(obj);
-    EsValue constr_result;
-    if (!callT(EsValue::from_obj(obj), argc, argv, constr_result))
+    frame.set_this_value(EsValue::from_obj(obj));
+    if (!callT(frame))
         return false;
 
-    result = EsValue::from_obj(constr_result.is_object() ?
-                               constr_result.as_object() : obj);
+    // FIXME:
+    EsValue constr_result = frame.result();
+    frame.set_result(EsValue::from_obj(constr_result.is_object() ?
+                                       constr_result.as_object() : obj));
     return true;
 }
 
@@ -1909,8 +1901,9 @@ bool EsFunction::has_instanceT(const EsValue &v, bool &result)
 }
 
 EsBuiltinFunction::EsBuiltinFunction(EsLexicalEnvironment *scope,
-                                     function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                     NativeFunction fun, bool strict,
+                                     uint32_t len, bool needs_this_binding)
+    : EsFunction(scope, fun, strict, len, needs_this_binding)
 {
 }
 
@@ -1919,36 +1912,29 @@ EsBuiltinFunction::~EsBuiltinFunction()
 }
 
 EsBuiltinFunction *EsBuiltinFunction::create_inst(EsLexicalEnvironment *scope,
-                                                  function_type fun, int len, bool strict)
+                                                  NativeFunction fun, int len,
+                                                  bool strict)
 {
-    EsBuiltinFunction *f = new (GC)EsBuiltinFunction(scope, fun, strict);
+    EsBuiltinFunction *f = new (GC)EsBuiltinFunction(scope, fun, strict, len,
+                                                     false);
 
     // 15: Built-in objects doesn't have a prototype property.
-    f->make_inst(len, false);
+    f->make_inst(false);
 
     return f;
 }
 
-bool EsBuiltinFunction::callT(const EsValue &this_obj, int argc, EsValue argv[],
-                              EsValue &result, int flags)
+bool EsBuiltinFunction::callT(EsCallFrame &frame, int flags)
 {
-    bool strict = false;
-    if (!fun_ && code_)
-        strict = code_->is_strict_mode();
-    else
-        strict = EsContextStack::instance().top()->is_strict() || strict_;
-
-    EsFunctionContext ctx(strict, scope_, this_obj);
-
-    // We can skip steps 10.5:4 to 10.5:7 because we don't have to the
-    // environment and arguments object for built-in functions.
+    EsFunctionContext ctx(strict_, scope_);
 
     // Invoke the function code.
     assert(fun_);
-    return fun_(EsContextStack::instance().top(), this, argc, argv, result);
+    return fun_(EsContextStack::instance().top(),
+                frame.argc(), frame.fp(), frame.vp());
 }
 
-bool EsBuiltinFunction::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsBuiltinFunction::constructT(EsCallFrame &frame)
 {
     // 15: Built-in objects doesn't have [Construct].
     ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_BUILTIN_CONSTRUCT));
@@ -1956,8 +1942,9 @@ bool EsBuiltinFunction::constructT(int argc, EsValue argv[], EsValue &result)
 }
 
 EsEvalFunction::EsEvalFunction()
-    : EsBuiltinFunction(es_global_env(), es_std_eval, false)
+    : EsBuiltinFunction(es_global_env(), es_std_eval, false, 1, true)
 {
+    needs_this_binding_ = true;
 }
 
 EsEvalFunction::~EsEvalFunction()
@@ -1969,18 +1956,17 @@ EsEvalFunction *EsEvalFunction::create_inst()
     EsEvalFunction *f = new (GC)EsEvalFunction();
 
     // 15: Built-in objects doesn't have a prototype property.
-    f->make_inst(1, false);
+    f->make_inst(false);
 
     return f;
 }
 
-bool EsEvalFunction::callT(const EsValue &this_obj, int argc, EsValue argv[],
-                           EsValue &result, int flags)
+bool EsEvalFunction::callT(EsCallFrame &frame, int flags)
 {
     bool direct_eval_call = flags & CALL_DIRECT_EVAL;
 
     // Parse the program.
-    EsValue prog_arg = argc >= 1 ? argv[0] : EsValue::undefined;
+    EsValue prog_arg = frame.arg(0);
 
     FunctionLiteral *prog = NULL;
 
@@ -2013,38 +1999,45 @@ bool EsEvalFunction::callT(const EsValue &this_obj, int argc, EsValue argv[],
 
     if (prog == NULL)   // Argument is not of string type.
     {
-        result = prog_arg;
+        frame.set_result(prog_arg);
         return true;
     }
 
-    // Check if direct eval call.
-    enum
-    {
-        CONTEXT_EVAL,
-        CONTEXT_EVAL_INDIRECT
-    } ctx = direct_eval_call || prog->is_strict_mode() ? CONTEXT_EVAL : CONTEXT_EVAL_INDIRECT;
+    bool strict = prog->is_strict_mode();
 
-    bool strict = ctx == CONTEXT_EVAL && (EsContextStack::instance().top()->is_strict() || prog->is_strict_mode()); // VERIFIED: 10.1.1
-
-    if (ctx == CONTEXT_EVAL)
+    if (direct_eval_call || strict)
     {
         EsEvalContext ctx(strict);
 
-        Evaluator eval(prog, Evaluator::TYPE_EVAL);
-        return eval.exec(ctx, this, 0, NULL, result);
+        EsCallFrame eval_frame = EsCallFrame::push_eval_direct(
+            this, frame.this_value());
+
+        Evaluator eval(prog, Evaluator::TYPE_EVAL, eval_frame);
+        if (!eval.exec(ctx))
+            return false;
+
+        frame.set_result(eval_frame.result());
+        return true;
     }
     else
     {
         EsGlobalContext ctx(strict);
 
-        Evaluator eval(prog, Evaluator::TYPE_EVAL);
-        return eval.exec(ctx, this, 0, NULL, result);
+        EsCallFrame eval_frame = EsCallFrame::push_eval_indirect(this);
+
+        Evaluator eval(prog, Evaluator::TYPE_EVAL, eval_frame);
+        if (!eval.exec(ctx))
+            return false;
+
+        frame.set_result(eval_frame.result());
+        return true;
     }
 }
 
 EsFunctionBind::EsFunctionBind(const EsValue &bound_this, EsFunction *target_fun,
                                const EsValueVector &args)
-    : EsFunction(target_fun->scope(), NULL, target_fun->is_strict()),
+    : EsFunction(target_fun->scope(), NULL, target_fun->is_strict(),
+                 target_fun->length(), false),
       target_fun_(target_fun), bound_this_(bound_this), bound_args_(args)
 {
     assert(target_fun_);
@@ -2065,6 +2058,7 @@ EsFunctionBind *EsFunctionBind::create_inst(EsFunction *target, const EsValue &b
 
     if (target->class_name() == _USTR("Function"))
     {
+        // FIXME: Use .length().
         EsValue target_len;
         static_cast<EsObject *>(target)->getT(property_keys.length, target_len);
 
@@ -2094,38 +2088,49 @@ EsFunctionBind *EsFunctionBind::create_inst(EsFunction *target, const EsValue &b
     return f;
 }
 
-bool EsFunctionBind::callT(const EsValue &this_obj, int argc, EsValue argv[],
-                           EsValue &result, int flags)
+bool EsFunctionBind::callT(EsCallFrame &frame, int flags)
 {
     assert(target_fun_);
+
+    // FIXME: Consider growing the current stack frame instead.
+    EsCallFrame target_frame = EsCallFrame::push_function(
+        frame.argc() + bound_args_.size(), target_fun_, bound_this_);
+
+    // FIXME: Replace fp_pos with pointer.
+    int fp_pos = 0;
+    for (const EsValue &arg : bound_args_)
+        target_frame.fp()[fp_pos++] = arg;
     
-    for (int i = 0; i < argc; i++)
-        bound_args_.push_back(argv[i]);
+    for (int i = 0; i < frame.argc(); i++)
+        target_frame.fp()[fp_pos++] = frame.fp()[i];
     
-    if (!target_fun_->callT(bound_this_, static_cast<int>(bound_args_.size()),
-                            &bound_args_[0], result))
+    if (!target_fun_->callT(target_frame))
         return false;
-    
-    for (int i = 0; i < argc; i++)
-        bound_args_.pop_back();
-    
+
+    frame.set_result(target_frame.result());
     return true;
 }
 
-bool EsFunctionBind::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsFunctionBind::constructT(EsCallFrame &frame)
 {
     assert(target_fun_);
-    
-    for (int i = 0; i < argc; i++)
-        bound_args_.push_back(argv[i]);
-    
-    if (!target_fun_->constructT(static_cast<int>(bound_args_.size()),
-                                 &bound_args_[0], result))
-        return false;
-    
-    for (int i = 0; i < argc; i++)
-        bound_args_.pop_back();
 
+    // FIXME: Consider growing the current stack frame instead.
+    EsCallFrame target_frame = EsCallFrame::push_function(
+        frame.argc() + bound_args_.size(), target_fun_, EsValue::undefined);
+    
+    // FIXME: Replace fp_pos with pointer.
+    int fp_pos = 0;
+    for (const EsValue &arg : bound_args_)
+        target_frame.fp()[fp_pos++] = arg;
+    
+    for (int i = 0; i < frame.argc(); i++)
+        target_frame.fp()[fp_pos++] = frame.fp()[i];
+    
+    if (!target_fun_->constructT(target_frame))
+        return false;
+
+    frame.set_result(target_frame.result());
     return true;
 }
 
@@ -2376,8 +2381,8 @@ EsFunction *EsRegExp::default_constr()
 }
 
 EsArrayConstructor::EsArrayConstructor(EsLexicalEnvironment *scope,
-                                       function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                       NativeFunction fun, bool strict)
+    : EsFunction(scope, fun, strict, 1, false)
 {
 }
 
@@ -2402,8 +2407,11 @@ EsFunction *EsArrayConstructor::create_inst()
     return f;
 }
 
-bool EsArrayConstructor::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsArrayConstructor::constructT(EsCallFrame &frame)
 {
+    int argc = frame.argc();
+    EsValue *argv = frame.fp();
+
     EsArray *a = NULL;
 
     if (argc == 1)
@@ -2444,13 +2452,13 @@ bool EsArrayConstructor::constructT(int argc, EsValue argv[], EsValue &result)
     }
 
     assert(a);
-    result = EsValue::from_obj(a);
+    frame.set_result(EsValue::from_obj(a));
     return true;
 }
 
 EsBooleanConstructor::EsBooleanConstructor(EsLexicalEnvironment *scope,
-                                           function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                           NativeFunction fun, bool strict)
+    : EsFunction(scope, fun, strict, 1, false)
 {
 }
 
@@ -2471,20 +2479,19 @@ EsFunction *EsBooleanConstructor::create_inst()
     return f;
 }
 
-bool EsBooleanConstructor::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsBooleanConstructor::constructT(EsCallFrame &frame)
 {
     bool value = false;
+    if (frame.argc() > 0)
+        value = frame.fp()[0].to_boolean();
     
-    if (argc > 0)
-        value = argv[0].to_boolean();
-    
-    result = EsValue::from_obj(EsBooleanObject::create_inst(value));
+    frame.set_result(EsValue::from_obj(EsBooleanObject::create_inst(value)));
     return true;
 }
 
 EsDateConstructor::EsDateConstructor(EsLexicalEnvironment *scope,
-                                     function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                     NativeFunction fun, bool strict)
+    : EsFunction(scope, fun, strict, 7, false)
 {
 }
 
@@ -2517,26 +2524,42 @@ EsFunction *EsDateConstructor::create_inst()
     return f;
 }
 
-bool EsDateConstructor::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsDateConstructor::constructT(EsCallFrame &frame)
 {
+    int argc = frame.argc();
+    EsValue *argv = frame.fp();
+
+    EsValue result;
     if (argc == 0)
-        return EsDate::create_inst(result);             // 15.9.3.1
-    if (argc == 1)
-        return EsDate::create_inst(argv[0], result);    // 15.9.3.2
+    {
+        if (!EsDate::create_inst(result))              // 15.9.3.1
+            return false;
+    }
+    else if (argc == 1)
+    {
+        if (!EsDate::create_inst(argv[0], result))     // 15.9.3.2
+            return false;
+    }
     else
-        return EsDate::create_inst(argv[0],                     // Year.
-                                   argv[1],                     // Month.
-                                   argc > 2 ? &argv[2] : NULL,  // Date (optional).
-                                   argc > 3 ? &argv[3] : NULL,  // Hours (optional).
-                                   argc > 4 ? &argv[4] : NULL,  // Minutes (optional).
-                                   argc > 5 ? &argv[5] : NULL,  // Seconds (optional).
-                                   argc > 6 ? &argv[6] : NULL,  // Milliseconds (optional).
-                                   result);
+    {
+        if (!EsDate::create_inst(argv[0],                       // Year.
+                                 argv[1],                       // Month.
+                                 argc > 2 ? &argv[2] : NULL,    // Date (optional).
+                                 argc > 3 ? &argv[3] : NULL,    // Hours (optional).
+                                 argc > 4 ? &argv[4] : NULL,    // Minutes (optional).
+                                 argc > 5 ? &argv[5] : NULL,    // Seconds (optional).
+                                 argc > 6 ? &argv[6] : NULL,    // Milliseconds (optional).
+                                 result))
+            return false;
+    }
+
+    frame.set_result(result);
+    return true;
 }
 
 EsNumberConstructor::EsNumberConstructor(EsLexicalEnvironment *scope,
-                                         function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                         NativeFunction fun, bool strict)
+    : EsFunction(scope, fun, strict, 1, false)
 {
 }
 
@@ -2571,21 +2594,19 @@ EsFunction *EsNumberConstructor::create_inst()
     return f;
 }
 
-bool EsNumberConstructor::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsNumberConstructor::constructT(EsCallFrame &frame)
 {
     double value = 0.0;
+    if (frame.argc() > 0 && !frame.fp()[0].to_number(value))
+        return false;
     
-    if (argc > 0)
-        if (!argv[0].to_number(value))
-            return false;
-    
-    result = EsValue::from_obj(EsNumberObject::create_inst(value));
+    frame.set_result(EsValue::from_obj(EsNumberObject::create_inst(value)));
     return true;
 }
 
 EsFunctionConstructor::EsFunctionConstructor(EsLexicalEnvironment *scope,
-                                             function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                             NativeFunction fun, bool strict)
+    : EsFunction(scope, fun, strict, 1, false)
 {
 }
 
@@ -2606,8 +2627,10 @@ EsFunction *EsFunctionConstructor::create_inst()
     return f;
 }
 
-bool EsFunctionConstructor::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsFunctionConstructor::constructT(EsCallFrame &frame)
 {
+    int argc = frame.argc();
+    EsValue *argv = frame.fp();
     // 15.3.2.1
     EsValue body = argc == 0 ? EsValue::from_str(String()) : argv[argc - 1];
 
@@ -2690,13 +2713,14 @@ bool EsFunctionConstructor::constructT(int argc, EsValue argv[], EsValue &result
         }
     }
 
-    result = EsValue::from_obj(EsFunction::create_inst(EsContextStack::instance().top()->var_env(), prog));
+    frame.set_result(EsValue::from_obj(EsFunction::create_inst(
+        EsContextStack::instance().top()->var_env(), prog)));
     return true;
 }
 
 EsObjectConstructor::EsObjectConstructor(EsLexicalEnvironment *scope,
-                                         function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                         NativeFunction fun, bool strict)
+    : EsFunction(scope, fun, strict, 1, false)
 {
 }
 
@@ -2769,15 +2793,35 @@ EsFunction *EsObjectConstructor::create_inst()
     return f;
 }
 
-bool EsObjectConstructor::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsObjectConstructor::constructT(EsCallFrame &frame)
 {
-    result = EsValue::from_obj(EsObject::create_inst(argc, argv));
+    int argc = frame.argc();
+    EsValue *argv = frame.fp();
+
+    if (argc > 0)
+    {
+        const EsValue &val = argv[0];
+        if (val.is_object())
+        {
+            frame.set_result(EsValue::from_obj(val.as_object()));
+            return true;
+        }
+        
+        if (val.is_boolean() || val.is_number() || val.is_string())
+        {
+            // Will never throw given the if expression above.
+            frame.set_result(EsValue::from_obj(val.to_objectT()));
+            return true;
+        }
+    }
+
+    frame.set_result(EsValue::from_obj(EsObject::create_inst()));
     return true;
 }
 
 EsStringConstructor::EsStringConstructor(EsLexicalEnvironment *scope,
-                                         function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                         NativeFunction fun, bool strict)
+    : EsFunction(scope, fun, strict, 1, false)
 {
 }
 
@@ -2801,21 +2845,19 @@ EsFunction *EsStringConstructor::create_inst()
     return f;
 }
 
-bool EsStringConstructor::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsStringConstructor::constructT(EsCallFrame &frame)
 {
     String value;
+    if (frame.argc() > 0 && !frame.fp()[0].to_string(value))
+        return false;
     
-    if (argc > 0)
-        if (!argv[0].to_string(value))
-            return false;
-    
-    result = EsValue::from_obj(EsStringObject::create_inst(value));
+    frame.set_result(EsValue::from_obj(EsStringObject::create_inst(value)));
     return true;
 }
 
 EsRegExpConstructor::EsRegExpConstructor(EsLexicalEnvironment *scope,
-                                         function_type fun, bool strict)
-    : EsFunction(scope, fun, strict)
+                                         NativeFunction fun, bool strict)
+    : EsFunction(scope, fun, strict, 2, false)
 {
 }
 
@@ -2835,8 +2877,11 @@ EsFunction *EsRegExpConstructor::create_inst()
     return f;
 }
 
-bool EsRegExpConstructor::constructT(int argc, EsValue argv[], EsValue &result)
+bool EsRegExpConstructor::constructT(EsCallFrame &frame)
 {
+    int argc = frame.argc();
+    EsValue *argv = frame.fp();
+
     EsValue pattern_arg = argc >= 1 ? argv[0] : EsValue::undefined;
     EsValue flags_arg = argc >= 2 ? argv[1] : EsValue::undefined;
 
@@ -2886,60 +2931,58 @@ bool EsRegExpConstructor::constructT(int argc, EsValue argv[], EsValue &result)
     if (obj == NULL)
         return false;
 
-    result = EsValue::from_obj(obj);
+    frame.set_result(EsValue::from_obj(obj));
     return true;
 }
 
 ES_API_FUN(es_std_dummy)
 {
-    result = EsValue::undefined;
+    EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
+
     return true;
 }
 
-EsArgumentGetter::EsArgumentGetter(EsLexicalEnvironment *scope, EsValue *val)
-    : EsFunction(scope, es_std_dummy, 1)
+EsArgumentGetter::EsArgumentGetter(EsValue *val)
+    : EsFunction(NULL, es_std_dummy, false, 0, false)
     , val_(val)
 {
 }
 
-EsArgumentGetter *EsArgumentGetter::create_inst(EsLexicalEnvironment *scope,
-                                                EsValue *val)
+EsArgumentGetter *EsArgumentGetter::create_inst(EsValue *val)
 {
-    EsArgumentGetter *f = new (GC)EsArgumentGetter(scope, val);
+    EsArgumentGetter *f = new (GC)EsArgumentGetter(val);
 
     // FIXME: This isn't nice.
-    f->make_inst(1);
+    f->make_inst(true);
 
     return f;
 }
 
-bool EsArgumentGetter::callT(const EsValue &this_obj, int argc, EsValue argv[],
-                             EsValue &result, int flags)
+bool EsArgumentGetter::callT(EsCallFrame &frame, int flags)
 {
-    result = *val_;
+    frame.set_result(*val_);
     return true;
 }
 
-EsArgumentSetter::EsArgumentSetter(EsLexicalEnvironment *scope, EsValue *val)
-    : EsFunction(scope, es_std_dummy, 1)
+EsArgumentSetter::EsArgumentSetter(EsValue *val)
+    : EsFunction(NULL, es_std_dummy, false, 1, false)
     , val_(val)
 {
 }
 
-EsArgumentSetter *EsArgumentSetter::create_inst(EsLexicalEnvironment *scope,
-                                                EsValue *val)
+EsArgumentSetter *EsArgumentSetter::create_inst(EsValue *val)
 {
-    EsArgumentSetter *f = new (GC)EsArgumentSetter(scope, val);
+    EsArgumentSetter *f = new (GC)EsArgumentSetter(val);
 
     // FIXME: This isn't nice.
-    f->make_inst(1);
+    f->make_inst(true);
 
     return f;
 }
 
-bool EsArgumentSetter::callT(const EsValue &this_obj, int argc, EsValue argv[],
-                             EsValue &result, int flags)
+bool EsArgumentSetter::callT(EsCallFrame &frame, int flags)
 {
-    *val_ = argc > 0 ? argv[0] : EsValue::undefined;
+    assert(frame.argc() > 0);
+    *val_ = frame.arg(0);
     return true;
 }

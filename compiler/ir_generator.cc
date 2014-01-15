@@ -42,14 +42,14 @@ public:
         res_ = out.str();;
     }
 
-    void visit_const_callee(ir::CalleeConstant *instr)
+    void visit_const_fp(ir::FramePointer *instr)
     {
-        res_ = "callee";
+        res_ = "fp";
     }
 
-    void visit_const_ret(ir::ReturnConstant *instr)
+    void visit_const_vp(ir::ValuePointer *instr)
     {
-        res_ = "result";
+        res_ = "vp";
     }
 
     void visit_const_null(ir::NullConstant *instr)
@@ -225,7 +225,7 @@ void IrGenerator::visit_block(ir::Block *block)
 
 void IrGenerator::visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *instr)
 {
-    out() << value(instr) << " = args.obj.init ctx callee argc" << "\n";
+    out() << value(instr) << " = args.obj.init ctx argc fp vp" << "\n";
 }
 
 void IrGenerator::visit_instr_args_obj_link(ir::ArgumentsObjectLinkInstruction *instr)
@@ -290,7 +290,7 @@ void IrGenerator::visit_instr_bnd_extra_init(ir::BindExtraInitInstruction *instr
 
 void IrGenerator::visit_instr_bnd_extra_ptr(ir::BindExtraPtrInstruction *instr)
 {
-    out() << value(instr) << " = bnd.extra.ptr " << instr->hops() << "\n";
+    out() << value(instr) << " = bnd.extra.ptr argc fp vp " << instr->hops() << "\n";
 }
 
 void IrGenerator::visit_instr_call(ir::CallInstruction *instr)
@@ -310,31 +310,31 @@ void IrGenerator::visit_instr_call(ir::CallInstruction *instr)
     }
 
     out() << value(instr) << " = "<< kind << " " << value(instr->function())
-          << " (" << instr->argc() << ", " << value(instr->argv()) << ", "
-                 << value(instr->result()) << ")\n";
+          << " (" << instr->argc() << ", "
+                  << value(instr->result()) << ")\n";
 }
 
 void IrGenerator::visit_instr_call_keyed(ir::CallKeyedInstruction *instr)
 {
     out() << value(instr) << " = call " << value(instr->object()) << " "
           << uint64(instr->key())
-          << " (" << instr->argc() << ", " << value(instr->argv()) << ", "
-                 << value(instr->result()) << ")\n";
+          << " (" << instr->argc() << ", "
+                  << value(instr->result()) << ")\n";
 }
 
 void IrGenerator::visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *instr)
 {
     out() << value(instr) << " = call " << value(instr->object()) << " "
           << value(instr->key())
-          << " (" << instr->argc() << ", " << value(instr->argv()) << ", "
-                 << value(instr->result()) << ")\n";
+          << " (" << instr->argc() << ", "
+                  << value(instr->result()) << ")\n";
 }
 
 void IrGenerator::visit_instr_call_named(ir::CallNamedInstruction *instr)
 {
     out() << value(instr) << " = call " << uint64(instr->key())
-          << " (" << instr->argc() << ", " << value(instr->argv()) << ", "
-                 << value(instr->result()) << ")\n";
+          << " (" << instr->argc() << ", "
+                  << value(instr->result()) << ")\n";
 }
 
 void IrGenerator::visit_instr_val(ir::ValueInstruction *instr)
@@ -429,6 +429,21 @@ void IrGenerator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *i
           << instr->index() << "\n";
 }
 
+void IrGenerator::visit_instr_stk_alloc(ir::StackAllocInstruction *instr)
+{
+    out() << "stk.alloc " << instr->count() << "\n";
+}
+
+void IrGenerator::visit_instr_stk_free(ir::StackFreeInstruction *instr)
+{
+    out() << "stk.free " << instr->count() << "\n";
+}
+
+void IrGenerator::visit_instr_stk_push(ir::StackPushInstruction *instr)
+{
+    out() << "stk.push " << value(instr->value()) << "\n";
+}
+
 void IrGenerator::visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *instr)
 {
     out() << "ctx.set_strict " << boolean(instr->strict()) << "\n";
@@ -449,11 +464,6 @@ void IrGenerator::visit_instr_ctx_enter_with(ir::ContextEnterWithInstruction *in
 void IrGenerator::visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr)
 {
     out() << "ctx.leave\n";
-}
-
-void IrGenerator::visit_instr_ctx_this(ir::ContextThisInstruction *instr)
-{
-    out() << value(instr) << " = " << "ctx.this\n";
 }
 
 void IrGenerator::visit_instr_ctx_get(ir::ContextGetInstruction *instr)
@@ -498,12 +508,6 @@ void IrGenerator::visit_instr_init_args(ir::InitArgumentsInstruction *instr)
 {
     out() << "init.args " << value(instr->destination()) << " "
           << instr->parameter_count() << "\n";
-}
-
-void IrGenerator::visit_instr_init_args_obj(ir::InitArgumentsObjectInstruction *instr)
-{
-    out() << "init.args_obj " << instr->parameter_count()
-          << value(instr->parameter_array()) << "\n";
 }
 
 void IrGenerator::visit_instr_decl(ir::Declaration *instr)

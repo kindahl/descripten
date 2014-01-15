@@ -18,15 +18,15 @@
 
 #pragma once
 #include "operation.hh"
-#include "value.hh"
+#include "value_data.h"
 
 class EsContext;
 
 namespace runtime
 {
     typedef void (*tglobal_data)();
-    typedef bool (*tglobal_main)(EsContext *ctx, int argc,
-                                 EsValue *fp, EsValue *vp);
+    typedef bool (*tglobal_main)(EsContext *ctx, uint32_t argc,
+                                 EsValueData *fp, EsValueData *vp);
     
     bool init(tglobal_data global_data);
     bool shutdown();

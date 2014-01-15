@@ -24,7 +24,7 @@
 
 EsCallStack g_call_stack;
 
-EsCallFrame::EsCallFrame(size_t pos, int argc, EsValue *fp, EsValue *vp)
+EsCallFrame::EsCallFrame(size_t pos, uint32_t argc, EsValue *fp, EsValue *vp)
     : pos_(pos)
     , argc_(argc)
     , fp_(fp)
@@ -77,13 +77,14 @@ EsCallFrame EsCallFrame::push_eval_indirect(EsFunction *callee)
     return frame;
 }
 
-EsCallFrame EsCallFrame::push_function_excl_args(int argc, EsFunction *callee,
+EsCallFrame EsCallFrame::push_function_excl_args(uint32_t argc,
+                                                 EsFunction *callee,
                                                  const EsValue &this_arg)
 {
     // Allocate any default (unspecified) arguments.
     assert(callee);
-    int argc_def = 0;
-    if (static_cast<int>(callee->length()) > argc)
+    uint32_t argc_def = 0;
+    if (callee->length() > argc)
         argc_def = callee->length() - argc;
 
     EsCallFrame frame(g_call_stack.size() - argc,
@@ -119,13 +120,13 @@ EsCallFrame EsCallFrame::push_function_excl_args(int argc, EsFunction *callee,
     return frame;
 }
 
-EsCallFrame EsCallFrame::push_function(int argc, EsFunction *callee,
+EsCallFrame EsCallFrame::push_function(uint32_t argc, EsFunction *callee,
                                        const EsValue &this_arg)
 {
     // Allocate any default (unspecified) arguments.
     assert(callee);
-    int argc_def = 0;
-    if (static_cast<int>(callee->length()) > argc)
+    uint32_t argc_def = 0;
+    if (callee->length() > argc)
         argc_def = callee->length() - argc;
 
     EsCallFrame frame(g_call_stack.size(),
@@ -177,7 +178,7 @@ EsCallFrame EsCallFrame::push_global()
     return frame;
 }
 
-EsCallFrame EsCallFrame::wrap(int argc, EsValue *fp, EsValue *vp)
+EsCallFrame EsCallFrame::wrap(uint32_t argc, EsValue *fp, EsValue *vp)
 {
     return EsCallFrame(std::numeric_limits<size_t>::max(), argc, fp, vp);
 }

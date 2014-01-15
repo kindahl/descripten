@@ -23,7 +23,7 @@
 #include "common/core.hh"
 #include "parser/ast.hh"
 #include "parser/visitor.hh"
-#include "api.hh"
+#include "value_data.h"
 
 using parser::ArrayLiteral;
 using parser::AssignmentExpression;
@@ -160,7 +160,7 @@ private:
         TYPE_REFERENCE  ///< The object is a reference.
     } type_;
 
-    EsValue val_;       ///< Value, only valid if type_ == TYPE_VALUE.
+    EsValueData val_;   ///< Value, only valid if type_ == TYPE_VALUE.
     EsReference ref_;   ///< Reference, only valid if type_ == TYPE_REFERENCE.
 
 public:
@@ -173,7 +173,7 @@ public:
      * Constructs an object containing a value.
      * @param [in] val Value.
      */
-    EsReferenceOrValue(const EsValue &val) : type_(TYPE_VALUE), val_(val) {}
+    EsReferenceOrValue(const EsValueData &val) : type_(TYPE_VALUE), val_(val) {}
 
     /**
      * Constructs and object containing a reference.
@@ -184,7 +184,11 @@ public:
     /**
      * @return true if the object contains nothing, else false is returned.
      */
-    bool empty() const { return type_ == TYPE_EMPTY || (type_ == TYPE_VALUE && val_.is_nothing()); }
+    bool empty() const
+    {
+        return type_ == TYPE_EMPTY ||
+               (type_ == TYPE_VALUE && es_value_is_nothing(val_));
+    }
 
     /**
      * @return true if the object contains a value, else false is returned.
@@ -200,7 +204,7 @@ public:
      * @return Value contained in object.
      * @pre Object contains a value; is_value() returns true.
      */
-    const EsValue &value() const { assert(is_value()); return val_; }
+    const EsValueData &value() const { assert(is_value()); return val_; }
 
     /**
      * @return Reference contained in object.
@@ -320,8 +324,8 @@ private:
     bool is_in_iteration() const;
     bool is_in_switch() const;
 
-    bool expand_ref_get(const EsReferenceOrValue &any, EsValue &value);
-    bool expand_ref_put(const EsReferenceOrValue &any, const EsValue &value);
+    bool expand_ref_get(const EsReferenceOrValue &any, EsValueData &value);
+    bool expand_ref_put(const EsReferenceOrValue &any, const EsValueData &value);
 
     void parse_fun_decls(const DeclarationVector &decls);
 

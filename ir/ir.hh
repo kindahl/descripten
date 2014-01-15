@@ -815,20 +815,22 @@ public:
     Instruction *last_instr() const;
 
     Value *push_args_obj_init();
-    Value *push_args_obj_link(Value *args, int index, Value *val);
+    Value *push_args_obj_link(Value *args, uint32_t index, Value *val);
     Value *push_arr_get(size_t index, Value *arr);
     Value *push_arr_put(size_t index, Value *arr, Value *val);
     Value *push_bin_add(Value *op1, Value *op2);
     Value *push_bin_sub(Value *op1, Value *op2);
     Value *push_bin_or(Value *op1, Value *op2);
     Value *push_bin_eq(Value *op1, Value *op2);
-    Value *push_bnd_extra_init(int num_extra);
-    Value *push_bnd_extra_ptr(int hops);
-    Value *push_call(Value *fun, int argc, Value *res);
-    Value *push_call_keyed(Value *obj, uint64_t key, int argc, Value *res);
-    Value *push_call_keyed_slow(Value *obj, Value *key, int argc, Value *res);
-    Value *push_call_named(uint64_t key, int argc, Value *res);
-    Value *push_call_new(Value *fun, int argc, Value *res);
+    Value *push_bnd_extra_init(uint32_t num_extra);
+    Value *push_bnd_extra_ptr(uint32_t hops);
+    Value *push_call(Value *fun, uint32_t argc, Value *res);
+    Value *push_call_keyed(Value *obj, uint64_t key, uint32_t argc,
+                           Value *res);
+    Value *push_call_keyed_slow(Value *obj, Value *key, uint32_t argc,
+                                Value *res);
+    Value *push_call_named(uint64_t key, uint32_t argc, Value *res);
+    Value *push_call_new(Value *fun, uint32_t argc, Value *res);
     Value *push_mem_alloc(const Type *type);
     Value *push_mem_store(Value *dst, Value *src);
     Value *push_mem_elm_ptr(Value *val, size_t index);
@@ -854,7 +856,6 @@ public:
     Value *push_trm_ret(Value *val);
     Value *push_val_to_bool(Value *val);
     Value *push_val_to_double(Value *val, Value *res);
-    Value *push_val_to_str(Value *val, Value *res);
     Value *push_val_from_bool(Value *val, Value *res);  // FIXME: Rename args more appropriately val, bval
     Value *push_val_from_double(Value *val, Value *res);
     Value *push_val_from_str(Value *val, Value *res);
@@ -874,19 +875,19 @@ public:
     Value *push_ex_load_state(Value *state);
     Value *push_ex_set(Value *val);
     Value *push_ex_clear();
-    Value *push_init_args(Value *dst, int prmc);
+    Value *push_init_args(Value *dst, uint32_t prmc);
     Value *push_decl_var(uint64_t key, bool is_strict);
     Value *push_decl_fun(uint64_t key, bool is_strict, Value *fun);
     Value *push_decl_prm(uint64_t key, bool is_strict,
-                         int prm_index, Value *prm_array);
+                         size_t prm_index, Value *prm_array);
     Value *push_link_var(uint64_t key, bool is_strict, Value *var);
     Value *push_link_fun(uint64_t key, bool is_strict, Value *fun);
     Value *push_link_prm(uint64_t key, bool is_strict, Value *prm);
 
     Value *push_es_new_arr(size_t length, Value *vals, Value *res);
-    Value *push_es_new_fun(Function *fun, int param_count, bool is_strict,
+    Value *push_es_new_fun(Function *fun, uint32_t param_count, bool is_strict,
                            Value *res);
-    Value *push_es_new_fun_expr(Function *fun, int param_count,
+    Value *push_es_new_fun_expr(Function *fun, uint32_t param_count,
                                 bool is_strict, Value *res);
     Value *push_es_new_obj(Value *res);
     Value *push_es_new_rex(const String &pattern, const String &flags,
@@ -1060,11 +1061,6 @@ public:
     ArgumentsObjectInitInstruction();
 
     /**
-     * @return Argument count.
-     */
-    int argc() const;
-
-    /**
      * @copydoc Value::type
      */
     virtual const Type *type() const OVERRIDE;
@@ -1085,11 +1081,11 @@ class ArgumentsObjectLinkInstruction : public Instruction
 {
 private:
     Value *args_;
-    int index_;
+    uint32_t index_;
     Value *val_;
 
 public:
-    ArgumentsObjectLinkInstruction(Value *args, int index, Value *val);
+    ArgumentsObjectLinkInstruction(Value *args, uint32_t index, Value *val);
 
     /**
      * @return Arguments object.
@@ -1099,7 +1095,7 @@ public:
     /**
      * @return Argument index.
      */
-    int index() const;
+    uint32_t index() const;
 
     /**
      * @return Value.
@@ -1240,12 +1236,12 @@ public:
 class BindExtraInitInstruction : public Instruction
 {
 private:
-    int num_extra_;
+    uint32_t num_extra_;
 
 public:
-    BindExtraInitInstruction(int num_extra);
+    BindExtraInitInstruction(uint32_t num_extra);
 
-    int num_extra() const;
+    uint32_t num_extra() const;
 
     /**
      * @copydoc Value::type
@@ -1267,12 +1263,12 @@ public:
 class BindExtraPtrInstruction : public Instruction
 {
 private:
-    int hops_;
+    uint32_t hops_;
 
 public:
-    BindExtraPtrInstruction(int hops);
+    BindExtraPtrInstruction(uint32_t hops);
 
-    int hops() const;
+    uint32_t hops() const;
 
     /**
      * @copydoc Value::type
@@ -1297,18 +1293,17 @@ public:
     enum Operation
     {
         NORMAL, ///< Normal function call.
-        NAMED,  ///< Named function call.
         NEW     ///< New call.
     };
 
 private:
     Operation op_;
     Value *fun_;
-    int argc_;
+    uint32_t argc_;
     Value *res_;
 
 public:
-    CallInstruction(Operation op, Value *fun, int argc, Value *res);
+    CallInstruction(Operation op, Value *fun, uint32_t argc, Value *res);
 
     /**
      * @return Type of call.
@@ -1323,7 +1318,7 @@ public:
     /**
      * @return Number of arguments.
      */
-    int argc() const;
+    uint32_t argc() const;
 
     /**
      * @return Function result.
@@ -1352,11 +1347,11 @@ class CallKeyedInstruction : public Instruction
 private:
     Value *obj_;
     uint64_t key_;
-    int argc_;
+    uint32_t argc_;
     Value *res_;
 
 public:
-    CallKeyedInstruction(Value *obj, uint64_t key, int argc,
+    CallKeyedInstruction(Value *obj, uint64_t key, uint32_t argc,
                          Value *res);
 
     /**
@@ -1372,7 +1367,7 @@ public:
     /**
      * @return Number of arguments.
      */
-    int argc() const;
+    uint32_t argc() const;
 
     /**
      * @return Function result.
@@ -1401,11 +1396,11 @@ class CallKeyedSlowInstruction : public Instruction
 private:
     Value *obj_;
     Value *key_;
-    int argc_;
+    uint32_t argc_;
     Value *res_;
 
 public:
-    CallKeyedSlowInstruction(Value *obj, Value *key, int argc,
+    CallKeyedSlowInstruction(Value *obj, Value *key, uint32_t argc,
                              Value *res);
 
     /**
@@ -1421,7 +1416,7 @@ public:
     /**
      * @return Number of arguments.
      */
-    int argc() const;
+    uint32_t argc() const;
 
     /**
      * @return Function result.
@@ -1449,11 +1444,11 @@ class CallNamedInstruction : public Instruction
 {
 private:
     uint64_t key_;
-    int argc_;
+    uint32_t argc_;
     Value *res_;
 
 public:
-    CallNamedInstruction(uint64_t key, int argc, Value *res);
+    CallNamedInstruction(uint64_t key, uint32_t argc, Value *res);
 
     /**
      * @return Function to call.
@@ -1463,7 +1458,7 @@ public:
     /**
      * @return Number of arguments.
      */
-    int argc() const;
+    uint32_t argc() const;
 
     /**
      * @return Function result.
@@ -1537,7 +1532,6 @@ public:
     {
         TO_BOOLEAN,
         TO_DOUBLE,
-        TO_STRING,
 
         FROM_BOOLEAN,
         FROM_DOUBLE,
@@ -2328,10 +2322,10 @@ class InitArgumentsInstruction : public Instruction
 {
 private:
     Value *dst_;
-    int prmc_;
+    uint32_t prmc_;
 
 public:
-    InitArgumentsInstruction(Value *dst, int prmc);
+    InitArgumentsInstruction(Value *dst, uint32_t prmc);
 
     /**
      * @return Destination value.
@@ -2341,7 +2335,7 @@ public:
     /**
      * @return Number of parameters that the function expects.
      */
-    int parameter_count() const;
+    uint32_t parameter_count() const;
 
     /**
     * @copydoc Value::type
@@ -2379,13 +2373,14 @@ private:
     uint64_t key_;
     bool is_strict_;
     Value *val_;        ///< Only valid for FUNCTION type.
-    int prm_index_;     ///< Only valid for PARAMETER type.
+    size_t prm_index_;  ///< Only valid for PARAMETER type.
     Value *prm_array_;  ///< Only valid for PARAMETER type.
 
 public:
     Declaration(uint64_t id, bool is_strict);
     Declaration(uint64_t id, bool is_strict, Value *val);
-    Declaration(uint64_t id, bool is_strict, int prm_index, Value *prm_array);
+    Declaration(uint64_t id, bool is_strict, size_t prm_index,
+                Value *prm_array);
 
     /**
      * @return Kind of operation.
@@ -2412,7 +2407,7 @@ public:
      * @return Parameter index.
      * @pre type is PARAMETER.
      */
-    int parameter_index() const;
+    size_t parameter_index() const;
 
     /**
      * @return Parameter array.
@@ -2960,12 +2955,12 @@ class EsNewFunctionDeclarationInstruction : public Instruction
 {
 private:
     Function *fun_;
-    int param_count_;
+    uint32_t param_count_;
     bool is_strict_;
     Value *res_;
 
 public:
-    EsNewFunctionDeclarationInstruction(Function *fun, int param_count,
+    EsNewFunctionDeclarationInstruction(Function *fun, uint32_t param_count,
                                         bool is_strict, Value *res);
 
     /**
@@ -2976,7 +2971,7 @@ public:
     /**
      * @return Number of parameters.
      */
-    int parameter_count() const;
+    uint32_t parameter_count() const;
 
     /**
      * @return true if function is a strict function.
@@ -3009,12 +3004,12 @@ class EsNewFunctionExpressionInstruction : public Instruction
 {
 private:
     Function *fun_;
-    int param_count_;
+    uint32_t param_count_;
     bool is_strict_;
     Value *res_;
 
 public:
-    EsNewFunctionExpressionInstruction(Function *fun, int param_count,
+    EsNewFunctionExpressionInstruction(Function *fun, uint32_t param_count,
                                        bool is_strict, Value *res);
 
     /**
@@ -3025,7 +3020,7 @@ public:
     /**
      * @return Number of parameters.
      */
-    int parameter_count() const;
+    uint32_t parameter_count() const;
 
     /**
      * @return true if function is a strict function.

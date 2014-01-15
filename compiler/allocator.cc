@@ -284,7 +284,6 @@ void Allocator::visit_instr_val(ir::ValueInstruction *instr)
             touch_o(instr->value());
             break;
         case ir::ValueInstruction::TO_DOUBLE:
-        case ir::ValueInstruction::TO_STRING:
             touch_r(instr);
             touch_o(instr->value());
             touch_o(instr->result());

@@ -17,22 +17,39 @@
  */
 
 #pragma once
-#include <cstdint>
-#include "api.hh"
+#include <stdint.h>
+#include "value_data.h"
 
-class EsContext;
-class EsPropertyIterator;
-class EsString;
-class EsValue;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void data_reg_str(const EsString *str, uint32_t id);
+#define ESA_BOOL            uint8_t
+#define ESA_TRUE            1
+#define ESA_FALSE           0
 
-// FIXME: Rename to op_frm_alloc instead? Since we're allocating in the call frame.
-void op_stk_alloc(uint32_t count);
-void op_stk_free(uint32_t count);
-void op_stk_push(const EsValue &val);
+#define ESA_FUN_PTR(name)   bool (* name)(EsContext *ctx, uint32_t argc,\
+                                          EsValueData *fp, EsValueData *vp)
 
-void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc);
+struct EsContext;
+struct EsPropertyIterator;
+struct EsString;
+
+void esa_str_intern(const EsString *str, uint32_t id);
+
+bool esa_val_to_bool(EsValueData val_data);
+bool esa_val_to_num(EsValueData val_data, double *num);
+const EsString *esa_val_to_str(EsValueData val_data);
+EsObject *esa_val_to_obj(EsValueData val_data);
+bool esa_val_chk_coerc(EsValueData val_data);
+
+// FIXME: Rename to esa_frm_alloc instead? Since we're allocating in the call frame.
+void esa_stk_alloc(uint32_t count);
+void esa_stk_free(uint32_t count);
+void esa_stk_push(EsValueData val_data);
+
+void esa_init_args(EsValueData dst_data[], uint32_t argc,
+                   const EsValueData argv_data[], uint32_t prmc);
 
 /**
  * Constructs and initializes the arguments object for the specified execution
@@ -40,7 +57,7 @@ void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc);
  * @p argv. However, no parameter will be linked to any argument.
  *
  * After the arguments object has been created arguments can be linked to
- * parameters using op_args_obj_link().
+ * parameters using esa_args_obj_link().
  *
  * @param [in] ctx Context to which the arguments object should be linked.
  * @param [in] argc Number of arguments.
@@ -48,11 +65,12 @@ void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc);
  * @param [in] vp Value pointer.
  * @return Pointer to arguments object wrapped in a value.
  *
- * @see op_args_obj_link()
+ * @see esa_args_obj_link()
  */
-EsValue op_args_obj_init(EsContext *ctx, int argc,
-                         EsValue *fp, EsValue *vp);
-void op_args_obj_link(EsValue &args, int i, EsValue *val);
+EsValueData esa_args_obj_init(EsContext *ctx, uint32_t argc,
+                              EsValueData *fp_data, EsValueData *vp_data);
+void esa_args_obj_link(EsValueData args_data, uint32_t i,
+                       EsValueData *val_data);
 
 /**
  * Initalizes extra bindings. Extra bindings are bindings that are accessed
@@ -77,101 +95,130 @@ void op_args_obj_link(EsValue &args, int i, EsValue *val);
  * @return Pointer to extra bindings in memory. Is guaranteed to have enough
  *         memory for @a num_extra bindings.
  */
-EsValue *op_bnd_extra_init(EsContext *ctx, int num_extra);
-EsValue *op_bnd_extra_ptr(int argc, EsValue *fp, EsValue *vp, int hops);
+EsValueData *esa_bnd_extra_init(EsContext *ctx, uint32_t num_extra);
+EsValueData *esa_bnd_extra_ptr(uint32_t argc, EsValueData *fp_data,
+                               EsValueData *vp_data, uint32_t hops);
 
 // Context related functions.
-bool op_ctx_decl_fun(EsContext *ctx, bool is_eval, bool is_strict,
-                     uint64_t fn, const EsValue &fo);
-bool op_ctx_decl_var(EsContext *ctx, bool is_eval, bool is_strict,
-                     uint64_t vn);
-bool op_ctx_decl_prm(EsContext *ctx, bool is_strict, uint64_t pn,
-                     const EsValue &po);
-void op_ctx_link_fun(EsContext *ctx, uint64_t fn, EsValue *fo); // May not be called from eval context.
-void op_ctx_link_var(EsContext *ctx, uint64_t vn, EsValue *vo); // May not be called from eval context.
-void op_ctx_link_prm(EsContext *ctx, uint64_t vn, EsValue *po); // May not be called from eval context.
-bool op_ctx_get(EsContext *ctx, uint64_t raw_key, EsValue &result,
-                uint16_t cid);
-bool op_ctx_put(EsContext *ctx, uint64_t raw_key, const EsValue &val,
-                uint16_t cid);
-bool op_ctx_del(EsContext *ctx, uint64_t raw_key, EsValue &result);
-void op_ctx_set_strict(EsContext *ctx, bool strict);
-bool op_ctx_enter_with(EsContext *ctx, const EsValue &val);
-bool op_ctx_enter_catch(EsContext *ctx, uint64_t raw_key);
-void op_ctx_leave();
-EsContext *op_ctx_running();
+bool esa_ctx_decl_fun(EsContext *ctx, bool is_eval, bool is_strict,
+                      uint64_t fn, EsValueData fo_data);
+bool esa_ctx_decl_var(EsContext *ctx, bool is_eval, bool is_strict,
+                      uint64_t vn);
+bool esa_ctx_decl_prm(EsContext *ctx, bool is_strict, uint64_t pn,
+                      EsValueData po_data);
+void esa_ctx_link_fun(EsContext *ctx, uint64_t fn, EsValueData *fo_data);    // May not be called from eval context.
+void esa_ctx_link_var(EsContext *ctx, uint64_t vn, EsValueData *vo_data);    // May not be called from eval context.
+void esa_ctx_link_prm(EsContext *ctx, uint64_t vn, EsValueData *po_data);    // May not be called from eval context.
+bool esa_ctx_get(EsContext *ctx, uint64_t raw_key, EsValueData *result_data,
+                 uint16_t cid);
+bool esa_ctx_put(EsContext *ctx, uint64_t raw_key, EsValueData val_data,
+                 uint16_t cid);
+bool esa_ctx_del(EsContext *ctx, uint64_t raw_key, EsValueData *result_data);
+void esa_ctx_set_strict(EsContext *ctx, bool strict);
+bool esa_ctx_enter_with(EsContext *ctx, EsValueData val_data);
+bool esa_ctx_enter_catch(EsContext *ctx, uint64_t raw_key);
+void esa_ctx_leave();
+EsContext *esa_ctx_running();
 
-EsValue op_ex_save_state(EsContext *ctx);
-void op_ex_load_state(EsContext *ctx, const EsValue &state);
-void op_ex_set(EsContext *ctx, const EsValue &exception);
-void op_ex_clear(EsContext *ctx);
+EsValueData esa_ex_save_state(EsContext *ctx);
+void esa_ex_load_state(EsContext *ctx, EsValueData state_data);
+EsValueData esa_ex_get(EsContext *ctx);
+void esa_ex_set(EsContext *ctx, EsValueData exception_data);
+void esa_ex_clear(EsContext *ctx);
 
 // Object related functions.
-EsPropertyIterator *op_prp_it_new(const EsValue &val);
-bool op_prp_it_next(EsPropertyIterator *it, EsValue &val);
-bool op_prp_def_data(EsValue &obj_val, const EsValue &key,
-                     const EsValue &val);
-bool op_prp_def_accessor(EsValue &obj_val, uint64_t raw_key,
-                         const EsValue &fun, bool is_setter);
-bool op_prp_get(const EsValue &obj_val, const EsValue &key_val,
-                EsValue &result, uint16_t cid);
-bool op_prp_get(const EsValue &obj_val, uint64_t raw_key,
-                EsValue &result, uint16_t cid);
-bool op_prp_put(EsContext *ctx, const EsValue &obj_val, const EsValue &key_val,
-                const EsValue &val, uint16_t cid);
-bool op_prp_put(EsContext *ctx, const EsValue &obj_val, uint64_t raw_key,
-                const EsValue &val, uint16_t cid);
-bool op_prp_del(EsContext *ctx, EsValue &obj_val, const EsValue &key_val,
-                EsValue &result);
-bool op_prp_del(EsContext *ctx, EsValue &obj_val, uint64_t raw_key,
-                EsValue &result);
+EsPropertyIterator *esa_prp_it_new(EsValueData val_data);
+bool esa_prp_it_next(EsPropertyIterator *it, EsValueData *result_data);
+bool esa_prp_def_data(EsValueData obj_data, EsValueData key_data,
+                      EsValueData val_data);
+bool esa_prp_def_accessor(EsValueData obj_data, uint64_t raw_key,
+                          EsValueData fun_data, bool is_setter);
+bool esa_prp_get_slow(EsValueData src_data, EsValueData key_data,
+                      EsValueData *result_data, uint16_t cid);
+bool esa_prp_get(EsValueData src_data, uint64_t raw_key,
+                 EsValueData *result_data, uint16_t cid);
+bool esa_prp_put_slow(EsContext *ctx, EsValueData dst_data,
+                      EsValueData key_data, EsValueData val_data,
+                      uint16_t cid);
+bool esa_prp_put(EsContext *ctx, EsValueData dst_data, uint64_t raw_key,
+                 EsValueData val_data, uint16_t cid);
+bool esa_prp_del_slow(EsContext *ctx, EsValueData src_data,
+                      EsValueData key_data, EsValueData *result_data);
+bool esa_prp_del(EsContext *ctx, EsValueData src_data, uint64_t raw_key,
+                 EsValueData *result_data);
 
-bool op_call(const EsValue &fun, int argc, EsValue &result);
-bool op_call_keyed(const EsValue &obj_val, const EsValue &key_val, int argc,
-                   EsValue &result);
-bool op_call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
-                   EsValue &result);
-bool op_call_named(uint64_t raw_key, int argc, EsValue &result);
-bool op_call_new(const EsValue &fun, int argc, EsValue &result);
+bool esa_call(EsValueData fun_data, uint32_t argc, EsValueData *result_data);
+bool esa_call_keyed_slow(EsValueData src_data, EsValueData key_data,
+                         uint32_t argc, EsValueData *result_data);
+bool esa_call_keyed(EsValueData src_data, uint64_t raw_key, uint32_t argc,
+                    EsValueData *result_data);
+bool esa_call_named(uint64_t raw_key, uint32_t argc, EsValueData *result_data);
+bool esa_call_new(EsValueData fun_data, uint32_t argc,
+                  EsValueData *result_data);
 
 // Literal functions.
-const EsString *op_new_str(const void *str, uint32_t len);
-EsValue op_new_arr(int count, EsValue items[]);
-EsValue op_new_obj();
-EsValue op_new_reg_exp(const EsString *pattern, const EsString *flags);
-EsValue op_new_fun_decl(EsContext *ctx, ES_API_FUN_PTR(fun),
-                        bool strict, int prmc);
-EsValue op_new_fun_expr(EsContext *ctx, ES_API_FUN_PTR(fun),
-                        bool strict, int prmc);
+const EsString *esa_new_str(const void *str, uint32_t len);
+EsValueData esa_new_arr(uint32_t count, EsValueData items_data[]);
+EsValueData esa_new_obj();
+EsValueData esa_new_reg_exp(const EsString *pattern, const EsString *flags);
+EsValueData esa_new_fun_decl(EsContext *ctx, ESA_FUN_PTR(fun),
+                             bool strict, uint32_t prmc);
+EsValueData esa_new_fun_expr(EsContext *ctx, ESA_FUN_PTR(fun),
+                             bool strict, uint32_t prmc);
 
 // Unary functions.
-bool op_u_typeof(const EsValue &val, EsValue &result);
-bool op_u_not(const EsValue &expr, EsValue &result);
-bool op_u_bit_not(const EsValue &expr, EsValue &result);
-bool op_u_add(const EsValue &expr, EsValue &result);
-bool op_u_sub(const EsValue &expr, EsValue &result);
+bool esa_u_typeof(EsValueData val_data, EsValueData *result_data);
+bool esa_u_not(EsValueData expr_data, EsValueData *result_data);
+bool esa_u_bit_not(EsValueData expr_data, EsValueData *result_data);
+bool esa_u_add(EsValueData expr_data, EsValueData *result_data);
+bool esa_u_sub(EsValueData expr_data, EsValueData *result_data);
 
 // Binary functions.
-bool op_b_or(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_xor(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_and(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_shl(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_sar(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_shr(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_add(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_sub(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_mul(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_div(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_b_mod(const EsValue &lval, const EsValue &rval, EsValue &result);
+bool esa_b_or(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data);
+bool esa_b_xor(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_and(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_shl(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_sar(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_shr(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_add(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_sub(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_mul(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_div(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_b_mod(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
 
 // Comparative functions.
-bool op_c_in(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_instance_of(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_strict_eq(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_strict_neq(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_eq(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_neq(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_lt(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_gt(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_lte(const EsValue &lval, const EsValue &rval, EsValue &result);
-bool op_c_gte(const EsValue &lval, const EsValue &rval, EsValue &result);
+bool esa_c_in(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data);
+bool esa_c_instance_of(EsValueData lval_data, EsValueData rval_data,
+                       EsValueData *result_data);
+bool esa_c_strict_eq(EsValueData lval_data, EsValueData rval_data,
+                     EsValueData *result_data);
+bool esa_c_strict_neq(EsValueData lval_data, EsValueData rval_data,
+                      EsValueData *result_data);
+bool esa_c_eq(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data);
+bool esa_c_neq(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_c_lt(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data);
+bool esa_c_lte(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+bool esa_c_gt(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data);
+bool esa_c_gte(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data);
+
+#ifdef __cplusplus
+}
+#endif

@@ -745,7 +745,8 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
         if (num_params > 0)
         {
             // Note, parameters are stored in extra.
-            t = fun->last_block()->push_init_args(e, static_cast<int>(num_params));
+            t = fun->last_block()->push_init_args(
+                    e, static_cast<uint32_t>(num_params));
         }
 
         start_extras = num_params;

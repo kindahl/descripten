@@ -149,7 +149,7 @@ struct CompareArraySortComparator
     bool operator() (const EsValue &e1, const EsValue &e2)
     {
         EsValue result;
-        if (!op_c_lt(e1, e2, result))
+        if (!esa_c_lt(e1, e2, &result))
             throw static_cast<int>(0);
 
         return result.to_boolean();
@@ -1260,7 +1260,7 @@ ES_API_FUN(es_std_arr_proto_splice)
     }
 
     uint32_t k = act_start;
-    for (int i = 2; i < argc; i++, k++)
+    for (uint32_t i = 2; i < argc; i++, k++)
     {
         if (!o->putT(EsPropertyKey::from_u32(k), frame.arg(i), true))
             return false;
@@ -2595,7 +2595,7 @@ ES_API_FUN(es_std_fun_proto_call)
     // FIXME: We can probably wrap the original frame + 1 value offset.
     EsCallFrame new_frame = EsCallFrame::push_function(
         argc > 1 ? argc - 1 : 0, frame.this_value().as_function(), this_arg);
-    for (int i = 1; i < argc; i++)
+    for (uint32_t i = 1; i < argc; i++)
         new_frame.fp()[i - 1] = fp[i];
 
     if (!frame.this_value().as_function()->callT(new_frame))
@@ -4924,7 +4924,7 @@ ES_API_FUN(es_std_str_from_char_code)
     byte *buf = new byte[argc * 6 + 1];     // One UTF-8 character may potentially be 6 bytes, not in this particular case but in general.
     byte *ptr = buf;
     
-    for (int i = 0; i < argc; i++)
+    for (uint32_t i = 0; i < argc; i++)
     {
         const EsValue &arg = frame.arg(i);
         

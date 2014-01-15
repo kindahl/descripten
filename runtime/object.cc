@@ -734,7 +734,7 @@ EsFunction *EsArguments::make_arg_setter(EsValue *val)
 }
 
 EsArguments *EsArguments::create_inst(EsFunction *callee,
-                                      int argc, const EsValue argv[])
+                                      uint32_t argc, const EsValue argv[])
 {
     EsArguments *a = new (GC)EsArguments();
 
@@ -748,7 +748,7 @@ EsArguments *EsArguments::create_inst(EsFunction *callee,
         EsPropertyDescriptor(false, true, true,
             EsValue::from_num(static_cast<double>(argc)))); // VERIFIED: 10.6.
 
-    for (int i = argc - 1; i >= 0; i--)
+    for (uint32_t i = argc; i-- > 0;)
     {
         const EsValue &val = argv[i];
         a->define_new_own_property(EsPropertyKey::from_u32(i),
@@ -780,8 +780,8 @@ EsArguments *EsArguments::create_inst(EsFunction *callee,
 }
 
 EsArguments *EsArguments::create_inst(EsFunction *callee,
-                                      int argc, EsValue argv[],
-                                      int prmc, String prmv[])
+                                      uint32_t argc, EsValue argv[],
+                                      uint32_t prmc, String prmv[])
 {
     EsArguments *a = new (GC)EsArguments();
     
@@ -797,7 +797,7 @@ EsArguments *EsArguments::create_inst(EsFunction *callee,
 
     StringSet mapped_names;
 
-    for (int i = argc - 1; i >= 0; i--)
+    for (uint32_t i = argc; i-- > 0;)
     {
         const EsValue &val = argv[i];
         a->define_new_own_property(EsPropertyKey::from_u32(i),
@@ -1050,7 +1050,7 @@ EsArray *EsArray::create_inst(uint32_t len)
     return a;
 }
 
-EsArray *EsArray::create_inst_from_lit(int count, EsValue items[])
+EsArray *EsArray::create_inst_from_lit(uint32_t count, EsValue items[])
 {
     EsArray *a = new (GC)EsArray();
     a->make_inst();
@@ -1060,7 +1060,7 @@ EsArray *EsArray::create_inst_from_lit(int count, EsValue items[])
                              EsValue::from_num(static_cast<double>(count))));   // VERIFIED: 15.4.5.2
 
     EsValueVector::const_iterator it;
-    for (int i = 0; i < count; i++)
+    for (uint32_t i = 0; i < count; i++)
     {
         if (items[i].is_nothing())
             continue;
@@ -1937,9 +1937,9 @@ EsBuiltinFunction::~EsBuiltinFunction()
 {
 }
 
-EsBuiltinFunction *EsBuiltinFunction::create_inst(EsLexicalEnvironment *scope,
-                                                  NativeFunction fun, int len,
-                                                  bool strict)
+EsBuiltinFunction *EsBuiltinFunction::create_inst(
+        EsLexicalEnvironment *scope, NativeFunction fun, uint32_t len,
+        bool strict)
 {
     EsBuiltinFunction *f = new (GC)EsBuiltinFunction(scope, fun, strict, len,
                                                      false);
@@ -2125,11 +2125,11 @@ bool EsFunctionBind::callT(EsCallFrame &frame, int flags)
         frame.argc() + bound_args_.size(), target_fun_, bound_this_);
 
     // FIXME: Replace fp_pos with pointer.
-    int fp_pos = 0;
+    uint32_t fp_pos = 0;
     for (const EsValue &arg : bound_args_)
         target_frame.fp()[fp_pos++] = arg;
     
-    for (int i = 0; i < frame.argc(); i++)
+    for (uint32_t i = 0; i < frame.argc(); i++)
         target_frame.fp()[fp_pos++] = frame.fp()[i];
     
     if (!target_fun_->callT(target_frame))
@@ -2148,11 +2148,11 @@ bool EsFunctionBind::constructT(EsCallFrame &frame)
         frame.argc() + bound_args_.size(), target_fun_, EsValue::undefined);
     
     // FIXME: Replace fp_pos with pointer.
-    int fp_pos = 0;
+    uint32_t fp_pos = 0;
     for (const EsValue &arg : bound_args_)
         target_frame.fp()[fp_pos++] = arg;
     
-    for (int i = 0; i < frame.argc(); i++)
+    for (uint32_t i = 0; i < frame.argc(); i++)
         target_frame.fp()[fp_pos++] = frame.fp()[i];
     
     if (!target_fun_->constructT(target_frame))
@@ -2450,7 +2450,7 @@ EsFunction *EsArrayConstructor::create_inst()
 
 bool EsArrayConstructor::constructT(EsCallFrame &frame)
 {
-    int argc = frame.argc();
+    uint32_t argc = frame.argc();
     EsValue *argv = frame.fp();
 
     EsArray *a = NULL;
@@ -2485,7 +2485,7 @@ bool EsArrayConstructor::constructT(EsCallFrame &frame)
     {
         a = EsArray::create_inst(static_cast<uint32_t>(argc));
 
-        for (int i = 0; i < argc; i++)
+        for (uint32_t i = 0; i < argc; i++)
         {
             if (argv[i].is_nothing())   // FIXME: This should never occur, nothing literals are only provided through array literals.
                 continue;
@@ -2569,7 +2569,7 @@ EsFunction *EsDateConstructor::create_inst()
 
 bool EsDateConstructor::constructT(EsCallFrame &frame)
 {
-    int argc = frame.argc();
+    uint32_t argc = frame.argc();
     EsValue *argv = frame.fp();
 
     EsValue result;
@@ -2672,7 +2672,7 @@ EsFunction *EsFunctionConstructor::create_inst()
 
 bool EsFunctionConstructor::constructT(EsCallFrame &frame)
 {
-    int argc = frame.argc();
+    uint32_t argc = frame.argc();
     EsValue *argv = frame.fp();
     // 15.3.2.1
     EsValue body = argc == 0
@@ -2686,7 +2686,7 @@ bool EsFunctionConstructor::constructT(EsCallFrame &frame)
         // Concatenate all arguments to a string and then parse it as a formal
         // parameter list.
         p.append("function $(");
-        for (int i = 0; i < argc - 1; i++)
+        for (uint32_t i = 0; i < argc - 1; i++)
         {
             if (i > 0)
                 p.append(',');
@@ -2840,7 +2840,7 @@ EsFunction *EsObjectConstructor::create_inst()
 
 bool EsObjectConstructor::constructT(EsCallFrame &frame)
 {
-    int argc = frame.argc();
+    uint32_t argc = frame.argc();
     EsValue *argv = frame.fp();
 
     if (argc > 0)
@@ -2929,7 +2929,7 @@ EsFunction *EsRegExpConstructor::create_inst()
 
 bool EsRegExpConstructor::constructT(EsCallFrame &frame)
 {
-    int argc = frame.argc();
+    uint32_t argc = frame.argc();
     EsValue *argv = frame.fp();
 
     EsValue pattern_arg = argc >= 1 ? argv[0] : EsValue::undefined;

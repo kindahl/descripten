@@ -507,10 +507,10 @@ public:
     virtual ~EsArguments();
 
     static EsArguments *create_inst(EsFunction *callee,
-                                    int argc, const EsValue argv[]);
+                                    uint32_t argc, const EsValue argv[]);
     static EsArguments *create_inst(EsFunction *callee,
-                                    int argc, EsValue argv[],
-                                    int prmc, String prmv[]);
+                                    uint32_t argc, EsValue argv[],
+                                    uint32_t prmc, String prmv[]);
 
     void link_parameter(uint32_t i, EsValue *val);
 
@@ -569,7 +569,7 @@ public:
     
     static EsArray *create_raw();
     static EsArray *create_inst(uint32_t len = 0);
-    static EsArray *create_inst_from_lit(int count, EsValue items[]);
+    static EsArray *create_inst_from_lit(uint32_t count, EsValue items[]);
 
     /**
      * @return Default array constructor.
@@ -794,7 +794,7 @@ public:
     friend class EsStringObject;
     
 public:
-    typedef bool (*NativeFunction)(EsContext *ctx, int argc,
+    typedef bool (*NativeFunction)(EsContext *ctx, uint32_t argc,
                                    EsValue *fp, EsValue *vp);
 
 public:
@@ -939,7 +939,7 @@ public:
     virtual ~EsBuiltinFunction();
 
     static EsBuiltinFunction *create_inst(EsLexicalEnvironment *scope,
-                                          NativeFunction func, int len,
+                                          NativeFunction func, uint32_t len,
                                           bool strict = false);
 
     /**

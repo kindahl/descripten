@@ -224,8 +224,8 @@ bool JsonParser::parse_array(EsValue &result)
         return false;
     }
 
-    result = EsValue::from_obj(EsArray::create_inst_from_lit(static_cast<int>(items.size()),
-                                                             &items[0]));
+    result = EsValue::from_obj(EsArray::create_inst_from_lit(
+            static_cast<uint32_t>(items.size()), &items[0]));
     return true;
 }
 

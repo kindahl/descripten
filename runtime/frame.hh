@@ -92,7 +92,7 @@ public:
         EsValue *end_ptr_;
 
     public:
-        Arguments(EsValue *fp, int argc)
+        Arguments(EsValue *fp, uint32_t argc)
             : begin_ptr_(argc > 0 ? fp : NULL)
             , end_ptr_(argc > 0 ? fp + argc : NULL) {}
 
@@ -102,11 +102,11 @@ public:
 
 private:
     size_t pos_;    ///< Frame position on call stack.
-    int argc_;      ///< Number of arguments passed to function.
+    uint32_t argc_; ///< Number of arguments passed to function.
     EsValue *fp_;   ///< Pointer to beginning of frame.
     EsValue *vp_;   ///< Pointer to beginning of locals.
 
-    EsCallFrame(size_t pos, int argc, EsValue *fp, EsValue *vp);
+    EsCallFrame(size_t pos, uint32_t argc, EsValue *fp, EsValue *vp);
 
     /**
      * @return The number of allocated arguments.
@@ -114,9 +114,9 @@ private:
      *       arguments.
      */
 #ifdef DEBUG
-    inline int num_alloc_args() const
+    inline uint32_t num_alloc_args() const
     {
-        return static_cast<int>(vp_ - fp_) - 3;
+        return static_cast<uint32_t>(vp_ - fp_) - 3;
     }
 #endif
 
@@ -124,23 +124,25 @@ public:
     EsCallFrame(EsCallFrame &&other);
     ~EsCallFrame();
 
+    // FIXME: Argument ordering.
     static EsCallFrame push_eval_direct(EsFunction *callee,
                                         const EsValue &this_binding);
     static EsCallFrame push_eval_indirect(EsFunction *callee);
-    static EsCallFrame push_function_excl_args(int argc, EsFunction *callee,
+    static EsCallFrame push_function_excl_args(uint32_t argc,
+                                               EsFunction *callee,
                                                const EsValue &this_arg);
-    static EsCallFrame push_function(int argc, EsFunction *callee,
+    static EsCallFrame push_function(uint32_t argc, EsFunction *callee,
                                      const EsValue &this_arg);
     static EsCallFrame push_global();
-    static EsCallFrame wrap(int argc, EsValue *fp, EsValue *vp);
+    static EsCallFrame wrap(uint32_t argc, EsValue *fp, EsValue *vp);
 
     inline Arguments arguments() const { return Arguments(fp_, argc_); }
 
-    inline int argc() const { return argc_; }
+    inline uint32_t argc() const { return argc_; }
     inline EsValue *fp() { return fp_; }
     inline EsValue *vp() { return vp_; }
 
-    inline const EsValue &arg(int index) { assert(index < num_alloc_args()); return fp_[index]; }
+    inline const EsValue &arg(uint32_t index) { assert(index < num_alloc_args()); return fp_[index]; }
     inline const EsValue &callee() const { return vp_[CALLEE]; }
     inline const EsValue &this_value() const { return vp_[THIS]; }
     inline const EsValue &result() const { return vp_[RESULT]; }

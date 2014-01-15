@@ -354,13 +354,6 @@ void IrGenerator::visit_instr_val(ir::ValueInstruction *instr)
                   << "\n";
             break;
         }
-        case ir::ValueInstruction::TO_STRING:
-        {
-            out() << value(instr) << " = val.to_string "
-                  << value(instr->value()) << " " << value(instr->result())
-                  << "\n";
-            break;
-        }
 
         case ir::ValueInstruction::FROM_BOOLEAN:
             out() << value(instr->result()) << " = " << "val.from_boolean "

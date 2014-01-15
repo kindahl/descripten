@@ -19,23 +19,11 @@
 #pragma once
 #include <cassert>
 #include "types.hh"
+#include "value_data.h"
 
 class EsFunction;
 class EsObject;
 class EsString;
-
-#define ES_VALUE_MASK               UINT64_C(0xffff000000000000)
-#define ES_VALUE_MASK_NO_TAG        UINT64_C(0xfff8000000000000)
-
-#define ES_VALUE_TAG_NAN            UINT64_C(0x7ff8000000000000)
-
-#define ES_VALUE_TAG_NUMBER         UINT64_C(0x7ff8000000000000)
-#define ES_VALUE_TAG_NOTHING        UINT64_C(0x7ff9000000000000)
-#define ES_VALUE_TAG_UNDEFINED      UINT64_C(0x7ffa000000000000)
-#define ES_VALUE_TAG_NULL           UINT64_C(0x7ffb000000000000)
-#define ES_VALUE_TAG_BOOL           UINT64_C(0x7ffc000000000000)
-#define ES_VALUE_TAG_STRING         UINT64_C(0x7ffd000000000000)
-#define ES_VALUE_TAG_OBJECT         UINT64_C(0x7ffe000000000000)
 
 /**
  * @brief Holds a primitive value or a pointer to a string or an object.
@@ -73,7 +61,7 @@ class EsString;
  *               101 string
  *               110 object
  */
-class EsValue
+class EsValue : public EsValueData
 {
 public:
     /**
@@ -95,12 +83,6 @@ public:
     };
 
 private:
-    union
-    {
-        uint64_t bits_;
-        double num_;
-    } data_;
-
     /**
      * Creates a value of the specified type, this should only be used for null
      * and undefined values since only the type will be initialized.
@@ -110,13 +92,18 @@ private:
     {
         assert(type == TYPE_NOTHING || type == TYPE_NULL || type == TYPE_UNDEFINED);
 
-        data_.bits_ = ES_VALUE_TAG_NAN | (static_cast<uint64_t>(type) << 48);
+        data.bits = ES_VALUE_TAG_NAN | (static_cast<uint64_t>(type) << 48);
     }
 
 public:
     EsValue()
     {
-        data_.bits_ = ES_VALUE_TAG_NOTHING;
+        data.bits = ES_VALUE_TAG_NOTHING;
+    }
+
+    EsValue(const EsValueData &value)
+    {
+        data = value.data;
     }
 
     /**
@@ -199,7 +186,7 @@ public:
         if (is_number())
             return TYPE_NUMBER;
 
-        return static_cast<Type>((data_.bits_ >> 48) & 0x07);
+        return static_cast<Type>((data.bits >> 48) & 0x07);
     }
 
     /**
@@ -208,7 +195,7 @@ public:
      */
     inline void set_bool(bool val)
     {
-        data_.bits_ = ES_VALUE_TAG_BOOL | static_cast<uint64_t>(val);
+        data.bits = ES_VALUE_TAG_BOOL | static_cast<uint64_t>(val);
     }
 
     /**
@@ -217,7 +204,7 @@ public:
      */
     inline void set_num(double val)
     {
-        data_.num_ = val;
+        data.num = val;
     }
 
     /**
@@ -226,7 +213,7 @@ public:
      */
     inline void set_i64(int64_t val)
     {
-        data_.num_ = static_cast<double>(val);
+        data.num = static_cast<double>(val);
     }
 
 #ifdef UNUSED
@@ -243,7 +230,7 @@ public:
     inline void set_str(const EsString *str)
     {
         assert(reinterpret_cast<uintptr_t>(str) < UINT64_C(0xffffffffffff));
-        data_.bits_ = ES_VALUE_TAG_STRING | reinterpret_cast<uint64_t>(str);
+        data.bits = ES_VALUE_TAG_STRING | reinterpret_cast<uint64_t>(str);
     }
 
     /**
@@ -253,7 +240,7 @@ public:
     inline void set_obj(EsObject *obj)
     {
         assert(reinterpret_cast<uintptr_t>(obj) < UINT64_C(0xffffffffffff));
-        data_.bits_ = ES_VALUE_TAG_OBJECT | reinterpret_cast<uint64_t>(obj);
+        data.bits = ES_VALUE_TAG_OBJECT | reinterpret_cast<uint64_t>(obj);
     }
 
     /**
@@ -261,7 +248,7 @@ public:
      */
     inline bool is_nothing() const
     {
-        return (data_.bits_ & ES_VALUE_MASK) == ES_VALUE_TAG_NOTHING;
+        return (data.bits & ES_VALUE_MASK) == ES_VALUE_TAG_NOTHING;
     }
 
     /**
@@ -269,7 +256,7 @@ public:
      */
     inline bool is_undefined() const
     {
-        return (data_.bits_ & ES_VALUE_MASK) == ES_VALUE_TAG_UNDEFINED;
+        return (data.bits & ES_VALUE_MASK) == ES_VALUE_TAG_UNDEFINED;
     }
 
     /**
@@ -277,7 +264,7 @@ public:
      */
     inline bool is_null() const
     {
-        return (data_.bits_ & ES_VALUE_MASK) == ES_VALUE_TAG_NULL;
+        return (data.bits & ES_VALUE_MASK) == ES_VALUE_TAG_NULL;
     }
 
     /**
@@ -285,7 +272,7 @@ public:
      */
     inline bool is_boolean() const
     {
-        return (data_.bits_ & ES_VALUE_MASK) == ES_VALUE_TAG_BOOL;
+        return (data.bits & ES_VALUE_MASK) == ES_VALUE_TAG_BOOL;
     }
 
     /**
@@ -293,8 +280,8 @@ public:
      */
     inline bool is_number() const
     {
-        return (data_.bits_ & ES_VALUE_MASK) == ES_VALUE_TAG_NUMBER ||      // NaN.
-               (data_.bits_ & ES_VALUE_MASK_NO_TAG) != ES_VALUE_TAG_NAN;    // Any other number.
+        return (data.bits & ES_VALUE_MASK) == ES_VALUE_TAG_NUMBER ||      // NaN.
+               (data.bits & ES_VALUE_MASK_NO_TAG) != ES_VALUE_TAG_NAN;    // Any other number.
     }
 
     /**
@@ -302,7 +289,7 @@ public:
      */
     inline bool is_string() const
     {
-        return (data_.bits_ & ES_VALUE_MASK) == ES_VALUE_TAG_STRING;
+        return (data.bits & ES_VALUE_MASK) == ES_VALUE_TAG_STRING;
     }
 
     /**
@@ -310,7 +297,7 @@ public:
      */
     inline bool is_object() const
     {
-        return (data_.bits_ & ES_VALUE_MASK) == ES_VALUE_TAG_OBJECT;
+        return (data.bits & ES_VALUE_MASK) == ES_VALUE_TAG_OBJECT;
     }
 
     /**
@@ -325,7 +312,7 @@ public:
     inline bool as_boolean() const
     {
         assert(is_boolean());
-        return static_cast<bool>(data_.bits_ - ES_VALUE_TAG_BOOL);
+        return static_cast<bool>(data.bits - ES_VALUE_TAG_BOOL);
     }
 
     /**
@@ -335,7 +322,7 @@ public:
     inline double as_number() const
     {
         assert(is_number());
-        return data_.num_;
+        return data.num;
     }
 
     /**
@@ -346,7 +333,7 @@ public:
     inline EsString *as_string() const
     {
         assert(is_string());
-        return reinterpret_cast<EsString *>(data_.bits_ - ES_VALUE_TAG_STRING);
+        return reinterpret_cast<EsString *>(data.bits - ES_VALUE_TAG_STRING);
     }
 
     /**
@@ -357,7 +344,7 @@ public:
     inline EsObject *as_object() const
     {
         assert(is_object());
-        return reinterpret_cast<EsObject *>(data_.bits_ - ES_VALUE_TAG_OBJECT);
+        return reinterpret_cast<EsObject *>(data.bits - ES_VALUE_TAG_OBJECT);
     }
 
     /**

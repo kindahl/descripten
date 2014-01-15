@@ -87,19 +87,19 @@ public:
         switch (instr->value())
         {
             case ir::ValueConstant::VALUE_NOTHING:
-                res_ = "EsValue::nothing";
+                res_ = "es_value_nothing()";
                 break;
             case ir::ValueConstant::VALUE_UNDEFINED:
-                res_ = "EsValue::undefined";
+                res_ = "es_value_undefined()";
                 break;
             case ir::ValueConstant::VALUE_NULL:
-                res_ = "EsValue::null";
+                res_ = "es_value_null()";
                 break;
             case ir::ValueConstant::VALUE_TRUE:
-                res_ = "EsValue::from_bool(true)";
+                res_ = "es_value_true()";
                 break;
             case ir::ValueConstant::VALUE_FALSE:
-                res_ = "EsValue::from_bool(false)";
+                res_ = "es_value_false()";
                 break;
             default:
                 assert(false);
@@ -129,7 +129,7 @@ std::string CcGenerator::string(const String &str)
     std::string esc_str = escape(str);
 
     std::stringstream strstr;
-    strstr << "op_new_str(U\"" << esc_str << "\", " << str.length() << ")";
+    strstr << "esa_new_str(U\"" << esc_str << "\", " << str.length() << ")";
     return strstr.str();
 }
 
@@ -195,7 +195,7 @@ std::string CcGenerator::type(const ir::Type *type)
 
         // Complex types.
         case ir::Type::ID_VALUE:
-            str << "EsValue";
+            str << "EsValueData";
             break;
         case ir::Type::ID_REFERENCE:
             str << "EsReference";
@@ -275,10 +275,10 @@ void CcGenerator::visit_module(ir::Module *module)
 void CcGenerator::visit_fun(ir::Function *fun)
 {
     decl_out_->stream() << "bool " << fun->name()
-                        << "(EsContext *ctx, int argc, EsValue *fp, EsValue *vp);\n";
+                        << "(EsContext *ctx, uint32_t argc, EsValueData *fp, EsValueData *vp);\n";
 
     main_out_->stream() << "bool " << fun->name()
-                        << "(EsContext *ctx, int argc, EsValue *fp, EsValue *vp)\n";
+                        << "(EsContext *ctx, uint32_t argc, EsValueData *fp, EsValueData *vp)\n";
 
     main_out_->stream() << "{" << "\n";
 
@@ -322,13 +322,13 @@ void CcGenerator::visit_block(ir::Block *block)
 
 void CcGenerator::visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_args_obj_init(ctx, argc, fp, vp)"
+    out() << value(instr) << " = " << "esa_args_obj_init(ctx, argc, fp, vp)"
           << ";\n";
 }
 
 void CcGenerator::visit_instr_args_obj_link(ir::ArgumentsObjectLinkInstruction *instr)
 {
-    out() << "op_args_obj_link(" << value(instr->arguments()) << ", "
+    out() << "esa_args_obj_link(" << value(instr->arguments()) << ", "
           << instr->index() << ", " << value(instr->value()) << ")" << ";\n";
 }
 
@@ -382,13 +382,13 @@ void CcGenerator::visit_instr_bin(ir::BinaryInstruction *instr)
 
 void CcGenerator::visit_instr_bnd_extra_init(ir::BindExtraInitInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_bnd_extra_init(ctx, "
+    out() << value(instr) << " = " << "esa_bnd_extra_init(ctx, "
           << instr->num_extra() << ")" << ";\n";
 }
 
 void CcGenerator::visit_instr_bnd_extra_ptr(ir::BindExtraPtrInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_bnd_extra_ptr(argc, fp, vp, "
+    out() << value(instr) << " = " << "esa_bnd_extra_ptr(argc, fp, vp, "
           << instr->hops() << ")" << ";\n";
 }
 
@@ -398,10 +398,10 @@ void CcGenerator::visit_instr_call(ir::CallInstruction *instr)
     switch (instr->operation())
     {
         case ir::CallInstruction::NORMAL:
-            kind = "op_call";
+            kind = "esa_call";
             break;
         case ir::CallInstruction::NEW:
-            kind = "op_call_new";
+            kind = "esa_call_new";
             break;
         default:
             assert(false);
@@ -410,33 +410,33 @@ void CcGenerator::visit_instr_call(ir::CallInstruction *instr)
 
     out() << value(instr) << " = "<< kind
           << "(" << value(instr->function()) << ", "
-                 << instr->argc() << ", "
+                 << instr->argc() << ", &"
                  << value(instr->result()) << ");\n";
 }
 
 void CcGenerator::visit_instr_call_keyed(ir::CallKeyedInstruction *instr)
 {
-    out() << value(instr) << " = op_call_keyed("
+    out() << value(instr) << " = esa_call_keyed("
           << value(instr->object()) << ", "
           << uint64(instr->key()) << ", "
-          << instr->argc() << ", "
+          << instr->argc() << ", &"
           << value(instr->result()) << ");\n";
 }
 
 void CcGenerator::visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *instr)
 {
-    out() << value(instr) << " = op_call_keyed("
+    out() << value(instr) << " = esa_call_keyed_slow("
           << value(instr->object()) << ", "
           << value(instr->key()) << ", "
-          << instr->argc() << ", "
+          << instr->argc() << ", &"
           << value(instr->result()) << ");\n";
 }
 
 void CcGenerator::visit_instr_call_named(ir::CallNamedInstruction *instr)
 {
-    out() << value(instr) << " = op_call_named("
+    out() << value(instr) << " = esa_call_named("
           << uint64(instr->key()) << ", "
-          << instr->argc() << ", "
+          << instr->argc() << ", &"
           << value(instr->result()) << ");\n";
 }
 
@@ -446,48 +446,43 @@ void CcGenerator::visit_instr_val(ir::ValueInstruction *instr)
     {
         case ir::ValueInstruction::TO_BOOLEAN:
         {
-            out() << value(instr) << " = " << value(instr->value())
-                  << ".to_boolean();\n";
+            out() << value(instr) << " = esa_val_to_bool("
+                  << value(instr->value()) << ");\n";
             break;
         }
         case ir::ValueInstruction::TO_DOUBLE:
         {
-            out() << value(instr) << " = " << value(instr->value())
-                  << ".to_number(" << value(instr->result()) << ");\n";
-            break;
-        }
-        case ir::ValueInstruction::TO_STRING:
-        {
-            out() << value(instr) << " = " << value(instr->value())
-                  << ".to_string(" << value(instr->result()) << ");\n";
+            out() << value(instr) << " = esa_val_to_num("
+                  << value(instr->value()) << ", &" << value(instr->result())
+                  << ");\n";
             break;
         }
 
         case ir::ValueInstruction::FROM_BOOLEAN:
-            out() << value(instr->result()) << " = " << "EsValue::from_bool("
+            out() << value(instr->result()) << " = " << "es_value_from_boolean("
                   << value(instr->value()) << ");\n";
             break;
         case ir::ValueInstruction::FROM_DOUBLE:
-            out() << value(instr->result()) << " = " << "EsValue::from_num("
+            out() << value(instr->result()) << " = " << "es_value_from_number("
                   << value(instr->value()) << ");\n";
             break;
         case ir::ValueInstruction::FROM_STRING:
-            out() << value(instr->result()) << " = " << "EsValue::from_str("
+            out() << value(instr->result()) << " = " << "es_value_from_string("
                   << value(instr->value()) << ");\n";
             break;
 
         case ir::ValueInstruction::IS_NULL:
-            out() << value(instr) << " = " << value(instr->value())
-                  << ".is_null();\n";
+            out() << value(instr) << " = es_value_is_null("
+                  << value(instr->value()) << ");\n";
             break;
         case ir::ValueInstruction::IS_UNDEFINED:
-            out() << value(instr) << " = " << value(instr->value())
-                  << ".is_undefined();\n";
+            out() << value(instr) << " = es_value_is_undefined("
+                  << value(instr->value()) << ");\n";
             break;
 
         case ir::ValueInstruction::TEST_COERCIBILITY:
-            out() << value(instr) << " = " << value(instr->value())
-                  << ".chk_obj_coercibleT();\n";
+            out() << value(instr) << " = esa_val_chk_coerc("
+                  << value(instr->value()) << ");\n";
             break;
 
         default:
@@ -559,88 +554,88 @@ void CcGenerator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *i
 
 void CcGenerator::visit_instr_stk_alloc(ir::StackAllocInstruction *instr)
 {
-    out() << "op_stk_alloc(" << instr->count() << ");\n";
+    out() << "esa_stk_alloc(" << instr->count() << ");\n";
 }
 
 void CcGenerator::visit_instr_stk_free(ir::StackFreeInstruction *instr)
 {
-    out() << "op_stk_free(" << instr->count() << ");\n";
+    out() << "esa_stk_free(" << instr->count() << ");\n";
 }
 
 void CcGenerator::visit_instr_stk_push(ir::StackPushInstruction *instr)
 {
-    out() << "op_stk_push(" << value(instr->value()) << ");\n";
+    out() << "esa_stk_push(" << value(instr->value()) << ");\n";
 }
 
 void CcGenerator::visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *instr)
 {
-    out() << "op_ctx_set_strict(ctx, " << boolean(instr->strict()) << ");\n";
+    out() << "esa_ctx_set_strict(ctx, " << boolean(instr->strict()) << ");\n";
 }
 
 void CcGenerator::visit_instr_ctx_enter_catch(ir::ContextEnterCatchInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_ctx_enter_catch(ctx, "
+    out() << value(instr) << " = " << "esa_ctx_enter_catch(ctx, "
           << uint64(instr->key()) << ");\n";
-    out() << "ctx = op_ctx_running();\n";
+    out() << "ctx = esa_ctx_running();\n";
 }
 
 void CcGenerator::visit_instr_ctx_enter_with(ir::ContextEnterWithInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_ctx_enter_with(ctx, "
+    out() << value(instr) << " = " << "esa_ctx_enter_with(ctx, "
           << value(instr->value()) << ");\n";
-    out() << "ctx = op_ctx_running();\n";
+    out() << "ctx = esa_ctx_running();\n";
 }
 
 void CcGenerator::visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr)
 {
-    out() << "op_ctx_leave();\n";
-    out() << "ctx = op_ctx_running();\n";
+    out() << "esa_ctx_leave();\n";
+    out() << "ctx = esa_ctx_running();\n";
 }
 
 void CcGenerator::visit_instr_ctx_get(ir::ContextGetInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_ctx_get(ctx, "
-          << uint64(instr->key()) << ", " << value(instr->result())
+    out() << value(instr) << " = " << "esa_ctx_get(ctx, "
+          << uint64(instr->key()) << ", &" << value(instr->result())
           << ", " << instr->cache_id() << ");\n";
 }
 
 void CcGenerator::visit_instr_ctx_put(ir::ContextPutInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_ctx_put(ctx, "
+    out() << value(instr) << " = " << "esa_ctx_put(ctx, "
           << uint64(instr->key()) << ", " << value(instr->value())
           << ", " << instr->cache_id() << ");\n";
 }
 
 void CcGenerator::visit_instr_ctx_del(ir::ContextDeleteInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_ctx_del(ctx, "
-          << uint64(instr->key()) << ", " << value(instr->result())
+    out() << value(instr) << " = " << "esa_ctx_del(ctx, "
+          << uint64(instr->key()) << ", &" << value(instr->result())
           << ");\n";
 }
 
 void CcGenerator::visit_instr_ex_save_state(ir::ExceptionSaveStateInstruction *instr)
 {
-    out() << value(instr->result()) << " = " << "op_ex_save_state(ctx);\n";
+    out() << value(instr->result()) << " = " << "esa_ex_save_state(ctx);\n";
 }
 
 void CcGenerator::visit_instr_ex_load_state(ir::ExceptionLoadStateInstruction *instr)
 {
-    out() << "op_ex_load_state(ctx, " << value(instr->state()) << ");\n";
+    out() << "esa_ex_load_state(ctx, " << value(instr->state()) << ");\n";
 }
 
 void CcGenerator::visit_instr_ex_set(ir::ExceptionSetInstruction *instr)
 {
-    out() << "op_ex_set(ctx, " << value(instr->value()) << ");\n";
+    out() << "esa_ex_set(ctx, " << value(instr->value()) << ");\n";
 }
 
 void CcGenerator::visit_instr_ex_clear(ir::ExceptionClearInstruction *instr)
 {
-    out() << "op_ex_clear(ctx);" << "\n";
+    out() << "esa_ex_clear(ctx);" << "\n";
 }
 
 void CcGenerator::visit_instr_init_args(ir::InitArgumentsInstruction *instr)
 {
-    out() << "op_init_args(" << value(instr->destination()) << ", argc, fp, "
+    out() << "esa_init_args(" << value(instr->destination()) << ", argc, fp, "
           << instr->parameter_count() << ");" << "\n";
 }
 
@@ -650,7 +645,7 @@ void CcGenerator::visit_instr_decl(ir::Declaration *instr)
     {
         case ir::Declaration::FUNCTION:
         {
-            out() << value(instr) << " = " << "op_ctx_decl_fun(ctx, false, "
+            out() << value(instr) << " = " << "esa_ctx_decl_fun(ctx, false, "
                   << boolean(instr->is_strict()) << ", "
                   << uint64(instr->key()) << ", "
                   << value(instr->value()) << ");\n";
@@ -659,7 +654,7 @@ void CcGenerator::visit_instr_decl(ir::Declaration *instr)
 
         case ir::Declaration::VARIABLE:
         {
-            out() << value(instr) << " = " << "op_ctx_decl_var(ctx, false, "
+            out() << value(instr) << " = " << "esa_ctx_decl_var(ctx, false, "
                   << boolean(instr->is_strict()) << ", "
                   << uint64(instr->key()) << ");\n";
             break;
@@ -667,7 +662,7 @@ void CcGenerator::visit_instr_decl(ir::Declaration *instr)
 
         case ir::Declaration::PARAMETER:
         {
-            out() << value(instr) << " = " << "op_ctx_decl_prm(ctx, "
+            out() << value(instr) << " = " << "esa_ctx_decl_prm(ctx, "
                   << boolean(instr->is_strict()) << ", "
                   << uint64(instr->key()) << ", "
                   << value(instr->parameter_array())
@@ -687,7 +682,7 @@ void CcGenerator::visit_instr_link(ir::Link *instr)
     {
         case ir::Link::FUNCTION:
         {
-            out() << "op_ctx_link_fun(ctx, "
+            out() << "esa_ctx_link_fun(ctx, "
                   << uint64(instr->key()) << ", "
                   << value(instr->value()) << ");\n";
             break;
@@ -695,7 +690,7 @@ void CcGenerator::visit_instr_link(ir::Link *instr)
 
         case ir::Link::VARIABLE:
         {
-            out() << "op_ctx_link_var(ctx, "
+            out() << "esa_ctx_link_var(ctx, "
                   << uint64(instr->key()) << ", "
                   << value(instr->value()) << ");\n";
             break;
@@ -703,7 +698,7 @@ void CcGenerator::visit_instr_link(ir::Link *instr)
 
         case ir::Link::PARAMETER:
         {
-            out() << "op_ctx_link_prm(ctx, "
+            out() << "esa_ctx_link_prm(ctx, "
                   << uint64(instr->key()) << ", "
                   << value(instr->value()) << ");\n";
             break;
@@ -727,7 +722,7 @@ static int next_cid()
 
 void CcGenerator::visit_instr_prp_def_data(ir::PropertyDefineDataInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_def_data("
+    out() << value(instr) << " = " << "esa_prp_def_data("
           << value(instr->object()) << ", "
           << value(instr->key()) << ", "
           << value(instr->value()) << ");\n";
@@ -735,7 +730,7 @@ void CcGenerator::visit_instr_prp_def_data(ir::PropertyDefineDataInstruction *in
 
 void CcGenerator::visit_instr_prp_def_accessor(ir::PropertyDefineAccessorInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_def_accessor("
+    out() << value(instr) << " = " << "esa_prp_def_accessor("
           << value(instr->object()) << ", "
           << uint64(instr->key()) << ", "
           << value(instr->function()) << ", "
@@ -744,68 +739,68 @@ void CcGenerator::visit_instr_prp_def_accessor(ir::PropertyDefineAccessorInstruc
 
 void CcGenerator::visit_instr_prp_it_new(ir::PropertyIteratorNewInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_it_new("
+    out() << value(instr) << " = " << "esa_prp_it_new("
           << value(instr->object()) << ");\n";
 }
 
 void CcGenerator::visit_instr_prp_it_next(ir::PropertyIteratorNextInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_it_next("
-          << value(instr->iterator()) << ", " << value(instr->value()) << ");\n";
+    out() << value(instr) << " = " << "esa_prp_it_next("
+          << value(instr->iterator()) << ", &" << value(instr->value()) << ");\n";
 }
 
 void CcGenerator::visit_instr_prp_get(ir::PropertyGetInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_get("
-          << value(instr->object()) << ", " << uint64(instr->key()) << ", "
+    out() << value(instr) << " = " << "esa_prp_get("
+          << value(instr->object()) << ", " << uint64(instr->key()) << ", &"
           << value(instr->result()) << ", " << next_cid() << ");\n";
 }
 
 void CcGenerator::visit_instr_prp_get_slow(ir::PropertyGetSlowInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_get("
-          << value(instr->object()) << ", " << value(instr->key()) << ", "
+    out() << value(instr) << " = " << "esa_prp_get_slow("
+          << value(instr->object()) << ", " << value(instr->key()) << ", &"
           << value(instr->result()) << ", " << next_cid() << ");\n";
 }
 
 void CcGenerator::visit_instr_prp_put(ir::PropertyPutInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_put(ctx, "
+    out() << value(instr) << " = " << "esa_prp_put(ctx, "
           << value(instr->object()) << ", " << uint64(instr->key()) << ", "
           << value(instr->value()) << ", " << next_cid() << ");\n";
 }
 
 void CcGenerator::visit_instr_prp_put_slow(ir::PropertyPutSlowInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_put(ctx, "
+    out() << value(instr) << " = " << "esa_prp_put_slow(ctx, "
           << value(instr->object()) << ", " << value(instr->key()) << ", "
           << value(instr->value()) << ", " << next_cid() << ");\n";
 }
 
 void CcGenerator::visit_instr_prp_del(ir::PropertyDeleteInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_del(ctx, "
-          << value(instr->object()) << ", " << uint64(instr->key()) << ", "
+    out() << value(instr) << " = " << "esa_prp_del(ctx, "
+          << value(instr->object()) << ", " << uint64(instr->key()) << ", &"
           << value(instr->result()) << ");\n";
 }
 
 void CcGenerator::visit_instr_prp_del_slow(ir::PropertyDeleteSlowInstruction *instr)
 {
-    out() << value(instr) << " = " << "op_prp_del(ctx, "
-          << value(instr->object()) << ", " << value(instr->key()) << ", "
+    out() << value(instr) << " = " << "esa_prp_del_slow(ctx, "
+          << value(instr->object()) << ", " << value(instr->key()) << ", &"
           << value(instr->result()) << ");\n";
 }
 
 void CcGenerator::visit_instr_es_new_arr(ir::EsNewArrayInstruction *instr)
 {
-    out() << value(instr->result()) << " = " << "op_new_arr("
+    out() << value(instr->result()) << " = " << "esa_new_arr("
           << instr->length() << ", "
           << value(instr->values()) << ");\n";
 }
 
 void CcGenerator::visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstruction *instr)
 {
-    out() << value(instr->result()) << " = " << "op_new_fun_decl(ctx, "
+    out() << value(instr->result()) << " = " << "esa_new_fun_decl(ctx, "
           << instr->function()->name() << ", "
           << boolean(instr->is_strict()) << ", "
           << instr->parameter_count() << ");\n";
@@ -813,7 +808,7 @@ void CcGenerator::visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstru
 
 void CcGenerator::visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruction *instr)
 {
-    out() << value(instr->result()) << " = " << "op_new_fun_expr(ctx, "
+    out() << value(instr->result()) << " = " << "esa_new_fun_expr(ctx, "
           << instr->function()->name() << ", "
           << boolean(instr->is_strict()) << ", "
           << instr->parameter_count() << ");\n";
@@ -822,12 +817,12 @@ void CcGenerator::visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruc
 void CcGenerator::visit_instr_es_new_obj(ir::EsNewObjectInstruction *instr)
 {
     // FIXME: Inline.
-    out() << value(instr->result()) << " = " << "op_new_obj();\n";
+    out() << value(instr->result()) << " = " << "esa_new_obj();\n";
 }
 
 void CcGenerator::visit_instr_es_new_rex(ir::EsNewRegexInstruction *instr)
 {
-    out() << value(instr->result()) << " = " << "op_new_reg_exp("
+    out() << value(instr->result()) << " = " << "esa_new_reg_exp("
           << string(instr->pattern()) << ", "
           << string(instr->flags()) << ");\n";
 }
@@ -838,135 +833,135 @@ void CcGenerator::visit_instr_es_bin(ir::EsBinaryInstruction *instr)
     {
         // Arithmetic.
         case ir::EsBinaryInstruction::MUL:
-            out() << value(instr) << " = " << "op_b_mul("
+            out() << value(instr) << " = " << "esa_b_mul("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::DIV:
-            out() << value(instr) << " = " << "op_b_div("
+            out() << value(instr) << " = " << "esa_b_div("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::MOD:
-            out() << value(instr) << " = " << "op_b_mod("
+            out() << value(instr) << " = " << "esa_b_mod("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::ADD:
-            out() << value(instr) << " = " << "op_b_add("
+            out() << value(instr) << " = " << "esa_b_add("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::SUB:
-            out() << value(instr) << " = " << "op_b_sub("
+            out() << value(instr) << " = " << "esa_b_sub("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::LS:
-            out() << value(instr) << " = " << "op_b_shl("
+            out() << value(instr) << " = " << "esa_b_shl("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::RSS:
-            out() << value(instr) << " = " << "op_b_sar("
+            out() << value(instr) << " = " << "esa_b_sar("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::RUS:
-            out() << value(instr) << " = " << "op_b_shr("
+            out() << value(instr) << " = " << "esa_b_shr("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
 
         // Relational.
         case ir::EsBinaryInstruction::LT:
-            out() << value(instr) << " = " << "op_c_lt("
+            out() << value(instr) << " = " << "esa_c_lt("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::GT:
-            out() << value(instr) << " = " << "op_c_gt("
+            out() << value(instr) << " = " << "esa_c_gt("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::LTE:
-            out() << value(instr) << " = " << "op_c_lte("
+            out() << value(instr) << " = " << "esa_c_lte("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::GTE:
-            out() << value(instr) << " = " << "op_c_gte("
+            out() << value(instr) << " = " << "esa_c_gte("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::IN:
-            out() << value(instr) << " = " << "op_c_in("
+            out() << value(instr) << " = " << "esa_c_in("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::INSTANCEOF:
-            out() << value(instr) << " = " << "op_c_instance_of("
+            out() << value(instr) << " = " << "esa_c_instance_of("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
 
         // Equality.
         case ir::EsBinaryInstruction::EQ:
-            out() << value(instr) << " = " << "op_c_eq("
+            out() << value(instr) << " = " << "esa_c_eq("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::NEQ:
-            out() << value(instr) << " = " << "op_c_neq("
+            out() << value(instr) << " = " << "esa_c_neq("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::STRICT_EQ:
-            out() << value(instr) << " = " << "op_c_strict_eq("
+            out() << value(instr) << " = " << "esa_c_strict_eq("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::STRICT_NEQ:
-            out() << value(instr) << " = " << "op_c_strict_neq("
+            out() << value(instr) << " = " << "esa_c_strict_neq("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
 
         // Bitwise.
         case ir::EsBinaryInstruction::BIT_AND:
-            out() << value(instr) << " = " << "op_b_and("
+            out() << value(instr) << " = " << "esa_b_and("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::BIT_XOR:
-            out() << value(instr) << " = " << "op_b_xor("
+            out() << value(instr) << " = " << "esa_b_xor("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsBinaryInstruction::BIT_OR:
-            out() << value(instr) << " = " << "op_b_or("
+            out() << value(instr) << " = " << "esa_b_or("
                   << value(instr->left()) << ", "
-                  << value(instr->right()) << ", "
+                  << value(instr->right()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
 
@@ -981,23 +976,23 @@ void CcGenerator::visit_instr_es_unary(ir::EsUnaryInstruction *instr)
     switch (instr->operation())
     {
         case ir::EsUnaryInstruction::TYPEOF:
-            out() << value(instr) << " = " << "op_u_typeof("
-                  << value(instr->value()) << ", "
+            out() << value(instr) << " = " << "esa_u_typeof("
+                  << value(instr->value()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsUnaryInstruction::NEG:
-            out() << value(instr) << " = " << "op_u_sub("
-                  << value(instr->value()) << ", "
+            out() << value(instr) << " = " << "esa_u_sub("
+                  << value(instr->value()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsUnaryInstruction::BIT_NOT:
-            out() << value(instr) << " = " << "op_u_bit_not("
-                  << value(instr->value()) << ", "
+            out() << value(instr) << " = " << "esa_u_bit_not("
+                  << value(instr->value()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         case ir::EsUnaryInstruction::LOG_NOT:
-            out() << value(instr) << " = " << "op_u_not("
-                  << value(instr->value()) << ", "
+            out() << value(instr) << " = " << "esa_u_not("
+                  << value(instr->value()) << ", &"
                   << value(instr->result()) << ");\n";
             break;
         default:
@@ -1008,7 +1003,7 @@ void CcGenerator::visit_instr_es_unary(ir::EsUnaryInstruction *instr)
 
 void CcGenerator::visit_str_res(ir::StringResource *res)
 {
-    out() << "data_reg_str("
+    out() << "esa_str_intern("
           << string(res->string()) << ", "
           << uint32(res->id()) << ");\n";
 }
@@ -1026,6 +1021,7 @@ void CcGenerator::generate(ir::Module *module, const std::string &file_path)
     main_out_ = out_.fork();
 
     // Generate include conditions.
+    decl_out_->stream() << "#include <stddef.h>" << "\n";
     decl_out_->stream() << "#include \"runtime.hh\"" << "\n";
 
     // Write body.

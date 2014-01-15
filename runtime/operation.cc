@@ -45,6 +45,7 @@
 #include "profiler.hh"
 #endif  // PROFILE
 
+// FIXME: Move somewhere else.
 class EsPropertyIterator
 {
 private:
@@ -79,29 +80,58 @@ public:
     }
 };
 
-void data_reg_str(const EsString *str, uint32_t id)
+void esa_str_intern(const EsString *str, uint32_t id)
 {
     strings().unsafe_intern(str, id);
 }
 
-void op_stk_alloc(uint32_t count)
+bool esa_val_to_bool(EsValueData val_data)
+{
+    return static_cast<EsValue &>(val_data).to_boolean();
+}
+
+bool esa_val_to_num(EsValueData val_data, double *num)
+{
+    return static_cast<EsValue &>(val_data).to_number(*num);
+}
+
+const EsString *esa_val_to_str(EsValueData val_data)
+{
+    return static_cast<EsValue &>(val_data).to_stringT();
+}
+
+EsObject *esa_val_to_obj(EsValueData val_data)
+{
+    return static_cast<EsValue &>(val_data).to_objectT();
+}
+
+bool esa_val_chk_coerc(EsValueData val_data)
+{
+    return static_cast<EsValue &>(val_data).chk_obj_coercibleT();
+}
+
+void esa_stk_alloc(uint32_t count)
 {
     g_call_stack.alloc(count);
 }
 
-void op_stk_free(uint32_t count)
+void esa_stk_free(uint32_t count)
 {
     g_call_stack.free(count);
 }
 
-void op_stk_push(const EsValue &val)
+void esa_stk_push(EsValueData val_data)
 {
-    g_call_stack.push(val);
+    g_call_stack.push(val_data);
 }
 
-void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc)
+void esa_init_args(EsValueData dst_data[], uint32_t argc,
+                   const EsValueData argv_data[], uint32_t prmc)
 {
-    int i = 0;
+    EsValue *dst = static_cast<EsValue *>(dst_data);
+    const EsValue *argv = static_cast<const EsValue *>(argv_data);
+
+    uint32_t i = 0;
     if (prmc <= argc)
     {
         for (; i < prmc; i++)
@@ -117,9 +147,12 @@ void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc)
     }
 }
 
-EsValue op_args_obj_init(EsContext *ctx, int argc,
-                         EsValue *fp, EsValue *vp)
+EsValueData esa_args_obj_init(EsContext *ctx, uint32_t argc,
+                              EsValueData *fp_data, EsValueData *vp_data)
 {
+    EsValue *fp = static_cast<EsValue *>(fp_data);
+    EsValue *vp = static_cast<EsValue *>(vp_data);
+
     EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
 
     assert(ctx->var_env()->env_rec()->is_decl_env());
@@ -149,18 +182,22 @@ EsValue op_args_obj_init(EsContext *ctx, int argc,
     return EsValue::nothing;
 }
 
-void op_args_obj_link(EsValue &args, int i, EsValue *val)
+void esa_args_obj_link(EsValueData args_data, uint32_t i,
+                       EsValueData *val_data)
 {
+    EsValue &args = static_cast<EsValue &>(args_data);
+    EsValue *val = static_cast<EsValue *>(val_data);
+
     assert(args.is_object());
 
     EsArguments *args_obj = safe_cast<EsArguments *>(args.as_object());
     args_obj->link_parameter(i, val);
 }
 
-EsValue *op_bnd_extra_init(EsContext *ctx, int num_extra)
+EsValueData *esa_bnd_extra_init(EsContext *ctx, uint32_t num_extra)
 {
     EsValue *extra = new (GC)EsValue[num_extra];
-    for (int i = 0; i < num_extra; i++)
+    for (uint32_t i = 0; i < num_extra; i++)
         extra[i] = EsValue::undefined;
 
     assert(ctx->var_env()->env_rec()->is_decl_env());
@@ -172,12 +209,16 @@ EsValue *op_bnd_extra_init(EsContext *ctx, int num_extra)
     return extra;
 }
 
-EsValue *op_bnd_extra_ptr(int argc, EsValue *fp, EsValue *vp, int hops)
+EsValueData *esa_bnd_extra_ptr(uint32_t argc, EsValueData *fp_data,
+                               EsValueData *vp_data, uint32_t hops)
 {
+    EsValue *fp = static_cast<EsValue *>(fp_data);
+    EsValue *vp = static_cast<EsValue *>(vp_data);
+
     EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
 
     EsLexicalEnvironment *env = frame.callee().as_function()->scope();
-    for (int i = 1; i < hops; i++)
+    for (uint32_t i = 1; i < hops; i++)
         env = env->outer();
 
     assert(env);
@@ -356,9 +397,11 @@ EsPropertyReference ctx_cached_get_own_property(EsObject *obj,
     return prop;
 }
 
-bool op_ctx_get(EsContext *ctx, uint64_t raw_key, EsValue &result,
-                uint16_t cid)
+bool esa_ctx_get(EsContext *ctx, uint64_t raw_key, EsValueData *result_data,
+                 uint16_t cid)
 {
+    EsValue &result = reinterpret_cast<EsValue &>(*result_data);
+
     EsPropertyKey key = EsPropertyKey::from_raw(raw_key);
 
     for (auto lex = ctx->lex_env(); lex; lex = lex->outer())
@@ -375,7 +418,7 @@ bool op_ctx_get(EsContext *ctx, uint64_t raw_key, EsValue &result,
             if (!ctx_cached_getT(obj, key, prop, cid))
             {
                 assert(false);
-                op_ex_clear(ctx);
+                esa_ex_clear(ctx);
                 return false;
             }
 
@@ -401,8 +444,8 @@ bool op_ctx_get(EsContext *ctx, uint64_t raw_key, EsValue &result,
     return false;
 }
 
-bool op_ctx_put(EsContext *ctx, uint64_t raw_key, const EsValue &val,
-                uint16_t cid)
+bool esa_ctx_put(EsContext *ctx, uint64_t raw_key, EsValueData val_data,
+                 uint16_t cid)
 {
     EsPropertyKey key = EsPropertyKey::from_raw(raw_key);
 
@@ -416,12 +459,13 @@ bool op_ctx_put(EsContext *ctx, uint64_t raw_key, const EsValue &val,
 
             EsObject *obj = env->binding_object();
 
-            EsPropertyReference prop = ctx_cached_get_own_property(obj, key, cid);
+            EsPropertyReference prop = ctx_cached_get_own_property(
+                    obj, key, cid);
             if (prop)
-                return obj->put_ownT(key, prop, val, ctx->is_strict());
+                return obj->put_ownT(key, prop, val_data, ctx->is_strict());
 
             if (obj->has_property(key))
-                return obj->putT(key, val, ctx->is_strict());
+                return obj->putT(key, val_data, ctx->is_strict());
         }
         else
         {
@@ -429,7 +473,8 @@ bool op_ctx_put(EsContext *ctx, uint64_t raw_key, const EsValue &val,
                 safe_cast<EsDeclarativeEnvironmentRecord *>(env_rec);
 
             if (env->has_binding(key))
-                return env->set_mutable_bindingT(key, val, ctx->is_strict());
+                return env->set_mutable_bindingT(key, val_data,
+                        ctx->is_strict());
         }
     }
 
@@ -441,11 +486,13 @@ bool op_ctx_put(EsContext *ctx, uint64_t raw_key, const EsValue &val,
         return false;
     }
 
-    return es_global_obj()->putT(key, val, false);
+    return es_global_obj()->putT(key, val_data, false);
 }
 
-bool op_ctx_del(EsContext *ctx, uint64_t raw_key, EsValue &result)
+bool esa_ctx_del(EsContext *ctx, uint64_t raw_key, EsValueData *result_data)
 {
+    EsValue &result = reinterpret_cast<EsValue &>(*result_data);
+
     EsPropertyKey key = EsPropertyKey::from_raw(raw_key);
 
     for (auto lex = ctx->lex_env(); lex; lex = lex->outer())
@@ -488,17 +535,17 @@ bool op_ctx_del(EsContext *ctx, uint64_t raw_key, EsValue &result)
     return true;
 }
 
-void op_ctx_set_strict(EsContext *ctx, bool strict)
+void esa_ctx_set_strict(EsContext *ctx, bool strict)
 {
     ctx->set_strict(strict);
 }
 
-bool op_ctx_enter_with(EsContext *ctx, const EsValue &val)
+bool esa_ctx_enter_with(EsContext *ctx, EsValueData val_data)
 {
-    return EsContextStack::instance().push_withT(val);
+    return EsContextStack::instance().push_withT(val_data);
 }
 
-bool op_ctx_enter_catch(EsContext *ctx, uint64_t raw_key)
+bool esa_ctx_enter_catch(EsContext *ctx, uint64_t raw_key)
 {
     assert(ctx->has_pending_exception());
 
@@ -509,40 +556,48 @@ bool op_ctx_enter_catch(EsContext *ctx, uint64_t raw_key)
     return true;    // FIXME:
 }
 
-void op_ctx_leave()
+void esa_ctx_leave()
 {
     EsContextStack::instance().pop();
 }
 
-EsContext *op_ctx_running()
+EsContext *esa_ctx_running()
 {
     return EsContextStack::instance().top();
 }
 
-EsValue op_ex_save_state(EsContext *ctx)
+EsValueData esa_ex_save_state(EsContext *ctx)
 {
     return ctx->get_pending_exception();
 }
 
-void op_ex_load_state(EsContext *ctx, const EsValue &state)
+void esa_ex_load_state(EsContext *ctx, EsValueData state_data)
 {
-    ctx->set_pending_exception(state);
+    ctx->set_pending_exception(state_data);
 }
 
-void op_ex_set(EsContext *ctx, const EsValue &exception)
+EsValueData esa_ex_get(EsContext *ctx)
 {
-    ctx->set_pending_exception(exception);
+    return ctx->get_pending_exception();
+}
+
+void esa_ex_set(EsContext *ctx, EsValueData exception_data)
+{
+    // FIXME: Why do we have both this and the load state function?
+    ctx->set_pending_exception(exception_data);
     assert(ctx->has_pending_exception());
 }
 
-void op_ex_clear(EsContext *ctx)
+void esa_ex_clear(EsContext *ctx)
 {
     ctx->clear_pending_exception();
 }
 
-bool op_ctx_decl_fun(EsContext *ctx, bool is_eval, bool is_strict,
-                     uint64_t fn, const EsValue &fo)
+bool esa_ctx_decl_fun(EsContext *ctx, bool is_eval, bool is_strict,
+                      uint64_t fn, EsValueData fo_data)
 {
+    EsValue &fo = static_cast<EsValue &>(fo_data);
+
     EsPropertyKey fn_key = EsPropertyKey::from_raw(fn);
 
     EsEnvironmentRecord *env_rec = ctx->var_env()->env_rec();
@@ -611,8 +666,8 @@ bool op_ctx_decl_fun(EsContext *ctx, bool is_eval, bool is_strict,
     return true;
 }
 
-bool op_ctx_decl_var(EsContext *ctx, bool is_eval, bool is_strict,
-                     uint64_t vn)
+bool esa_ctx_decl_var(EsContext *ctx, bool is_eval, bool is_strict,
+                      uint64_t vn)
 {
     EsPropertyKey vn_key = EsPropertyKey::from_raw(vn);
 
@@ -645,9 +700,11 @@ bool op_ctx_decl_var(EsContext *ctx, bool is_eval, bool is_strict,
     return true;
 }
 
-bool op_ctx_decl_prm(EsContext *ctx, bool is_strict, uint64_t pn,
-                     const EsValue &po)
+bool esa_ctx_decl_prm(EsContext *ctx, bool is_strict, uint64_t pn,
+                      EsValueData po_data)
 {
+    EsValue &po = static_cast<EsValue &>(po_data);
+
     EsPropertyKey pn_key = EsPropertyKey::from_raw(pn);
 
     assert(ctx->var_env()->env_rec()->is_decl_env());
@@ -661,8 +718,10 @@ bool op_ctx_decl_prm(EsContext *ctx, bool is_strict, uint64_t pn,
     return env_rec->set_mutable_bindingT(pn_key, po, is_strict);
 }
 
-void op_ctx_link_fun(EsContext *ctx, uint64_t fn, EsValue *fo)
+void esa_ctx_link_fun(EsContext *ctx, uint64_t fn, EsValueData *fo_data)
 {
+    EsValue *fo = static_cast<EsValue *>(fo_data);
+
     EsPropertyKey fn_key = EsPropertyKey::from_raw(fn);
 
     assert(ctx->var_env()->env_rec()->is_decl_env());
@@ -675,8 +734,10 @@ void op_ctx_link_fun(EsContext *ctx, uint64_t fn, EsValue *fo)
     env->link_mutable_binding(fn_key, false, fo, false);
 }
 
-void op_ctx_link_var(EsContext *ctx, uint64_t vn, EsValue *vo)
+void esa_ctx_link_var(EsContext *ctx, uint64_t vn, EsValueData *vo_data)
 {
+    EsValue *vo = static_cast<EsValue *>(vo_data);
+
     EsPropertyKey vn_key = EsPropertyKey::from_raw(vn);
 
     assert(ctx->var_env()->env_rec()->is_decl_env());
@@ -690,8 +751,10 @@ void op_ctx_link_var(EsContext *ctx, uint64_t vn, EsValue *vo)
     env->link_mutable_binding(vn_key, false, vo, true);
 }
 
-void op_ctx_link_prm(EsContext *ctx, uint64_t pn, EsValue *po)
+void esa_ctx_link_prm(EsContext *ctx, uint64_t pn, EsValueData *po_data)
 {
+    EsValue *po = static_cast<EsValue *>(po_data);
+
     EsPropertyKey pn_key = EsPropertyKey::from_raw(pn);
 
     assert(ctx->var_env()->env_rec()->is_decl_env());
@@ -702,24 +765,32 @@ void op_ctx_link_prm(EsContext *ctx, uint64_t pn, EsValue *po)
     env->link_mutable_binding(pn_key, false, po, true);
 }
 
-EsPropertyIterator *op_prp_it_new(const EsValue &val)
+EsPropertyIterator *esa_prp_it_new(EsValueData val_data)
 {
+    EsValue &val = static_cast<EsValue &>(val_data);
+
     EsObject *obj = val.to_objectT();
     if (!obj)
         return NULL;
 
-    EsPropertyIterator *it = new (GC)EsPropertyIterator(obj);
-    return it;
+    return new (GC)EsPropertyIterator(obj);
 }
 
-bool op_prp_it_next(EsPropertyIterator *it, EsValue &val)
+bool esa_prp_it_next(EsPropertyIterator *it, EsValueData *result_data)
 {
-    return it->next(val);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
+    return it->next(result);
 }
 
-bool op_prp_def_data(EsValue &obj_val, const EsValue &key, const EsValue &val)
+bool esa_prp_def_data(EsValueData obj_data, EsValueData key_data,
+                      EsValueData val_data)
 {
-    assert(obj_val.is_object());
+    EsValue &obj = static_cast<EsValue &>(obj_data);
+    EsValue &key = static_cast<EsValue &>(key_data);
+    EsValue &val = static_cast<EsValue &>(val_data);
+
+    assert(obj.is_object());
 
     const EsString *name = key.to_stringT();
     if (!name)
@@ -727,25 +798,32 @@ bool op_prp_def_data(EsValue &obj_val, const EsValue &key, const EsValue &val)
 
     uint32_t index = 0;
     if (es_str_to_index(name->str(), index))
-        return obj_val.as_object()->define_own_propertyT(
-            EsPropertyKey::from_u32(index), EsPropertyDescriptor(true, true, true, val), false);
+    {
+        return obj.as_object()->define_own_propertyT(
+                EsPropertyKey::from_u32(index),
+                EsPropertyDescriptor(true, true, true, val), false);
+    }
 
-    return obj_val.as_object()->define_own_propertyT(
-        EsPropertyKey::from_str(name), EsPropertyDescriptor(true, true, true, val), false);
+    return obj.as_object()->define_own_propertyT(
+            EsPropertyKey::from_str(name),
+            EsPropertyDescriptor(true, true, true, val), false);
 }
 
-bool op_prp_def_accessor(EsValue &obj_val, uint64_t raw_key,
-                         const EsValue &fun, bool is_setter)
+bool esa_prp_def_accessor(EsValueData obj_data, uint64_t raw_key,
+                          EsValueData fun_data, bool is_setter)
 {
-    assert(obj_val.is_object());
+    EsValue &obj = static_cast<EsValue &>(obj_data);
+    EsValue &fun = static_cast<EsValue &>(fun_data);
+
+    assert(obj.is_object());
 
     EsFunction *f = fun.as_function();
 
-    return obj_val.as_object()->define_own_propertyT(
-        EsPropertyKey::from_raw(raw_key),
-        EsPropertyDescriptor(true, true,
-                             is_setter ? Maybe<EsValue>() : EsValue::from_obj(f),
-                             is_setter ? EsValue::from_obj(f) : Maybe<EsValue>()), false);
+    return obj.as_object()->define_own_propertyT(
+            EsPropertyKey::from_raw(raw_key),
+            EsPropertyDescriptor(true, true,
+                                 is_setter ? Maybe<EsValue>() : EsValue::from_obj(f),
+                                 is_setter ? EsValue::from_obj(f) : Maybe<EsValue>()), false);
 }
 
 #ifdef FEATURE_PROPERTY_CACHE
@@ -762,27 +840,34 @@ struct PropertyLookupCacheEntry
 PropertyLookupCacheEntry property_cache[FEATURE_PROPERTY_CACHE_SIZE];
 #endif  // FEATURE_PROPERTY_CACHE
 
-bool op_prp_get(const EsValue &obj_val, const EsValue &key_val,
-                EsValue &result, uint16_t cid)
+bool esa_prp_get_slow(EsValueData src_data, EsValueData key_data,
+                      EsValueData *result_data, uint16_t cid)
 {
+    EsValue &src = static_cast<EsValue &>(src_data);
+    EsValue &key = static_cast<EsValue &>(key_data);
+
     uint32_t key_idx = 0;
-    if (key_val.is_number() && es_num_to_index(key_val.as_number(), key_idx))
+    if (key.is_number() && es_num_to_index(key.as_number(), key_idx))
     {
-        return op_prp_get(obj_val, EsPropertyKey::from_u32(key_idx).as_raw(),
-                          result, cid);
+        return esa_prp_get(src, EsPropertyKey::from_u32(key_idx).as_raw(),
+                          result_data, cid);
     }
 
-    const EsString *key_str = key_val.to_stringT();
+    const EsString *key_str = key.to_stringT();
     if (!key_str)
         return false;
 
-    return op_prp_get(obj_val, EsPropertyKey::from_str(key_str).as_raw(), result, cid);
+    return esa_prp_get(src, EsPropertyKey::from_str(key_str).as_raw(),
+                      result_data, cid);
 }
 
-bool op_prp_get(const EsValue &obj_val, uint64_t raw_key,
-                EsValue &result, uint16_t cid)
+bool esa_prp_get(EsValueData src_data, uint64_t raw_key,
+                 EsValueData *result_data, uint16_t cid)
 {
-    EsObject *obj = obj_val.to_objectT();
+    EsValue &src = static_cast<EsValue &>(src_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
+    EsObject *obj = src.to_objectT();
     if (!obj)
         return false;
 
@@ -821,7 +906,7 @@ bool op_prp_get(const EsValue &obj_val, uint64_t raw_key,
             EsPropertyReference prop =
                 base_obj->map().from_cached(cache_entry.prop);
 
-            return obj->get_resolveT(prop, result);
+            return obj->get_resolveT(prop, reinterpret_cast<EsValue &>(result));
         }
     }
 
@@ -837,7 +922,7 @@ cache_miss:
 
 #ifdef FEATURE_PROPERTY_CACHE
     if (!prop || !prop.is_cachable())
-        return obj->get_resolveT(prop, result);
+        return obj->get_resolveT(prop, reinterpret_cast<EsValue &>(result));
 
     cache_entry.hierarchy_depth = 0;
     cache_entry.key = key;
@@ -851,13 +936,13 @@ cache_miss:
             break;
 
         if (i >= PropertyLookupCacheEntry::max_obj_hierarchy_depth)
-            return obj->get_resolveT(prop, result);
+            return obj->get_resolveT(prop, reinterpret_cast<EsValue &>(result));
     }
 
     cache_entry.hierarchy_depth = i;
 #endif  // FEATURE_PROPERTY_CACHE
 
-    return obj->get_resolveT(prop, result);
+    return obj->get_resolveT(prop, reinterpret_cast<EsValue &>(result));
 }
 
 EsPropertyReference prp_cached_get_own_property(EsObject *obj,
@@ -906,27 +991,35 @@ EsPropertyReference prp_cached_get_own_property(EsObject *obj,
     return prop;
 }
 
-bool op_prp_put(EsContext *ctx, const EsValue &obj_val, const EsValue &key_val,
-                const EsValue &val, uint16_t cid)
+bool esa_prp_put_slow(EsContext *ctx, EsValueData dst_data,
+                      EsValueData key_data, EsValueData val_data, uint16_t cid)
 {
+    EsValue &dst = static_cast<EsValue &>(dst_data);
+    EsValue &key = static_cast<EsValue &>(key_data);
+    EsValue &val = static_cast<EsValue &>(val_data);
+
     uint32_t key_idx = 0;
-    if (key_val.is_number() && es_num_to_index(key_val.as_number(), key_idx))
+    if (key.is_number() && es_num_to_index(key.as_number(), key_idx))
     {
-        return op_prp_put(ctx, obj_val,
+        return esa_prp_put(ctx, dst,
                           EsPropertyKey::from_u32(key_idx).as_raw(), val, cid);
     }
 
-    const EsString *key_str = key_val.to_stringT();
+    const EsString *key_str = key.to_stringT();
     if (!key_str)
         return false;
 
-    return op_prp_put(ctx, obj_val, EsPropertyKey::from_str(key_str).as_raw(), val, cid);
+    return esa_prp_put(ctx, dst, EsPropertyKey::from_str(key_str).as_raw(),
+                      val, cid);
 }
 
-bool op_prp_put(EsContext *ctx, const EsValue &obj_val,
-                uint64_t raw_key, const EsValue &val, uint16_t cid)
+bool esa_prp_put(EsContext *ctx, EsValueData dst_data, uint64_t raw_key,
+                 EsValueData val_data, uint16_t cid)
 {
-    EsObject *obj = obj_val.to_objectT();
+    EsValue &dst = static_cast<EsValue &>(dst_data);
+    EsValue &val = static_cast<EsValue &>(val_data);
+
+    EsObject *obj = dst.to_objectT();
     if (!obj)
         return false;
 
@@ -938,29 +1031,37 @@ bool op_prp_put(EsContext *ctx, const EsValue &obj_val,
     return obj->putT(key, val, ctx->is_strict());
 }
 
-bool op_prp_del(EsContext *ctx, EsValue &obj_val, const EsValue &key_val,
-                EsValue &result)
+bool esa_prp_del_slow(EsContext *ctx, EsValueData src_data,
+                      EsValueData key_data, EsValueData *result_data)
 {
+    EsValue &src = static_cast<EsValue &>(src_data);
+    EsValue &key = static_cast<EsValue &>(key_data);
+
     uint32_t key_idx = 0;
-    if (key_val.is_number() && es_num_to_index(key_val.as_number(), key_idx))
+    if (key.is_number() && es_num_to_index(key.as_number(), key_idx))
     {
-        return op_prp_del(ctx, obj_val,
-                          EsPropertyKey::from_u32(key_idx).as_raw(), result);
+        return esa_prp_del(ctx, src,
+                          EsPropertyKey::from_u32(key_idx).as_raw(),
+                          result_data);
     }
 
-    const EsString *key_str = key_val.to_stringT();
+    const EsString *key_str = key.to_stringT();
     if (!key_str)
         return false;
 
-    return op_prp_del(ctx, obj_val, EsPropertyKey::from_str(key_str).as_raw(), result);
+    return esa_prp_del(ctx, src, EsPropertyKey::from_str(key_str).as_raw(),
+                      result_data);
 }
 
-bool op_prp_del(EsContext *ctx, EsValue &obj_val, uint64_t raw_key,
-                EsValue &result)
+bool esa_prp_del(EsContext *ctx, EsValueData src_data, uint64_t raw_key,
+                 EsValueData *result_data)
 {
+    EsValue &src = static_cast<EsValue &>(src_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     EsPropertyKey key = EsPropertyKey::from_raw(raw_key);
 
-    EsObject *obj = obj_val.to_objectT();
+    EsObject *obj = src.to_objectT();
     if (!obj)
         return false;
 
@@ -972,8 +1073,11 @@ bool op_prp_del(EsContext *ctx, EsValue &obj_val, uint64_t raw_key,
     return true;
 }
 
-bool op_call(const EsValue &fun, int argc, EsValue &result)
+bool esa_call(EsValueData fun_data, uint32_t argc, EsValueData *result_data)
 {
+    EsValue &fun = static_cast<EsValue &>(fun_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     EsCallStackGuard guard(argc);
 
     if (!fun.is_callable())
@@ -985,7 +1089,7 @@ bool op_call(const EsValue &fun, int argc, EsValue &result)
     guard.release();
 
     EsCallFrame frame = EsCallFrame::push_function_excl_args(
-        argc, fun.as_function(), EsValue::undefined);
+            argc, fun.as_function(), EsValue::undefined);
     if (!fun.as_function()->callT(frame))
         return false;
 
@@ -993,14 +1097,17 @@ bool op_call(const EsValue &fun, int argc, EsValue &result)
     return true;
 }
 
-bool call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
-                EsValue &result)
+bool call_keyed(EsValueData src_data, uint64_t raw_key, uint32_t argc,
+                EsValueData &result_data)
 {
+    EsValue &src = static_cast<EsValue &>(src_data);
+    EsValue &result = static_cast<EsValue &>(result_data);
+
     EsCallStackGuard guard(argc);
 
     EsPropertyKey key = EsPropertyKey::from_raw(raw_key);
 
-    EsObject *obj = obj_val.to_objectT();
+    EsObject *obj = src.to_objectT();
     if (!obj)
         return false;
 
@@ -1033,37 +1140,42 @@ bool call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
     return true;
 }
 
-bool op_call_keyed(const EsValue &obj_val, const EsValue &key_val, int argc,
-                   EsValue &result)
+bool esa_call_keyed_slow(EsValueData src_data, EsValueData key_data,
+                         uint32_t argc, EsValueData *result_data)
 {
+    EsValue &src = static_cast<EsValue &>(src_data);
+    EsValue &key = static_cast<EsValue &>(key_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     EsCallStackGuard guard(argc);
 
     uint32_t key_idx = 0;
-    if (key_val.is_number() && es_num_to_index(key_val.as_number(), key_idx))
+    if (key.is_number() && es_num_to_index(key.as_number(), key_idx))
     {
         guard.release();
-        return call_keyed(obj_val, EsPropertyKey::from_u32(key_idx).as_raw(),
+        return call_keyed(src, EsPropertyKey::from_u32(key_idx).as_raw(),
                           argc, result);
     }
 
-    const EsString *key_str = key_val.to_stringT();
+    const EsString *key_str = key.to_stringT();
     if (!key_str)
         return false;
 
     guard.release();
-    return call_keyed(obj_val, EsPropertyKey::from_str(key_str).as_raw(),
+    return call_keyed(src, EsPropertyKey::from_str(key_str).as_raw(),
                       argc, result);
 }
 
-bool op_call_keyed(const EsValue &obj_val, uint64_t raw_key, int argc,
-                   EsValue &result)
+bool esa_call_keyed(EsValueData src_data, uint64_t raw_key, uint32_t argc,
+                    EsValueData *result_data)
 {
-    return call_keyed(obj_val, raw_key, argc, result);
+    return call_keyed(src_data, raw_key, argc, *result_data);
 }
 
-bool op_call_named(uint64_t raw_key, int argc,
-                   EsValue &result)
+bool esa_call_named(uint64_t raw_key, uint32_t argc, EsValueData *result_data)
 {
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     EsCallStackGuard guard(argc);
 
     EsPropertyKey key = EsPropertyKey::from_raw(raw_key);
@@ -1080,7 +1192,7 @@ bool op_call_named(uint64_t raw_key, int argc,
     }
 
     EsValue fun;
-    if (!op_ctx_get(ctx, key.as_raw(), fun, 0))
+    if (!esa_ctx_get(ctx, key.as_raw(), &fun, 0))
         return false;
 
     if (!fun.is_callable())
@@ -1104,8 +1216,12 @@ bool op_call_named(uint64_t raw_key, int argc,
     return true;
 }
 
-bool op_call_new(const EsValue &fun, int argc, EsValue &result)
+bool esa_call_new(EsValueData fun_data, uint32_t argc,
+                  EsValueData *result_data)
 {
+    EsValue &fun = static_cast<EsValue &>(fun_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     EsCallStackGuard guard(argc);
 
     // FIXME: Do we need this check?
@@ -1132,53 +1248,65 @@ bool op_call_new(const EsValue &fun, int argc, EsValue &result)
     return true;
 }
 
-const EsString *op_new_str(const void *str, uint32_t len)
+const EsString *esa_new_str(const void *str, uint32_t len)
 {
     return EsString::create(reinterpret_cast<const uni_char *>(str), len);
 }
 
-EsValue op_new_arr(int count, EsValue items[])
+EsValueData esa_new_arr(uint32_t count, EsValueData items_data[])
 {
-    return EsValue::from_obj(EsArray::create_inst_from_lit(count, items));
+    return EsValue::from_obj(
+            EsArray::create_inst_from_lit(count,
+                    static_cast<EsValue *>(items_data)));
 }
 
-EsValue op_new_obj()
+EsValueData esa_new_obj()
 {
     return EsValue::from_obj(EsObject::create_inst());
 }
 
-EsValue op_new_fun_decl(EsContext *ctx, ES_API_FUN_PTR(fun),
-                        bool strict, int prmc)
+EsValueData esa_new_fun_decl(EsContext *ctx, ESA_FUN_PTR(fun),
+                             bool strict, uint32_t prmc)
 {
     assert(fun);
 
-    EsFunction *obj = EsFunction::create_inst(ctx->var_env(), fun, strict, prmc);
+    EsFunction *obj = EsFunction::create_inst(
+            ctx->var_env(),
+            reinterpret_cast<EsFunction::NativeFunction>(fun),
+            strict,
+            prmc);
     if (!obj)
         THROW(MemoryException);
 
     return EsValue::from_obj(obj);
 }
 
-EsValue op_new_fun_expr(EsContext *ctx, ES_API_FUN_PTR(fun),
-                        bool strict, int prmc)
+EsValueData esa_new_fun_expr(EsContext *ctx, ESA_FUN_PTR(fun),
+                             bool strict, uint32_t prmc)
 {
     assert(fun);
 
-    EsFunction *obj = EsFunction::create_inst(ctx->lex_env(), fun,
-                                              strict, prmc);
+    EsFunction *obj = EsFunction::create_inst(
+            ctx->lex_env(),
+            reinterpret_cast<EsFunction::NativeFunction>(fun),
+            strict,
+            prmc);
     if (!obj)
         THROW(MemoryException);
 
     return EsValue::from_obj(obj);
 }
 
-EsValue op_new_reg_exp(const EsString *pattern, const EsString *flags)
+EsValueData esa_new_reg_exp(const EsString *pattern, const EsString *flags)
 {
     return EsValue::from_obj(EsRegExp::create_inst(pattern, flags));
 }
 
-bool op_u_typeof(const EsValue &val, EsValue &result)
+bool esa_u_typeof(EsValueData val_data, EsValueData *result_data)
 {
+    EsValue &val = static_cast<EsValue &>(val_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     switch (val.type())
     {
         case EsValue::TYPE_UNDEFINED:
@@ -1211,14 +1339,20 @@ bool op_u_typeof(const EsValue &val, EsValue &result)
     return true;
 }
 
-bool op_u_not(const EsValue &expr, EsValue &result)
+bool esa_u_not(EsValueData expr_data, EsValueData *result_data)
 {
+    EsValue &expr = static_cast<EsValue &>(expr_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     result = EsValue::from_bool(!expr.to_boolean());
     return true;
 }
 
-bool op_u_bit_not(const EsValue &expr, EsValue &result)
+bool esa_u_bit_not(EsValueData expr_data, EsValueData *result_data)
 {
+    EsValue &expr = static_cast<EsValue &>(expr_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     int32_t old_value = 0;
     if (!expr.to_int32(old_value))
         return false;
@@ -1227,8 +1361,11 @@ bool op_u_bit_not(const EsValue &expr, EsValue &result)
     return true;
 }
 
-bool op_u_add(const EsValue &expr, EsValue &result)
+bool esa_u_add(EsValueData expr_data, EsValueData *result_data)
 {
+    EsValue &expr = static_cast<EsValue &>(expr_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     double num = 0.0;
     if (!expr.to_number(num))
         return false;
@@ -1237,8 +1374,11 @@ bool op_u_add(const EsValue &expr, EsValue &result)
     return true;
 }
 
-bool op_u_sub(const EsValue &expr, EsValue &result)
+bool esa_u_sub(EsValueData expr_data, EsValueData *result_data)
 {
+    EsValue &expr = static_cast<EsValue &>(expr_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     double old_num = 0.0;
     if (!expr.to_number(old_num))
         return false;
@@ -1251,8 +1391,13 @@ bool op_u_sub(const EsValue &expr, EsValue &result)
     return true;
 }
 
-bool op_b_or(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_or(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     int32_t lnum = 0;
     if (!lval.to_int32(lnum))
         return false;
@@ -1265,8 +1410,13 @@ bool op_b_or(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_xor(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_xor(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     int32_t lnum = 0;
     if (!lval.to_int32(lnum))
         return false;
@@ -1279,8 +1429,13 @@ bool op_b_xor(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_and(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_and(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     int32_t lnum = 0;
     if (!lval.to_int32(lnum))
         return false;
@@ -1293,8 +1448,13 @@ bool op_b_and(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_shl(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_shl(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     int32_t lnum = 0;
     if (!lval.to_int32(lnum))
         return false;
@@ -1307,8 +1467,13 @@ bool op_b_shl(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_sar(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_sar(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     int32_t lnum = 0;
     if (!lval.to_int32(lnum))
         return false;
@@ -1321,8 +1486,13 @@ bool op_b_sar(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_shr(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_shr(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     uint32_t lnum = 0;
     if (!lval.to_uint32(lnum))
         return false;
@@ -1335,8 +1505,13 @@ bool op_b_shr(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_add(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_add(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     EsValue lprim;
     if (!lval.to_primitive(ES_HINT_NONE, lprim))
         return false;
@@ -1362,8 +1537,13 @@ bool op_b_add(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_sub(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_sub(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     double lnum = 0.0;
     if (!lval.to_number(lnum))
         return false;
@@ -1378,8 +1558,13 @@ bool op_b_sub(const EsValue &lval, const EsValue &rval, EsValue &result)
     // FIXME: 11.6.3
 }
 
-bool op_b_mul(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_mul(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     double lnum = 0.0;
     if (!lval.to_number(lnum))
         return false;
@@ -1392,8 +1577,13 @@ bool op_b_mul(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_div(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_div(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     double lnum = 0.0;
     if (!lval.to_number(lnum))
         return false;
@@ -1406,8 +1596,13 @@ bool op_b_div(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_b_mod(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_b_mod(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     double lnum = 0.0;
     if (!lval.to_number(lnum))
         return false;
@@ -1420,8 +1615,13 @@ bool op_b_mod(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_c_in(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_in(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     if (!rval.is_object())
     {
         ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_NO_OBJ));
@@ -1437,8 +1637,13 @@ bool op_c_in(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_c_instance_of(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_instance_of(EsValueData lval_data, EsValueData rval_data,
+                       EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     if (!rval.is_object())
     {
         ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_NO_OBJ));
@@ -1459,20 +1664,35 @@ bool op_c_instance_of(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_c_strict_eq(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_strict_eq(EsValueData lval_data, EsValueData rval_data,
+                     EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     result = EsValue::from_bool(algorithm::strict_eq_comp(lval, rval));
     return true;
 }
 
-bool op_c_strict_neq(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_strict_neq(EsValueData lval_data, EsValueData rval_data,
+                      EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     result = EsValue::from_bool(!algorithm::strict_eq_comp(lval, rval));
     return true;
 }
 
-bool op_c_eq(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_eq(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     bool test = false;
     if (!algorithm::abstr_eq_comp(lval, rval, test))
         return false;
@@ -1481,8 +1701,13 @@ bool op_c_eq(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_c_neq(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_neq(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     bool test = false;;
     if (!algorithm::abstr_eq_comp(lval, rval, test))
         return false;
@@ -1491,8 +1716,13 @@ bool op_c_neq(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_c_lt(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_lt(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     Maybe<bool> test;
     if (!algorithm::abstr_rel_comp(lval, rval, true, test))
         return false;
@@ -1501,8 +1731,13 @@ bool op_c_lt(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_c_gt(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_gt(EsValueData lval_data, EsValueData rval_data,
+              EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     Maybe<bool> test;
     if (!algorithm::abstr_rel_comp(rval, lval, false, test))
         return false;
@@ -1511,8 +1746,13 @@ bool op_c_gt(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_c_lte(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_lte(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     Maybe<bool> test;
     if (!algorithm::abstr_rel_comp(rval, lval, false, test))
         return false;
@@ -1521,8 +1761,13 @@ bool op_c_lte(const EsValue &lval, const EsValue &rval, EsValue &result)
     return true;
 }
 
-bool op_c_gte(const EsValue &lval, const EsValue &rval, EsValue &result)
+bool esa_c_gte(EsValueData lval_data, EsValueData rval_data,
+               EsValueData *result_data)
 {
+    EsValue &lval = static_cast<EsValue &>(lval_data);
+    EsValue &rval = static_cast<EsValue &>(rval_data);
+    EsValue &result = static_cast<EsValue &>(*result_data);
+
     Maybe<bool> test;
     if (!algorithm::abstr_rel_comp(lval, rval, true, test))
         return false;

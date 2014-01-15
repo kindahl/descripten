@@ -20,8 +20,8 @@
 #include "runtime.hh"
 
 void _global_data();
-bool _global_main(EsContext *ctx, int argc,
-                  EsValue *fp, EsValue *vp);
+bool _global_main(EsContext *ctx, uint32_t argc,
+                  EsValueData *fp, EsValueData *vp);
 
 int main(int argc, const char * arv[])
 {

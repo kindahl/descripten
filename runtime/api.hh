@@ -26,7 +26,7 @@
  */
 #ifndef ES_API_FUN_HDR
 #define ES_API_FUN_HDR(name) bool name(EsContext *ctx,\
-                                       int argc,\
+                                       uint32_t argc,\
                                        EsValue *fp,\
                                        EsValue *vp)
 #endif
@@ -40,10 +40,10 @@
  *       points to what ECMA-262 refers to as 'this'.
  */
 #ifndef ES_API_FUN_PTR
-#define ES_API_FUN_PTR(name) bool (* name )(EsContext *ctx,\
-                                            int argc,\
-                                            EsValue *fp,\
-                                            EsValue *vp)
+#define ES_API_FUN_PTR(name) bool (* name)(EsContext *ctx,\
+                                           uint32_t argc,\
+                                           EsValue *fp,\
+                                           EsValue *vp)
 #endif
 
 /**

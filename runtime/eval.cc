@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <memory>
 #include <string.h>
 #include <gc_cpp.h>
 #include "common/cast.hh"
@@ -79,7 +80,7 @@ using parser::ValueVisitor;
 #define RETHROW_IF(expr)\
 if (expr)\
     return Completion(Completion::TYPE_THROW,\
-                      EsContextStack::instance().top()->get_pending_exception());
+                      esa_ex_get(EsContextStack::instance().top()));
 #endif
 
 Evaluator::Evaluator(FunctionLiteral *code, Type type, EsCallFrame &frame)
@@ -114,7 +115,7 @@ bool Evaluator::is_in_switch() const
     return false;
 }
 
-bool Evaluator::expand_ref_get(const EsReferenceOrValue &any, EsValue &value)
+bool Evaluator::expand_ref_get(const EsReferenceOrValue &any, EsValueData &value)
 {
     if (any.is_value())
     {
@@ -125,18 +126,18 @@ bool Evaluator::expand_ref_get(const EsReferenceOrValue &any, EsValue &value)
     const EsReference &ref = any.reference();
     if (ref.get_base())
     {
-        return op_prp_get(EsValue::from_obj(ref.get_base()),
+        return esa_prp_get(es_value_from_object(ref.get_base()),
                           EsPropertyKey::from_str(ref.get_referenced_name()).as_raw(),
-                          value, 0);
+                          &value, 0);
     }
     else
     {
-        return op_ctx_get(EsContextStack::instance().top(),
-                          EsPropertyKey::from_str(ref.get_referenced_name()).as_raw(), value, 0);
+        return esa_ctx_get(EsContextStack::instance().top(),
+                  EsPropertyKey::from_str(ref.get_referenced_name()).as_raw(), &value, 0);
     }
 }
 
-bool Evaluator::expand_ref_put(const EsReferenceOrValue &any, const EsValue &value)
+bool Evaluator::expand_ref_put(const EsReferenceOrValue &any, const EsValueData &value)
 {
     assert(any.is_reference());
 
@@ -144,27 +145,27 @@ bool Evaluator::expand_ref_put(const EsReferenceOrValue &any, const EsValue &val
     if (ref.get_base())
     {
         // If we have a base object it must be a property reference.
-        return op_prp_put(EsContextStack::instance().top(),
-                          EsValue::from_obj(ref.get_base()),
+        return esa_prp_put(EsContextStack::instance().top(),
+                          es_value_from_object(ref.get_base()),
                           EsPropertyKey::from_str(ref.get_referenced_name()).as_raw(),
                           value, 0);
     }
     else
     {
-        return op_ctx_put(EsContextStack::instance().top(),
+        return esa_ctx_put(EsContextStack::instance().top(),
                           EsPropertyKey::from_str(ref.get_referenced_name()).as_raw(), value, 0);
     }
 }
 
 Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
 {
-    EsValue r = EsValue::undefined;
+    EsValueData r = es_value_undefined();
 
     Completion lhs_res = parse(expr->left());
     if (lhs_res.is_abrupt())
         return lhs_res;
 
-    EsValue lval;
+    EsValueData lval;
     RETHROW_IF(!expand_ref_get(lhs_res.value(), lval));
 
     switch (expr->operation())
@@ -175,7 +176,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
             r = rval;
             break;
@@ -188,9 +189,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_mul(lval, rval, r));
+            RETHROW_IF(!esa_b_mul(lval, rval, &r));
             break;
         }
         case BinaryExpression::DIV:
@@ -199,9 +200,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_div(lval, rval, r));
+            RETHROW_IF(!esa_b_div(lval, rval, &r));
             break;
         }
         case BinaryExpression::MOD:
@@ -210,9 +211,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_mod(lval, rval, r));
+            RETHROW_IF(!esa_b_mod(lval, rval, &r));
             break;
         }
         case BinaryExpression::ADD:
@@ -221,9 +222,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_add(lval, rval, r));
+            RETHROW_IF(!esa_b_add(lval, rval, &r));
             break;
         }
         case BinaryExpression::SUB:
@@ -232,9 +233,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_sub(lval, rval, r));
+            RETHROW_IF(!esa_b_sub(lval, rval, &r));
             break;
         }
         case BinaryExpression::LS:  // <<
@@ -243,9 +244,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_shl(lval, rval, r));
+            RETHROW_IF(!esa_b_shl(lval, rval, &r));
             break;
         }
         case BinaryExpression::RSS: // >>
@@ -254,9 +255,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_sar(lval, rval, r));
+            RETHROW_IF(!esa_b_sar(lval, rval, &r));
             break;
         }
         case BinaryExpression::RUS: // >>>
@@ -265,9 +266,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_shr(lval, rval, r));
+            RETHROW_IF(!esa_b_shr(lval, rval, &r));
             break;
         }
 
@@ -278,9 +279,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_lt(lval, rval, r));
+            RETHROW_IF(!esa_c_lt(lval, rval, &r));
             break;
         }
         case BinaryExpression::GT:
@@ -289,9 +290,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_gt(lval, rval, r));
+            RETHROW_IF(!esa_c_gt(lval, rval, &r));
             break;
         }
         case BinaryExpression::LTE:
@@ -300,9 +301,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_lte(lval, rval, r));
+            RETHROW_IF(!esa_c_lte(lval, rval, &r));
             break;
         }
         case BinaryExpression::GTE:
@@ -311,9 +312,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_gte(lval, rval, r));
+            RETHROW_IF(!esa_c_gte(lval, rval, &r));
             break;
         }
         case BinaryExpression::IN:
@@ -322,9 +323,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_in(lval, rval, r));
+            RETHROW_IF(!esa_c_in(lval, rval, &r));
             break;
         }
         case BinaryExpression::INSTANCEOF:
@@ -333,9 +334,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_instance_of(lval, rval, r));
+            RETHROW_IF(!esa_c_instance_of(lval, rval, &r));
             break;
         }
 
@@ -346,9 +347,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_eq(lval, rval, r));
+            RETHROW_IF(!esa_c_eq(lval, rval, &r));
             break;
         }
         case BinaryExpression::NEQ:
@@ -357,9 +358,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_neq(lval, rval, r));
+            RETHROW_IF(!esa_c_neq(lval, rval, &r));
             break;
         }
         case BinaryExpression::STRICT_EQ:
@@ -368,9 +369,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_strict_eq(lval, rval, r));
+            RETHROW_IF(!esa_c_strict_eq(lval, rval, &r));
             break;
         }
         case BinaryExpression::STRICT_NEQ:
@@ -379,9 +380,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_c_strict_neq(lval, rval, r));
+            RETHROW_IF(!esa_c_strict_neq(lval, rval, &r));
             break;
         }
 
@@ -392,9 +393,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_and(lval, rval, r));
+            RETHROW_IF(!esa_b_and(lval, rval, &r));
             break;
         }
         case BinaryExpression::BIT_XOR:
@@ -403,9 +404,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_xor(lval, rval, r));
+            RETHROW_IF(!esa_b_xor(lval, rval, &r));
             break;
         }
         case BinaryExpression::BIT_OR:
@@ -414,9 +415,9 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
             if (rhs_res.is_abrupt())
                 return rhs_res;
 
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
-            RETHROW_IF(!op_b_or(lval, rval, r));
+            RETHROW_IF(!esa_b_or(lval, rval, &r));
             break;
         }
 
@@ -424,7 +425,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
         case BinaryExpression::LOG_AND:
         {
             // Short-circuit evaluation.
-            if (!lval.to_boolean())
+            if (!esa_val_to_bool(lval))
             {
                 r = lval;
             }
@@ -435,7 +436,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                     return rhs_res;
 
                 // FIXME: rval necessary?
-                EsValue rval;
+                EsValueData rval;
                 RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
                 r = rval;
             }
@@ -444,7 +445,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
         case BinaryExpression::LOG_OR:
         {
             // Short-circuit evaluation.
-            if (lval.to_boolean())
+            if (esa_val_to_bool(lval))
             {
                 r = lval;
             }
@@ -455,7 +456,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                     return rhs_res;
 
                 // FIXME: rval necessary?
-                EsValue rval;
+                EsValueData rval;
                 RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
                 r = rval;
             }
@@ -472,7 +473,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
 
 Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
 {
-    EsValue t;
+    EsValueData t;
 
     if (expr->operation() == UnaryExpression::DELETE)
     {
@@ -489,27 +490,27 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
                 return obj_res;
             EsReferenceOrValue obj = obj_res.value();
 
-            EsValue key_val;
+            EsValueData key_val;
             RETHROW_IF(!expand_ref_get(key, key_val));
 
-            EsValue obj_val;
+            EsValueData obj_val;
             RETHROW_IF(!expand_ref_get(obj, obj_val));
 
-            RETHROW_IF(!obj_val.chk_obj_coercibleT());
+            RETHROW_IF(!esa_val_chk_coerc(obj_val));
 
-            RETHROW_IF(!op_prp_del(EsContextStack::instance().top(),
-                                   obj_val, key_val, t));
+            RETHROW_IF(!esa_prp_del_slow(EsContextStack::instance().top(),
+                                        obj_val, key_val, &t));
         }
         else if (IdentifierLiteral * ident =
             dynamic_cast<IdentifierLiteral *>(expr->expression()))
         {
-            RETHROW_IF(!op_ctx_del(EsContextStack::instance().top(),
+            RETHROW_IF(!esa_ctx_del(EsContextStack::instance().top(),
                     EsPropertyKey::from_str(
-                            EsString::create(ident->value())).as_raw(), t));
+                            EsString::create(ident->value())).as_raw(), &t));
         }
         else
         {
-            t = EsValue::from_bool(true);
+            t = es_value_from_boolean(true);
         }
 
         return Completion(Completion::TYPE_NORMAL, t);
@@ -523,20 +524,20 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
     {
         case UnaryExpression::VOID:
         {
-            EsValue tmp;
+            EsValueData tmp;
             RETHROW_IF(!expand_ref_get(expr_res.value(), tmp));
-            t = EsValue::undefined;
+            t = es_value_undefined();
             break;
         }
         case UnaryExpression::TYPEOF:
         {
-            EsValue v;
+            EsValueData v;
             if (expr_res.value().is_reference())
             {
                 if (!expand_ref_get(expr_res.value(), v))
                 {
-                    op_ex_clear(EsContextStack::instance().top());
-                    v = EsValue::undefined;
+                    esa_ex_clear(EsContextStack::instance().top());
+                    v = es_value_undefined();
                 }
             }
             else
@@ -544,91 +545,91 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
                 v = expr_res.value().value();
             }
 
-            RETHROW_IF(!op_u_typeof(v, t));
+            RETHROW_IF(!esa_u_typeof(v, &t));
             break;
         }
         case UnaryExpression::PRE_INC:
         {
-            EsValue rval;
+            EsValueData rval;
             double old_val = 0.0;
             RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
-                       !rval.to_number(old_val));
+                       !esa_val_to_num(rval, &old_val));
 
             double new_val = old_val + 1.0f;
 
-            t = EsValue::from_num(new_val);
+            t = es_value_from_number(new_val);
             RETHROW_IF(!expand_ref_put(expr_res.value(), t));
             break;
         }
         case UnaryExpression::PRE_DEC:
         {
-            EsValue rval;
+            EsValueData rval;
             double old_val = 0.0;
             RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
-                       !rval.to_number(old_val));
+                       !esa_val_to_num(rval, &old_val));
 
             double new_val = old_val - 1.0f;
 
-            t = EsValue::from_num(new_val);
+            t = es_value_from_number(new_val);
             RETHROW_IF(!expand_ref_put(expr_res.value(), t));
             break;
         }
         case UnaryExpression::POST_INC:
         {
-            EsValue rval;
+            EsValueData rval;
             double old_val = 0.0;
             RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
-                       !rval.to_number(old_val));
+                       !esa_val_to_num(rval, &old_val));
 
             double new_val = old_val + 1.0f;
 
             RETHROW_IF(!expand_ref_put(expr_res.value(),
-                                       EsValue::from_num(new_val)));
+                                       es_value_from_number(new_val)));
 
-            t = EsValue::from_num(old_val);
+            t = es_value_from_number(old_val);
             break;
         }
         case UnaryExpression::POST_DEC:
         {
-            EsValue rval;
+            EsValueData rval;
             double old_val = 0.0;
             RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
-                       !rval.to_number(old_val));
+                       !esa_val_to_num(rval, &old_val));
 
             double new_val = old_val - 1.0f;
 
             RETHROW_IF(!expand_ref_put(expr_res.value(),
-                                       EsValue::from_num(new_val)));
+                                       es_value_from_number(new_val)));
 
-            t = EsValue::from_num(old_val);
+            t = es_value_from_number(old_val);
             break;
         }
         case UnaryExpression::PLUS:
         {
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
-                       !op_u_add(rval, t));
+                       !esa_u_add(rval, &t));
             break;
         }
         case UnaryExpression::MINUS:
         {
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
-                       !op_u_sub(rval, t));
+                       !esa_u_sub(rval, &t));
             break;
         }
         case UnaryExpression::BIT_NOT:
         {
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
-                       !op_u_bit_not(rval, t));
+                       !esa_u_bit_not(rval, &t));
             break;
         }
         case UnaryExpression::LOG_NOT:
         {
-            EsValue rval;
+            EsValueData rval;
             RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
-                       !op_u_not(rval, t));
+                       !esa_u_not(rval, &t));
             break;
         }
 
@@ -642,7 +643,7 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
 
 Completion Evaluator::parse_assign_expr(AssignmentExpression *expr)
 {
-    EsValue t;
+    EsValueData t;
 
     Completion lhs_res = parse(expr->lhs());
     if (lhs_res.is_abrupt())
@@ -660,43 +661,43 @@ Completion Evaluator::parse_assign_expr(AssignmentExpression *expr)
     }
     else
     {
-        EsValue lval, rval;
+        EsValueData lval, rval;
         RETHROW_IF(!expand_ref_get(l, lval) || !expand_ref_get(r, rval));
 
         switch (expr->operation())
         {
             case AssignmentExpression::ASSIGN_ADD:
-                RETHROW_IF(!op_b_add(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_add(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_SUB:
-                RETHROW_IF(!op_b_sub(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_sub(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_MUL:
-                RETHROW_IF(!op_b_mul(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_mul(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_MOD:
-                RETHROW_IF(!op_b_mod(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_mod(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_LS:
-                RETHROW_IF(!op_b_shl(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_shl(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_RSS:
-                RETHROW_IF(!op_b_sar(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_sar(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_RUS:
-                RETHROW_IF(!op_b_shr(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_shr(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_BIT_AND:
-                RETHROW_IF(!op_b_and(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_and(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_BIT_OR:
-                RETHROW_IF(!op_b_or(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_or(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_BIT_XOR:
-                RETHROW_IF(!op_b_xor(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_xor(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_DIV:
-                RETHROW_IF(!op_b_div(lval, rval, t) || !expand_ref_put(l, t));
+                RETHROW_IF(!esa_b_div(lval, rval, &t) || !expand_ref_put(l, t));
                 break;
 
             default:
@@ -714,10 +715,10 @@ Completion Evaluator::parse_cond_expr(ConditionalExpression *expr)
     if (cond_res.is_abrupt())
         return cond_res;
 
-    EsValue cond;
+    EsValueData cond;
     RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
-    if (cond.to_boolean())
+    if (esa_val_to_bool(cond))
         return parse(expr->left());
     else
         return parse(expr->right());
@@ -735,16 +736,16 @@ Completion Evaluator::parse_prop_expr(PropertyExpression *expr)
         return obj_res;
     EsReferenceOrValue obj_ref = obj_res.value();
 
-    EsValue key_val;
+    EsValueData key_val;
     RETHROW_IF(!expand_ref_get(key, key_val));
 
-    EsValue obj_val;
+    EsValueData obj_val;
     RETHROW_IF(!expand_ref_get(obj_ref, obj_val));
 
-    EsObject *obj = obj_val.to_objectT();
+    EsObject *obj = esa_val_to_obj(obj_val);
     RETHROW_IF(!obj);
 
-    const EsString *key_str = key_val.to_stringT();
+    const EsString *key_str = esa_val_to_str(key_val);
     RETHROW_IF(!key_str);
 
     EsReference t(key_str, EsContextStack::instance().top()->is_strict(), obj);
@@ -760,16 +761,16 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
         if (arg_res.is_abrupt())
             return arg_res;
 
-        EsValue val;
+        EsValueData val;
         RETHROW_IF(!expand_ref_get(arg_res.value(), val));
 
         // FIXME: Handle exceptions properly.
-        op_stk_push(val);
+        esa_stk_push(val);
     }
 
-    int argc = static_cast<int>(expr->arguments().size());
+    uint32_t argc = static_cast<uint32_t>(expr->arguments().size());
 
-    EsValue r;
+    EsValueData r;
     bool success = false;
 
     if (PropertyExpression *prop =
@@ -785,22 +786,22 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
             return obj_res;
         EsReferenceOrValue obj = obj_res.value();
 
-        EsValue key_val;
+        EsValueData key_val;
         RETHROW_IF(!expand_ref_get(key, key_val));
 
-        EsValue obj_val;
+        EsValueData obj_val;
         RETHROW_IF(!expand_ref_get(obj, obj_val));
 
-        RETHROW_IF(!obj_val.chk_obj_coercibleT());
+        RETHROW_IF(!esa_val_chk_coerc(obj_val));
 
-        success = op_call_keyed(obj_val, key_val, argc, r);
+        success = esa_call_keyed_slow(obj_val, key_val, argc, &r);
     }
     else if (IdentifierLiteral * ident =
         dynamic_cast<IdentifierLiteral *>(expr->expression()))
     {
-        success = op_call_named(
+        success = esa_call_named(
                 EsPropertyKey::from_str(EsString::create(ident->value())).as_raw(),
-                        argc, r);
+                        argc, &r);
     }
     else
     {
@@ -811,7 +812,7 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
         EsReferenceOrValue fun = expr_res.value();
 
         assert(!fun.is_reference());
-        success = op_call(fun.value(), argc, r);
+        success = esa_call(fun.value(), argc, &r);
     }
 
     RETHROW_IF(!success);
@@ -833,27 +834,27 @@ Completion Evaluator::parse_call_new_expr(CallNewExpression *expr)
         if (arg_res.is_abrupt())
             return arg_res;
 
-        EsValue val;
+        EsValueData val;
         RETHROW_IF(!expand_ref_get(arg_res.value(), val));
 
         // FIXME: Handle exceptions properly.
-        op_stk_push(val);
+        esa_stk_push(val);
     }
 
-    EsValue fun;
+    EsValueData fun;
     RETHROW_IF(!expand_ref_get(fun_ref, fun));
 
-    int argc = static_cast<int>(expr->arguments().size());
+    uint32_t argc = static_cast<uint32_t>(expr->arguments().size());
 
-    EsValue r;
-    RETHROW_IF(!op_call_new(fun, argc, r));
+    EsValueData r;
+    RETHROW_IF(!esa_call_new(fun, argc, &r));
 
     return Completion(Completion::TYPE_NORMAL, r);
 }
 
 Completion Evaluator::parse_regular_expr(RegularExpression *expr)
 {
-    EsValue r = op_new_reg_exp(EsString::create(expr->pattern()),
+    EsValueData r = esa_new_reg_exp(EsString::create(expr->pattern()),
                                EsString::create(expr->flags()));
     return Completion(Completion::TYPE_NORMAL, r);
 }
@@ -867,7 +868,8 @@ Completion Evaluator::parse_fun_expr(FunctionExpression *expr)
 
 Completion Evaluator::parse_this_lit(ThisLiteral *lit)
 {
-    return Completion(Completion::TYPE_NORMAL, frame_.this_value());
+    return Completion(Completion::TYPE_NORMAL,
+            reinterpret_cast<const EsValueData &>(frame_.this_value()));
 }
 
 Completion Evaluator::parse_ident_lit(IdentifierLiteral *lit)
@@ -880,27 +882,27 @@ Completion Evaluator::parse_ident_lit(IdentifierLiteral *lit)
 
 Completion Evaluator::parse_null_lit(NullLiteral *lit)
 {
-    return Completion(Completion::TYPE_NORMAL, EsValue::null);
+    return Completion(Completion::TYPE_NORMAL, es_value_null());
 }
 
 Completion Evaluator::parse_bool_lit(BoolLiteral *lit)
 {
     return Completion(Completion::TYPE_NORMAL,
-            EsValue::from_bool(lit->value()));
+            es_value_from_boolean(lit->value()));
 }
 
 Completion Evaluator::parse_num_lit(NumberLiteral *lit)
 {
     // FIXME: Performance hit when creating new string.
     return Completion(Completion::TYPE_NORMAL,
-            EsValue::from_num(
+            es_value_from_number(
                     es_str_to_num(EsString::create(lit->as_string()))));
 }
 
 Completion Evaluator::parse_str_lit(StringLiteral *lit)
 {
     return Completion(Completion::TYPE_NORMAL,
-            EsValue::from_str(EsString::create(lit->value())));
+            es_value_from_string(EsString::create(lit->value())));
 }
 
 Completion Evaluator::parse_fun_lit(FunctionLiteral *lit)
@@ -936,39 +938,39 @@ Completion Evaluator::parse_fun_lit(FunctionLiteral *lit)
     }
 
     assert(fun);
-    return Completion(Completion::TYPE_NORMAL, EsValue::from_obj(fun));
+    return Completion(Completion::TYPE_NORMAL, es_value_from_object(fun));
 }
 
 Completion Evaluator::parse_var_lit(VariableLiteral *lit)
 {
     // Dealt with in parse_fun_decls().
-    return Completion(Completion::TYPE_NORMAL, EsValue::nothing);
+    return Completion(Completion::TYPE_NORMAL, es_value_nothing());
 }
 
 Completion Evaluator::parse_array_lit(ArrayLiteral *lit)
 {
-    EsValueVector items;
+    std::unique_ptr<EsValueData[]> items(new EsValueData[lit->values().size()]);
 
-    ExpressionVector::const_iterator it;
-    for (it = lit->values().begin(); it != lit->values().end(); ++it)
+    for (size_t i = 0; i < lit->values().size(); i++)
     {
-        Completion val_res = parse(*it);
+        Completion val_res = parse(lit->values()[i]);
         if (val_res.is_abrupt())
             return val_res;
 
-        EsValue val;
+        EsValueData val;
         RETHROW_IF(!expand_ref_get(val_res.value(), val));
 
-        items.push_back(val);
+        items[i] = val;
     }
     
-    return Completion(Completion::TYPE_NORMAL, op_new_arr(static_cast<int>(items.size()),
-                                                          &items[0]));
+    return Completion(Completion::TYPE_NORMAL,
+            esa_new_arr(static_cast<uint32_t>(lit->values().size()),
+                       &items[0]));
 }
 
 Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
 {
-    EsValue new_obj = op_new_obj();
+    EsValueData new_obj = esa_new_obj();
 
     ObjectLiteral::PropertyVector::const_iterator it;
     for (it = lit->properties().begin(); it != lit->properties().end(); ++it)
@@ -981,17 +983,17 @@ Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
             if (key_res.is_abrupt())
                 return key_res;
 
-            EsValue key;
+            EsValueData key;
             RETHROW_IF(!expand_ref_get(key_res.value(), key));
 
             Completion val_res = parse(prop->value());
             if (val_res.is_abrupt())
                 return val_res;
 
-            EsValue val;
+            EsValueData val;
             RETHROW_IF(!expand_ref_get(val_res.value(), val));
 
-            RETHROW_IF(!op_prp_def_data(new_obj, key, val));
+            RETHROW_IF(!esa_prp_def_data(new_obj, key, val));
         }
         else
         {
@@ -999,10 +1001,10 @@ Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
             if (val_res.is_abrupt())
                 return val_res;
 
-            EsValue val;
+            EsValueData val;
             RETHROW_IF(!expand_ref_get(val_res.value(), val));
 
-            RETHROW_IF(!op_prp_def_accessor(new_obj,
+            RETHROW_IF(!esa_prp_def_accessor(new_obj,
                     EsPropertyKey::from_str(EsString::create(prop->accessor_name())).as_raw(),
                             val, prop->type() == ObjectLiteral::Property::SETTER));
         }
@@ -1013,13 +1015,13 @@ Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
 
 Completion Evaluator::parse_nothing_lit(NothingLiteral *lit)
 {
-    return Completion(Completion::TYPE_NORMAL, EsValue::nothing);
+    return Completion(Completion::TYPE_NORMAL, es_value_nothing());
 }
 
 Completion Evaluator::parse_empty_stmt(EmptyStatement *stmt)
 {
     // 12.3.
-    return Completion(Completion::TYPE_NORMAL, EsValue::nothing);
+    return Completion(Completion::TYPE_NORMAL, es_value_nothing());
 }
 
 Completion Evaluator::parse_expr_stmt(ExpressionStatement *stmt)
@@ -1029,7 +1031,7 @@ Completion Evaluator::parse_expr_stmt(ExpressionStatement *stmt)
     if (expr_res.is_abrupt())
         return expr_res;
 
-    EsValue val;
+    EsValueData val;
     RETHROW_IF(!expand_ref_get(expr_res.value(), val));
 
     return Completion(Completion::TYPE_NORMAL, val);
@@ -1059,10 +1061,10 @@ Completion Evaluator::parse_block_stmt(BlockStatement *stmt)
     }
 
     if (stmt->is_hidden())
-        return Completion(Completion::TYPE_NORMAL, EsValue::nothing);
+        return Completion(Completion::TYPE_NORMAL, es_value_nothing());
 
     if (stmt->body().empty())
-        return Completion(Completion::TYPE_NORMAL, EsValue::nothing);
+        return Completion(Completion::TYPE_NORMAL, es_value_nothing());
     else
         return Completion(stmt_res.type(), v, stmt_res.target());
 }
@@ -1074,15 +1076,15 @@ Completion Evaluator::parse_if_stmt(IfStatement *stmt)
     if (cond_res.is_abrupt())
         return cond_res;
 
-    EsValue cond;
+    EsValueData cond;
     RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
-    if (cond.to_boolean())
+    if (esa_val_to_bool(cond))
         return parse(stmt->if_statement());
     else if (stmt->has_else())
         return parse(stmt->else_statement());
     else
-        return Completion(Completion::TYPE_NORMAL, EsValue::nothing);
+        return Completion(Completion::TYPE_NORMAL, es_value_nothing());
 }
 
 Completion Evaluator::parse_do_while_stmt(DoWhileStatement *stmt)
@@ -1118,10 +1120,10 @@ Completion Evaluator::parse_do_while_stmt(DoWhileStatement *stmt)
             if (cond_res.is_abrupt())
                 return cond_res;
 
-            EsValue cond;
+            EsValueData cond;
             RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
-            if (!cond.to_boolean())
+            if (!esa_val_to_bool(cond))
                 iterating = false;
         }
     }
@@ -1142,10 +1144,10 @@ Completion Evaluator::parse_while_stmt(WhileStatement *stmt)
         if (cond_res.is_abrupt())
             return cond_res;
 
-        EsValue cond;
+        EsValueData cond;
         RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
-        if (!cond.to_boolean())
+        if (!esa_val_to_bool(cond))
             return Completion(Completion::TYPE_NORMAL, v);
 
         Completion body_res = parse(stmt->body());
@@ -1178,13 +1180,13 @@ Completion Evaluator::parse_for_in_stmt(ForInStatement *stmt)
     if (enum_res.is_abrupt())
         return enum_res;
 
-    EsValue expr_val;
+    EsValueData expr_val;
     RETHROW_IF(!expand_ref_get(enum_res.value(), expr_val));
 
-    if (expr_val.is_null() || expr_val.is_undefined())
-        return Completion(Completion::TYPE_NORMAL, EsValue::nothing);
+    if (es_value_is_null(expr_val) || es_value_is_undefined(expr_val))
+        return Completion(Completion::TYPE_NORMAL, es_value_nothing());
 
-    EsObject *obj = expr_val.to_objectT();
+    EsObject *obj = esa_val_to_obj(expr_val);
     RETHROW_IF(!obj)
 
     EsReferenceOrValue v;
@@ -1194,7 +1196,7 @@ Completion Evaluator::parse_for_in_stmt(ForInStatement *stmt)
 
     while (true)
     {
-        EsValue p;
+        EsValueData p;
         bool found_p = false;
 
         // Find the next enumerable property.
@@ -1206,7 +1208,7 @@ Completion Evaluator::parse_for_in_stmt(ForInStatement *stmt)
             if (!prop || !prop->is_enumerable())    // The property might have been deleted.
                 continue;
 
-            p.set_str(key.to_string());
+            p = es_value_from_string(key.to_string());
             found_p = true;
         }
 
@@ -1251,7 +1253,7 @@ Completion Evaluator::parse_for_stmt(ForStatement *stmt)
         if (init_res.is_abrupt())
             return init_res;
 
-        EsValue initializer;
+        EsValueData initializer;
         RETHROW_IF(!expand_ref_get(init_res.value(), initializer));
     }
 
@@ -1265,10 +1267,10 @@ Completion Evaluator::parse_for_stmt(ForStatement *stmt)
             if (cond_res.is_abrupt())
                 return cond_res;
 
-            EsValue cond;
+            EsValueData cond;
             RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
-            if (!cond.to_boolean())
+            if (!esa_val_to_bool(cond))
                 return Completion(Completion::TYPE_NORMAL, v);
         }
 
@@ -1296,7 +1298,7 @@ Completion Evaluator::parse_for_stmt(ForStatement *stmt)
             if (next_res.is_abrupt())
                 return next_res;
 
-            EsValue next;
+            EsValueData next;
             RETHROW_IF(!expand_ref_get(next_res.value(), next));
         }
     }
@@ -1322,7 +1324,7 @@ Completion Evaluator::parse_cont_stmt(ContinueStatement *stmt)
         }
     }
 
-    return Completion(Completion::TYPE_CONTINUE, EsValue::nothing, target);
+    return Completion(Completion::TYPE_CONTINUE, es_value_nothing(), target);
 }
 
 Completion Evaluator::parse_break_stmt(BreakStatement *stmt)
@@ -1343,20 +1345,20 @@ Completion Evaluator::parse_break_stmt(BreakStatement *stmt)
         }
     }
 
-    return Completion(Completion::TYPE_BREAK, EsValue::nothing, target);
+    return Completion(Completion::TYPE_BREAK, es_value_nothing(), target);
 }
 
 Completion Evaluator::parse_ret_stmt(ReturnStatement *stmt)
 {
     // 12.9.
     if (!stmt->has_expression())
-        return Completion(Completion::TYPE_RETURN, EsValue::undefined);
+        return Completion(Completion::TYPE_RETURN, es_value_undefined());
 
     Completion expr_res = parse(stmt->expression());
     if (expr_res.is_abrupt())
         return expr_res;
 
-    EsValue expr;
+    EsValueData expr;
     RETHROW_IF(!expand_ref_get(expr_res.value(), expr));
 
     return Completion(Completion::TYPE_RETURN, expr);
@@ -1371,13 +1373,13 @@ Completion Evaluator::parse_with_stmt(WithStatement *stmt)
     if (expr_res.is_abrupt())
         return expr_res;
 
-    EsValue expr;
+    EsValueData expr;
     RETHROW_IF(!expand_ref_get(expr_res.value(), expr));
 
-    RETHROW_IF(!op_ctx_enter_with(EsContextStack::instance().top(), expr));
+    RETHROW_IF(!esa_ctx_enter_with(EsContextStack::instance().top(), expr));
 
     Completion body_res = parse(stmt->body());
-    op_ctx_leave();
+    esa_ctx_leave();
     return body_res;
 }
 
@@ -1392,7 +1394,7 @@ Completion Evaluator::parse_switch_stmt(SwitchStatement *stmt)
     if (expr_res.is_abrupt())
         return expr_res;
 
-    EsValue expr_val;
+    EsValueData expr_val;
     RETHROW_IF(!expand_ref_get(expr_res.value(), expr_val));
 
     bool found_case = false;
@@ -1409,13 +1411,13 @@ Completion Evaluator::parse_switch_stmt(SwitchStatement *stmt)
             if (clause_res.is_abrupt())
                 return clause_res;
 
-            EsValue label;
+            EsValueData label;
             RETHROW_IF(!expand_ref_get(clause_res.value(), label));
 
-            EsValue val;
-            RETHROW_IF(!op_c_strict_eq(label, expr_val, val));
+            EsValueData val;
+            RETHROW_IF(!esa_c_strict_eq(label, expr_val, &val));
 
-            found_case = val.to_boolean();
+            found_case = esa_val_to_bool(val);
         }
 
         if (found_case)
@@ -1477,10 +1479,10 @@ Completion Evaluator::parse_throw_stmt(ThrowStatement *stmt)
     if (expr_res.is_abrupt())
         return expr_res;
 
-    EsValue expr_val;
+    EsValueData expr_val;
     RETHROW_IF(!expand_ref_get(expr_res.value(), expr_val));
 
-    op_ex_set(EsContextStack::instance().top(), expr_val);
+    esa_ex_set(EsContextStack::instance().top(), expr_val);
 
     return Completion(Completion::TYPE_THROW, expr_val);
 }
@@ -1495,13 +1497,13 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
         Completion c = b;
         if (b.type() == Completion::TYPE_THROW)
         {
-            RETHROW_IF(!op_ctx_enter_catch(EsContextStack::instance().top(),
+            RETHROW_IF(!esa_ctx_enter_catch(EsContextStack::instance().top(),
                     EsPropertyKey::from_str(
                             EsString::create(
                                     stmt->catch_identifier())).as_raw()));
 
             c = parse(stmt->catch_block());
-            op_ctx_leave();
+            esa_ctx_leave();
         }
 
         Completion fin_res = parse(stmt->finally_block());
@@ -1516,23 +1518,23 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
         if (try_res.type() != Completion::TYPE_THROW)
             return try_res;
 
-        RETHROW_IF(!op_ctx_enter_catch(EsContextStack::instance().top(),
+        RETHROW_IF(!esa_ctx_enter_catch(EsContextStack::instance().top(),
                 EsPropertyKey::from_str(
                         EsString::create(stmt->catch_identifier())).as_raw()));
 
         Completion catch_res = parse(stmt->catch_block());
-        op_ctx_leave();
+        esa_ctx_leave();
         return catch_res;
     }
     else if (stmt->has_finally_block())
     {
         Completion b = parse(stmt->try_block());
-        EsValue b_ex_state = op_ex_save_state(EsContextStack::instance().top());
+        EsValueData b_ex_state = esa_ex_save_state(EsContextStack::instance().top());
 
         Completion fin_res = parse(stmt->finally_block());
         if (fin_res.type() == Completion::TYPE_NORMAL)
         {
-            op_ex_load_state(EsContextStack::instance().top(), b_ex_state);
+            esa_ex_load_state(EsContextStack::instance().top(), b_ex_state);
             return b;
         }
         else
@@ -1542,7 +1544,7 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
     }
 
     assert(false);
-    return Completion(Completion::TYPE_THROW, EsValue::nothing);
+    return Completion(Completion::TYPE_THROW, es_value_nothing());
 }
 
 Completion Evaluator::parse_dbg_stmt(DebuggerStatement *stmt)
@@ -1560,14 +1562,15 @@ void Evaluator::parse_fun_decls(const DeclarationVector &decls)
         if (decl->is_function())
         {
             FunctionLiteral *lit = decl->as_function();
-            EsFunction *fun = parse(lit).value().value().as_function();
+            EsFunction *fun = safe_cast<EsFunction *>(
+                    es_value_as_object(parse(lit).value().value()));
 
-            op_ctx_decl_fun(
+            esa_ctx_decl_fun(
                     EsContextStack::instance().top(),
                     type_ == TYPE_EVAL,
                     code_->is_strict_mode(),
                     EsPropertyKey::from_str(EsString::create(lit->name())).as_raw(),
-                    EsValue::from_obj(fun));
+                    es_value_from_object(fun));
         }
     }
 
@@ -1579,7 +1582,7 @@ void Evaluator::parse_fun_decls(const DeclarationVector &decls)
             VariableLiteral *var = decl->as_variable();
             parse(var);
 
-            op_ctx_decl_var(
+            esa_ctx_decl_var(
                     EsContextStack::instance().top(),
                     type_ == TYPE_EVAL,
                     code_->is_strict_mode(),
@@ -1592,8 +1595,8 @@ bool Evaluator::exec(EsContext *ctx)
 {
     AutoScope scope(this, SCOPE_FUNCTION);
 
-    int argc = frame_.argc();
-    EsValue *argv = frame_.fp();
+    uint32_t argc = frame_.argc();
+    EsValueData *argv = reinterpret_cast<EsValueData *>(frame_.fp());
 
     // Function prologue: arguments object and parameters.
     if (type_ == TYPE_FUNCTION && code_->needs_args_obj())
@@ -1602,38 +1605,37 @@ bool Evaluator::exec(EsContext *ctx)
         // on the heap since the arguments object might outlive the function
         // context. As a result we cannot let the arguments object reference
         // the arguments vector directly.
-        EsValue *argv_heap = new (GC)EsValue[argc];
-        memcpy(argv_heap, argv, sizeof(EsValue) * argc);
+        EsValueData *argv_heap = new (GC)EsValueData[argc];
+        memcpy(argv_heap, argv, sizeof(EsValueData) * argc);
 
         String *prmv = code_->parameters().empty() ? NULL :
             const_cast<String *>(&code_->parameters()[0]);
-        EsValue args = op_args_obj_init(ctx, argc, frame_.fp(), frame_.vp());
-        assert(args.is_object());
-
-        EsArguments *args_obj = safe_cast<EsArguments *>(args.as_object());
+        EsValueData args = esa_args_obj_init(ctx, argc,
+                reinterpret_cast<EsValueData *>(frame_.fp()),
+                reinterpret_cast<EsValueData *>(frame_.vp()));
 
         StringSet mapped_names;
 
-        int prmc = static_cast<int>(code_->parameters().size());
-        for (int i = std::min(argc, prmc) - 1; i >= 0; i--)
+        uint32_t prmc = static_cast<uint32_t>(code_->parameters().size());
+        for (uint32_t i = std::min(argc, prmc); i-- > 0; )
         {
             String name = prmv[i];
             if (!ctx->is_strict() && mapped_names.count(name) == 0)
             {
                 mapped_names.insert(name);
 
-                args_obj->link_parameter(i, &argv_heap[i]);
+                esa_args_obj_link(args, i, &argv_heap[i]);
             }
         }
 
-        for (int i = 0; i < prmc; i++)
+        for (uint32_t i = 0; i < prmc; i++)
         {
             if (i < argc)
             {
                 // Link the parameter to the coresponding slot in the arguments
                 // vector. Updating an argument through the arguments object
                 // should reflect in the parameter and vice versa.
-                op_ctx_link_var(
+                esa_ctx_link_var(
                         EsContextStack::instance().top(),
                         EsPropertyKey::from_str(
                                 EsString::create(code_->parameters()[i])).as_raw(),
@@ -1641,26 +1643,27 @@ bool Evaluator::exec(EsContext *ctx)
             }
             else
             {
-                op_ctx_decl_prm(
+                esa_ctx_decl_prm(
                         EsContextStack::instance().top(),
                         code_->is_strict_mode(),
                         EsPropertyKey::from_str(
                                 EsString::create(code_->parameters()[i])).as_raw(),
-                        EsValue::undefined);
+                        es_value_undefined());
             }
         }
     }
     else
     {
         // Function prologue: parameters.
-        for (int i = 0; i < static_cast<int>(code_->parameters().size()); i++)
+        for (uint32_t i = 0; i < static_cast<uint32_t>(
+                code_->parameters().size()); i++)
         {
-            op_ctx_decl_prm(
+            esa_ctx_decl_prm(
                     EsContextStack::instance().top(),
                     code_->is_strict_mode(),
                     EsPropertyKey::from_str(
                             EsString::create(code_->parameters()[i])).as_raw(),
-                    i < argc ? argv[i] : EsValue::undefined);
+                    i < argc ? argv[i] : es_value_undefined());
         }
     }
 
@@ -1668,7 +1671,7 @@ bool Evaluator::exec(EsContext *ctx)
     parse_fun_decls(code_->declarations());
     
     // Only used for eval.
-    EsValue v = EsValue::undefined;
+    EsValueData v = es_value_undefined();
 
     // Function body, 13.2.1
     StatementVector::const_iterator it_stmt;
@@ -1684,7 +1687,8 @@ bool Evaluator::exec(EsContext *ctx)
             case Completion::TYPE_CONTINUE:
                 break;
             case Completion::TYPE_RETURN:
-                frame_.set_result(stmt_res.value().value());
+                frame_.set_result(reinterpret_cast<const EsValue &>(
+                        stmt_res.value().value()));
                 return true;
             case Completion::TYPE_THROW:
                 assert(EsContextStack::instance().top()->has_pending_exception());
@@ -1703,6 +1707,8 @@ bool Evaluator::exec(EsContext *ctx)
         }
     }
 
-    frame_.set_result(type_ == TYPE_EVAL ? v : EsValue::undefined);
+    frame_.set_result(type_ == TYPE_EVAL
+        ? reinterpret_cast<const EsValue &>(v)
+        : EsValue::undefined);
     return true;
 }

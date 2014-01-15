@@ -188,7 +188,7 @@ Value *Block::push_args_obj_init()
     return instr;
 }
 
-Value *Block::push_args_obj_link(Value *args, int index, Value *val)
+Value *Block::push_args_obj_link(Value *args, uint32_t index, Value *val)
 {
     Instruction *instr =
         new (GC)ArgumentsObjectLinkInstruction(args, index, val);
@@ -244,7 +244,7 @@ Value *Block::push_bin_eq(Value *op1, Value *op2)
     return instr;
 }
 
-Value *Block::push_bnd_extra_init(int num_extra)
+Value *Block::push_bnd_extra_init(uint32_t num_extra)
 {
     Instruction *instr =
         new (GC)BindExtraInitInstruction(num_extra);
@@ -252,7 +252,7 @@ Value *Block::push_bnd_extra_init(int num_extra)
     return instr;
 }
 
-Value *Block::push_bnd_extra_ptr(int hops)
+Value *Block::push_bnd_extra_ptr(uint32_t hops)
 {
     Instruction *instr =
         new (GC)BindExtraPtrInstruction(hops);
@@ -260,7 +260,7 @@ Value *Block::push_bnd_extra_ptr(int hops)
     return instr;
 }
 
-Value *Block::push_call(Value *fun, int argc, Value *res)
+Value *Block::push_call(Value *fun, uint32_t argc, Value *res)
 {
     assert(res);
     Instruction *instr =
@@ -269,7 +269,7 @@ Value *Block::push_call(Value *fun, int argc, Value *res)
     return instr;
 }
 
-Value *Block::push_call_keyed(Value *obj, uint64_t key, int argc, Value *res)
+Value *Block::push_call_keyed(Value *obj, uint64_t key, uint32_t argc, Value *res)
 {
     assert(res);
     Instruction *instr =
@@ -278,7 +278,7 @@ Value *Block::push_call_keyed(Value *obj, uint64_t key, int argc, Value *res)
     return instr;
 }
 
-Value *Block::push_call_keyed_slow(Value *obj, Value *key, int argc,
+Value *Block::push_call_keyed_slow(Value *obj, Value *key, uint32_t argc,
                                    Value *res)
 {
     assert(res);
@@ -288,7 +288,7 @@ Value *Block::push_call_keyed_slow(Value *obj, Value *key, int argc,
     return instr;
 }
 
-Value *Block::push_call_named(uint64_t key, int argc, Value *res)
+Value *Block::push_call_named(uint64_t key, uint32_t argc, Value *res)
 {
     assert(res);
     Instruction *instr =
@@ -297,7 +297,7 @@ Value *Block::push_call_named(uint64_t key, int argc, Value *res)
     return instr;
 }
 
-Value *Block::push_call_new(Value *fun, int argc, Value *res)
+Value *Block::push_call_new(Value *fun, uint32_t argc, Value *res)
 {
     assert(res);
     Instruction *instr =
@@ -494,15 +494,6 @@ Value *Block::push_val_to_double(Value *val, Value *res)
     return instr;
 }
 
-Value *Block::push_val_to_str(Value *val, Value *res)
-{
-    assert(res);
-    Instruction *instr =
-        new (GC)ValueInstruction(ValueInstruction::TO_STRING, val, res);
-    push_instr(instr);
-    return instr;
-}
-
 Value *Block::push_val_from_bool(Value *val, Value *res)
 {
     Instruction *instr =
@@ -648,7 +639,7 @@ Value *Block::push_ex_clear()
     return instr;
 }
 
-Value *Block::push_init_args(Value *dst, int prmc)
+Value *Block::push_init_args(Value *dst, uint32_t prmc)
 {
     assert(dst);
     Instruction *instr = new (GC)InitArgumentsInstruction(dst, prmc);
@@ -671,9 +662,10 @@ Value *Block::push_decl_fun(uint64_t key, bool is_strict, Value *fun)
 }
 
 Value *Block::push_decl_prm(uint64_t key, bool is_strict,
-                            int prm_index, Value *prm_array)
+                            size_t prm_index, Value *prm_array)
 {
-    Instruction *instr = new (GC)Declaration(key, is_strict, prm_index, prm_array);
+    Instruction *instr = new (GC)Declaration(key, is_strict, prm_index,
+                                             prm_array);
     push_instr(instr);
     return instr;
 }
@@ -707,8 +699,8 @@ Value *Block::push_es_new_arr(size_t length, Value *vals, Value *res)
     return instr;
 }
 
-Value *Block::push_es_new_fun(Function *fun, int param_count, bool is_strict,
-                              Value *res)
+Value *Block::push_es_new_fun(Function *fun, uint32_t param_count,
+                              bool is_strict, Value *res)
 {
     Instruction *instr =
         new (GC)EsNewFunctionDeclarationInstruction(fun, param_count,
@@ -717,7 +709,7 @@ Value *Block::push_es_new_fun(Function *fun, int param_count, bool is_strict,
     return instr;
 }
 
-Value *Block::push_es_new_fun_expr(Function *fun, int param_count,
+Value *Block::push_es_new_fun_expr(Function *fun, uint32_t param_count,
                                    bool is_strict, Value *res)
 {
     Instruction *instr =
@@ -993,7 +985,7 @@ const Type *ArgumentsObjectInitInstruction::type() const
 }
 
 ArgumentsObjectLinkInstruction::ArgumentsObjectLinkInstruction(
-    Value *args, int index, Value *val)
+    Value *args, uint32_t index, Value *val)
     : args_(args)
     , index_(index)
     , val_(val)
@@ -1005,7 +997,7 @@ Value *ArgumentsObjectLinkInstruction::arguments() const
     return args_;
 }
 
-int ArgumentsObjectLinkInstruction::index() const
+uint32_t ArgumentsObjectLinkInstruction::index() const
 {
     return index_;
 }
@@ -1099,12 +1091,12 @@ const Type *BinaryInstruction::type() const
     return op_ == EQ ? Type::boolean() : lval_->type();
 }
 
-BindExtraInitInstruction::BindExtraInitInstruction(int num_extra)
+BindExtraInitInstruction::BindExtraInitInstruction(uint32_t num_extra)
     : num_extra_(num_extra)
 {
 }
 
-int BindExtraInitInstruction::num_extra() const
+uint32_t BindExtraInitInstruction::num_extra() const
 {
     return num_extra_;
 }
@@ -1114,12 +1106,12 @@ const Type *BindExtraInitInstruction::type() const
     return new (GC)PointerType(Type::value());
 }
 
-BindExtraPtrInstruction::BindExtraPtrInstruction(int hops)
+BindExtraPtrInstruction::BindExtraPtrInstruction(uint32_t hops)
     : hops_(hops)
 {
 }
 
-int BindExtraPtrInstruction::hops() const
+uint32_t BindExtraPtrInstruction::hops() const
 {
     return hops_;
 }
@@ -1129,7 +1121,7 @@ const Type *BindExtraPtrInstruction::type() const
     return new (GC)PointerType(Type::value());
 }
 
-CallInstruction::CallInstruction(Operation op, Value *fun, int argc,
+CallInstruction::CallInstruction(Operation op, Value *fun, uint32_t argc,
                                  Value *res)
     : op_(op)
     , fun_(fun)
@@ -1148,7 +1140,7 @@ Value *CallInstruction::function() const
     return fun_;
 }
 
-int CallInstruction::argc() const
+uint32_t CallInstruction::argc() const
 {
     return argc_;
 }
@@ -1163,8 +1155,8 @@ const Type *CallInstruction::type() const
     return Type::boolean();
 }
 
-CallKeyedInstruction::CallKeyedInstruction(Value *obj, uint64_t key, int argc,
-                                           Value *res)
+CallKeyedInstruction::CallKeyedInstruction(Value *obj, uint64_t key,
+                                           uint32_t argc, Value *res)
     : obj_(obj)
     , key_(key)
     , argc_(argc)
@@ -1182,7 +1174,7 @@ uint64_t CallKeyedInstruction::key() const
     return key_;
 }
 
-int CallKeyedInstruction::argc() const
+uint32_t CallKeyedInstruction::argc() const
 {
     return argc_;
 }
@@ -1198,7 +1190,7 @@ const Type *CallKeyedInstruction::type() const
 }
 
 CallKeyedSlowInstruction::CallKeyedSlowInstruction(Value *obj, Value *key,
-                                                   int argc, Value *res)
+                                                   uint32_t argc, Value *res)
     : obj_(obj)
     , key_(key)
     , argc_(argc)
@@ -1216,7 +1208,7 @@ Value *CallKeyedSlowInstruction::key() const
     return key_;
 }
 
-int CallKeyedSlowInstruction::argc() const
+uint32_t CallKeyedSlowInstruction::argc() const
 {
     return argc_;
 }
@@ -1231,7 +1223,7 @@ const Type *CallKeyedSlowInstruction::type() const
     return Type::boolean();
 }
 
-CallNamedInstruction::CallNamedInstruction(uint64_t key, int argc,
+CallNamedInstruction::CallNamedInstruction(uint64_t key, uint32_t argc,
                                            Value *res)
     : key_(key)
     , argc_(argc)
@@ -1244,7 +1236,7 @@ uint64_t CallNamedInstruction::key() const
     return key_;
 }
 
-int CallNamedInstruction::argc() const
+uint32_t CallNamedInstruction::argc() const
 {
     return argc_;
 }
@@ -1280,7 +1272,7 @@ ValueInstruction::ValueInstruction(Operation op, Value *val, Value *res)
     , res_(res)
 {
     assert(op == FROM_BOOLEAN || op == FROM_DOUBLE || op == FROM_STRING ||
-           op == TO_DOUBLE || op == TO_STRING);
+           op == TO_DOUBLE);
 
 #ifdef DEBUG
     if (op == FROM_BOOLEAN) { assert(val->type()->is_boolean()); }
@@ -1289,11 +1281,6 @@ ValueInstruction::ValueInstruction(Operation op, Value *val, Value *res)
     if (op == TO_DOUBLE)
     {
         assert(res->type()->is_double());
-        assert(val->type()->is_value());
-    }
-    if (op == TO_STRING)
-    {
-        assert(res->type()->is_string());
         assert(val->type()->is_value());
     }
 #endif
@@ -1334,7 +1321,6 @@ const Type *ValueInstruction::type() const
     {
         case TO_BOOLEAN:
         case TO_DOUBLE:
-        case TO_STRING:
             return Type::boolean();
             return Type::boolean();
 
@@ -1740,7 +1726,7 @@ const Type *ExceptionClearInstruction::type() const
     return Type::_void();
 }
 
-InitArgumentsInstruction::InitArgumentsInstruction(Value *dst, int prmc)
+InitArgumentsInstruction::InitArgumentsInstruction(Value *dst, uint32_t prmc)
     : dst_(dst)
     , prmc_(prmc)
 {
@@ -1751,7 +1737,7 @@ Value *InitArgumentsInstruction::destination() const
     return dst_;
 }
 
-int InitArgumentsInstruction::parameter_count() const
+uint32_t InitArgumentsInstruction::parameter_count() const
 {
     return prmc_;
 }
@@ -1782,7 +1768,7 @@ Declaration::Declaration(uint64_t key, bool is_strict, Value *val)
 }
 
 Declaration::Declaration(uint64_t key, bool is_strict,
-                         int prm_index, Value *prm_array)
+                         size_t prm_index, Value *prm_array)
     : kind_(PARAMETER)
     , key_(key)
     , is_strict_(is_strict)
@@ -1813,7 +1799,7 @@ Value *Declaration::value() const
     return val_;
 }
 
-int Declaration::parameter_index() const
+size_t Declaration::parameter_index() const
 {
     assert(kind_ == PARAMETER);
     return prm_index_;
@@ -2163,7 +2149,7 @@ const Type *EsNewArrayInstruction::type() const
 }
 
 EsNewFunctionDeclarationInstruction::EsNewFunctionDeclarationInstruction(
-    Function *fun, int param_count, bool is_strict, Value *res)
+    Function *fun, uint32_t param_count, bool is_strict, Value *res)
     : fun_(fun)
     , param_count_(param_count)
     , is_strict_(is_strict)
@@ -2176,7 +2162,7 @@ Function *EsNewFunctionDeclarationInstruction::function() const
     return fun_;
 }
 
-int EsNewFunctionDeclarationInstruction::parameter_count() const
+uint32_t EsNewFunctionDeclarationInstruction::parameter_count() const
 {
     return param_count_;
 }
@@ -2197,7 +2183,7 @@ const Type *EsNewFunctionDeclarationInstruction::type() const
 }
 
 EsNewFunctionExpressionInstruction::EsNewFunctionExpressionInstruction(
-    Function *fun, int param_count, bool is_strict, Value *res)
+    Function *fun, uint32_t param_count, bool is_strict, Value *res)
     : fun_(fun)
     , param_count_(param_count)
     , is_strict_(is_strict)
@@ -2210,7 +2196,7 @@ Function *EsNewFunctionExpressionInstruction::function() const
     return fun_;
 }
 
-int EsNewFunctionExpressionInstruction::parameter_count() const
+uint32_t EsNewFunctionExpressionInstruction::parameter_count() const
 {
     return param_count_;
 }

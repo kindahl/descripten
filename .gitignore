@@ -1,0 +1,47 @@
+# linux
+.ycm_extra_conf.pyc
+*/.deps/*
+*/.libs/*
+*.la
+*.lo
+*.m4
+*.o
+*.swp
+ar-lib
+autom4te.cache/*
+compile
+compiler/compiler
+configure
+config.guess
+config.log
+config.status
+config.sub
+cscope.out
+depcomp
+install-sh
+libtool
+ltmain.sh
+Makefile
+Makefile.in
+missing
+test/bin/lexer
+test/bin/parser
+test/bin/test-common
+test/bin/test-parser
+test/bin/test-runtime
+test/js/*
+!test/js/*.js
+tools/evaluator
+
+# os x
+.DS_Store
+
+# windows
+build/*
+
+# all
+benchmark/v8/*
+test/test262/*
+test/test-common.cc
+test/test-parser.cc
+test/test-runtime.cc

@@ -1,0 +1,4 @@
+The non-local test suite requires test262 revision 309 to be checked out in a
+folder named test262.
+
+hg clone -r 309 http://hg.ecmascript.org/tests/test262 test262

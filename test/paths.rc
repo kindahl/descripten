@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export LD_LIBRARY_PATH=$PWD/../common/.libs/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$PWD/../ir/.libs/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$PWD/../parser/.libs/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$PWD/../runtime/.libs/:$LD_LIBRARY_PATH

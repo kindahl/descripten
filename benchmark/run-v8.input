@@ -1,0 +1,8 @@
+v8/richards.js
+#v8/regexp.js
+v8/deltablue.js
+#v8/raytrace.js
+# disabled, requires octal string escape support.
+#v8/earley-boyer.js
+#v8/crypto.js
+v8/splay.js

@@ -1,0 +1,45 @@
+diff --git a/./include/private/gcconfig.h.orig b/./include/private/gcconfig.h
+index a7128f1..df0fba9 100644
+--- a/./include/private/gcconfig.h.orig
++++ b/./include/private/gcconfig.h
+@@ -2263,6 +2263,8 @@
+ #   define DBG_HDRS_ALL
+ # endif
+ 
++#define POINTER_MASK ((GC_word)0xffffffffffff)
++
+ # if defined(POINTER_MASK) && !defined(POINTER_SHIFT)
+ #   define POINTER_SHIFT 0
+ # endif
+@@ -2272,7 +2274,7 @@
+ # endif
+ 
+ # if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
+-#   define FIXUP_POINTER(p) (p) = ((p) & (POINTER_MASK) << POINTER_SHIFT)
++#   define FIXUP_POINTER(p) (p) = (((GC_word)p) & (POINTER_MASK) << POINTER_SHIFT)
+ # endif
+ 
+ # if defined(FIXUP_POINTER)
+diff --git a/mark.c.orig b/mark.c
+index 9501166..f1e7d3d 100644
+--- a/mark.c.orig
++++ b/mark.c
+@@ -1340,7 +1340,8 @@ void GC_push_conditional(ptr_t bottom, ptr_t top, GC_bool all)
+   void GC_push_one(word p)
+ # endif
+ {
+-    GC_PUSH_ONE_STACK((ptr_t)p, MARKED_FROM_REGISTER);
++    ptr_t p_lval = (ptr_t)p;
++    GC_PUSH_ONE_STACK(p_lval, MARKED_FROM_REGISTER);
+ }
+ 
+ struct GC_ms_entry *GC_mark_and_push(void *obj,
+@@ -1490,7 +1491,7 @@ void GC_push_all_eager(ptr_t bottom, ptr_t top)
+       lim = t - 1 /* longword */;
+       for (p = b; p <= lim; p = (word *)(((ptr_t)p) + ALIGNMENT)) {
+ 	q = (ptr_t)(*p);
+-	GC_PUSH_ONE_STACK((ptr_t)q, p);
++	GC_PUSH_ONE_STACK(q, p);
+       }
+ #   undef GC_greatest_plausible_heap_addr
+ #   undef GC_least_plausible_heap_addr

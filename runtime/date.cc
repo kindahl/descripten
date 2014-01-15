@@ -21,9 +21,10 @@
 #include <limits>
 #include "common/exception.hh"
 #include "common/lexical.hh"
-#include "common/stringbuilder.hh"
 #include "date.hh"
 #include "native.hh"
+#include "string.hh"
+#include "stringbuilder.hh"
 
 #define IS_LEAP_YEAR(year) ((year) % 4 == 0 && ((year) % 100 || ((year) % 400 == 0)))
 
@@ -46,7 +47,7 @@ static int64_t days_from_month[] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273
 // Number of days that we inherit from a certain month during a leap year.
 static int64_t days_from_month_leap[] = { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 };
 
-double es_date_parse(const String &str)
+double es_date_parse(const EsString *str)
 {
     // Parse date on any of the following forms:
     // YYYY, YYYY-MM or YYYY-MM-DD.
@@ -55,11 +56,11 @@ double es_date_parse(const String &str)
     int day = 1;    // 1 is default for day if not specified.
 
     // Parse years.
-    size_t rem = str.length();  // How much remains to be parsed.
+    size_t rem = str->length();  // How much remains to be parsed.
     if (rem < 4)
         return std::numeric_limits<double>::quiet_NaN();
 
-    const uni_char *ptr = str.data();
+    const uni_char *ptr = str->data();
     if (!es_is_dec_number(ptr, 4))
         return std::numeric_limits<double>::quiet_NaN();
 
@@ -384,13 +385,13 @@ int64_t es_year_from_time(double time)
     return year;
 }
 
-String es_date_time_iso_str(double time)
+const EsString *es_date_time_iso_str(double time)
 {
     assert(std::isfinite(time));
 
     // Format: YYYY-MM-DDTHH:mm:ss.sssZ
-    return StringBuilder::sprintf("%.4d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3dZ",
-                                  es_year_from_time(time), es_month_from_time(time), es_date_from_time(time),
-                                  es_hour_from_time(time), es_min_from_time(time), es_sec_from_time(time),
-                                  es_ms_from_time(time));
+    return EsStringBuilder::sprintf("%.4d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3dZ",
+                                    es_year_from_time(time), es_month_from_time(time), es_date_from_time(time),
+                                    es_hour_from_time(time), es_min_from_time(time), es_sec_from_time(time),
+                                    es_ms_from_time(time));
 }

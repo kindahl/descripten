@@ -69,28 +69,49 @@ void es_global_init()
     global_obj->make_inst();
 
     // 8.5
-    ES_DEF_GLOBAL_PROPERTY_RD_ONLY(global_obj, EsPropertyKey::from_str(_USTR("Infinity")), EsValue::from_num(std::numeric_limits<double>::infinity()));
+    ES_DEF_GLOBAL_PROPERTY_RD_ONLY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Infinity")),
+            EsValue::from_num(std::numeric_limits<double>::infinity()));
     
     // Add global properties.
-    ES_DEF_GLOBAL_PROPERTY_RD_ONLY(global_obj, property_keys.nan, EsValue::from_num(std::numeric_limits<double>::quiet_NaN()));
-    ES_DEF_GLOBAL_PROPERTY_RD_ONLY(global_obj, property_keys.infinity, EsValue::from_num(std::numeric_limits<double>::infinity()));
-    ES_DEF_GLOBAL_PROPERTY_RD_ONLY(global_obj, property_keys.undefined, EsValue::undefined);
+    ES_DEF_GLOBAL_PROPERTY_RD_ONLY(global_obj, property_keys.nan,
+            EsValue::from_num(std::numeric_limits<double>::quiet_NaN()));
+    ES_DEF_GLOBAL_PROPERTY_RD_ONLY(global_obj, property_keys.infinity,
+            EsValue::from_num(std::numeric_limits<double>::infinity()));
+    ES_DEF_GLOBAL_PROPERTY_RD_ONLY(global_obj, property_keys.undefined,
+            EsValue::undefined);
     
     // Add global functions.
-    ES_DEF_GLOBAL_PROPERTY(global_obj, property_keys.eval, EsValue::from_obj(EsEvalFunction::create_inst()));
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("$PRINT")), es_std_print, 1);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("PRINT")), es_std_print, 1);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("print")), es_std_print, 1);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("$ERROR")), es_std_error, 1);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("ERROR")), es_std_error, 1);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("$FAIL")), es_std_error, 1);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("runTestCase")), es_std_run_test_case, 1);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("fnGlobalObject")), es_std_fn_glob_obj, 0);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("fnExists")), es_std_fn_exists, 1);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("compareArray")), es_std_compare_array, 2);
-    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, EsPropertyKey::from_str(_USTR("arrayContains")), es_std_array_contains, 2);
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("dataPropertyAttributesAreCorrect")), es_new_std_data_prop_attr_are_correct_function(global_env));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("accessorPropertyAttributesAreCorrect")), es_new_std_accessor_prop_attr_are_correct_function(global_env));
+    ES_DEF_GLOBAL_PROPERTY(global_obj, property_keys.eval,
+            EsValue::from_obj(EsEvalFunction::create_inst()));
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("$PRINT")), es_std_print, 1);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("PRINT")), es_std_print, 1);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("print")), es_std_print, 1);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("$ERROR")), es_std_error, 1);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("ERROR")), es_std_error, 1);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("$FAIL")), es_std_error, 1);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("runTestCase")), es_std_run_test_case, 1);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("fnGlobalObject")), es_std_fn_glob_obj, 0);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("fnExists")), es_std_fn_exists, 1);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("compareArray")), es_std_compare_array, 2);
+    ES_DEF_GLOBAL_PROPERTY_FUN(global_obj,
+            EsPropertyKey::from_str(_ESTR("arrayContains")), es_std_array_contains, 2);
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("dataPropertyAttributesAreCorrect")),
+            es_new_std_data_prop_attr_are_correct_function(global_env));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("accessorPropertyAttributesAreCorrect")),
+            es_new_std_accessor_prop_attr_are_correct_function(global_env));
 
     ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, property_keys.encode_uri, es_std_encode_uri, 1);
     ES_DEF_GLOBAL_PROPERTY_FUN(global_obj, property_keys.encode_uri_component, es_std_encode_uri_component, 1);
@@ -103,23 +124,28 @@ void es_global_init()
     
     // Add boolean object.
     EsObject *array = EsArray::default_constr();
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("Array")), EsValue::from_obj(array));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Array")), EsValue::from_obj(array));
     
     // Add boolean object.
     EsObject *boolean = EsBooleanObject::default_constr();
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("Boolean")), EsValue::from_obj(boolean));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Boolean")), EsValue::from_obj(boolean));
     
     // Add date object.
     EsObject *date = EsDate::default_constr();
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("Date")), EsValue::from_obj(date));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Date")), EsValue::from_obj(date));
     
     // Add function object.
     EsObject *fun = EsFunction::default_constr();
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("Function")), EsValue::from_obj(fun));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Function")), EsValue::from_obj(fun));
     
     // Add math object.
     EsObject *math = EsObject::create_inst_with_class(_USTR("Math"));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("Math")), EsValue::from_obj(math));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Math")), EsValue::from_obj(math));
     ES_DEF_GLOBAL_PROPERTY_RD_ONLY(math, property_keys.e, EsValue::from_num(ES_MATH_E));
     ES_DEF_GLOBAL_PROPERTY_RD_ONLY(math, property_keys.ln10, EsValue::from_num(ES_MATH_LN10));
     ES_DEF_GLOBAL_PROPERTY_RD_ONLY(math, property_keys.ln2, EsValue::from_num(ES_MATH_LN2));
@@ -149,34 +175,53 @@ void es_global_init()
 
     // Add JSON object.
     EsObject *json = EsObject::create_inst_with_class(_USTR("JSON"));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("JSON")), EsValue::from_obj(json));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("JSON")), EsValue::from_obj(json));
     ES_DEF_GLOBAL_PROPERTY_FUN(json, property_keys.parse, es_std_json_parse, 2);
     ES_DEF_GLOBAL_PROPERTY_FUN(json, property_keys.stringify, es_std_json_stringify, 3);
 
     // Add number object.
     EsFunction *num = EsNumberObject::default_constr();
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("Number")), EsValue::from_obj(num));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Number")), EsValue::from_obj(num));
     
     // Add object object.
     EsObject *obj = EsObject::default_constr();
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("Object")), EsValue::from_obj(obj));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Object")), EsValue::from_obj(obj));
     
     // Add string object.
     EsFunction *str = EsStringObject::default_constr();
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("String")), EsValue::from_obj(str));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("String")), EsValue::from_obj(str));
 
     // Add regular expression object.
     EsFunction *reg_exp = EsRegExp::default_constr();
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("RegExp")), EsValue::from_obj(reg_exp));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("RegExp")), EsValue::from_obj(reg_exp));
     
     // Add error objects.
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("Error")), EsValue::from_obj(EsError::default_constr()));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("EvalError")), EsValue::from_obj(EsEvalError::default_constr()));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("RangeError")), EsValue::from_obj(EsRangeError::default_constr()));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("ReferenceError")), EsValue::from_obj(EsReferenceError::default_constr()));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("SyntaxError")), EsValue::from_obj(EsSyntaxError::default_constr()));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("TypeError")), EsValue::from_obj(EsTypeError::default_constr()));
-    ES_DEF_GLOBAL_PROPERTY(global_obj, EsPropertyKey::from_str(_USTR("URIError")), EsValue::from_obj(EsUriError::default_constr()));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("Error")),
+            EsValue::from_obj(EsError::default_constr()));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("EvalError")),
+            EsValue::from_obj(EsEvalError::default_constr()));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("RangeError")),
+            EsValue::from_obj(EsRangeError::default_constr()));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("ReferenceError")),
+            EsValue::from_obj(EsReferenceError::default_constr()));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("SyntaxError")),
+            EsValue::from_obj(EsSyntaxError::default_constr()));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("TypeError")),
+            EsValue::from_obj(EsTypeError::default_constr()));
+    ES_DEF_GLOBAL_PROPERTY(global_obj,
+            EsPropertyKey::from_str(_ESTR("URIError")),
+            EsValue::from_obj(EsUriError::default_constr()));
 }
 
 EsLexicalEnvironment *es_global_env()

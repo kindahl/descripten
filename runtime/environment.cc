@@ -87,7 +87,8 @@ bool EsDeclarativeEnvironmentRecord::set_mutable_bindingT(const EsPropertyKey &n
     }
     else if (s)
     {
-        ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_NONMUTABLE, n.to_string().utf8().c_str()));
+        ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_NONMUTABLE,
+                                         n.to_string()->utf8().c_str()));
         return false;
     }
 
@@ -108,7 +109,8 @@ bool EsDeclarativeEnvironmentRecord::get_binding_valueT(const EsPropertyKey &n, 
             return true;
         }
 
-        ES_THROW(EsReferenceError, es_fmt_msg(ES_MSG_REF_NOT_DEFINED, n.to_string().utf8().c_str()));
+        ES_THROW(EsReferenceError, es_fmt_msg(ES_MSG_REF_NOT_DEFINED,
+                                              n.to_string()->utf8().c_str()));
         return false;
     }
 

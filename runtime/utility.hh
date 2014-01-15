@@ -17,12 +17,12 @@
  */
 
 #pragma once
-#include "common/string.hh"
 #include "container.hh"
 
 class EsDate;
 class EsValue;
 class EsRegExp;
+class EsString;
 
 /**
  * Tries to interpret a value as a boolean. If the value is a boolean object
@@ -58,7 +58,7 @@ bool es_as_number(const EsValue &val, double &number);
  * @return true if the value could be interpreted as a string and false
  *         otherwise.
  */
-bool es_as_string(const EsValue &val, String &str);
+bool es_as_string(const EsValue &val, const EsString *&str);
 
 /**
  * Tries to interpret a value as an object. If the value is an object and

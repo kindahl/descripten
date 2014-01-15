@@ -17,6 +17,6 @@
  */
 
 #pragma once
-#include "common/strings.hh"
+#include "strings.hh"
 
-Strings &strings();
+EsStrings &strings();

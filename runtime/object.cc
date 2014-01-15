@@ -297,7 +297,8 @@ bool EsObject::putT(EsPropertyKey p, const EsValue &v, bool throws)
     {
         if (throws)
         {
-            ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_PUT, p.to_string().utf8().c_str()));
+            ES_THROW(EsTypeError, es_fmt_msg(
+                    ES_MSG_TYPE_PROP_PUT, p.to_string()->utf8().c_str()));
             return false;
         }
         return true;
@@ -313,7 +314,9 @@ bool EsObject::putT(EsPropertyKey p, const EsValue &v, bool throws)
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_PUT_NO_SETTER, p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_PUT_NO_SETTER,
+                        p.to_string()->utf8().c_str()));
                 return false;
             }
             return true;
@@ -342,8 +345,9 @@ bool EsObject::put_ownT(EsPropertyKey p, EsPropertyReference &current,
     {
         if (throws)
         {
-            ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_PUT,
-                                             p.to_string().utf8().c_str()));
+            ES_THROW(EsTypeError, es_fmt_msg(
+                    ES_MSG_TYPE_PROP_PUT,
+                    p.to_string()->utf8().c_str()));
             return false;
         }
         return true;
@@ -359,8 +363,9 @@ bool EsObject::put_ownT(EsPropertyKey p, EsPropertyReference &current,
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_PUT_NO_SETTER,
-                                                 p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_PUT_NO_SETTER,
+                        p.to_string()->utf8().c_str()));
                 return false;
             }
             return true;
@@ -406,7 +411,9 @@ bool EsObject::removeT(EsPropertyKey p, bool throws, bool &removed)
 
     if (throws)
     {
-        ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DELETE, p.to_string().utf8().c_str()));
+        ES_THROW(EsTypeError, es_fmt_msg(
+                ES_MSG_TYPE_PROP_DELETE,
+                p.to_string()->utf8().c_str()));
         return false;
     }
 
@@ -512,7 +519,8 @@ bool EsObject::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor 
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF_NO_EXT, p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_DEF_NO_EXT, p.to_string()->utf8().c_str()));
                 return false;
             }
             defined = false;
@@ -549,7 +557,8 @@ bool EsObject::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor 
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF, p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_DEF, p.to_string()->utf8().c_str()));
                 return false;
             }
             defined = false;
@@ -566,7 +575,8 @@ bool EsObject::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor 
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF, p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_DEF, p.to_string()->utf8().c_str()));
                 return false;
             }
             defined = false;
@@ -590,7 +600,9 @@ bool EsObject::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor 
                 {
                     if (throws)
                     {
-                        ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF, p.to_string().utf8().c_str()));
+                        ES_THROW(EsTypeError, es_fmt_msg(
+                                ES_MSG_TYPE_PROP_DEF,
+                                p.to_string()->utf8().c_str()));
                         return false;
                     }
                     defined = false;
@@ -611,7 +623,9 @@ bool EsObject::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor 
             {
                 if (throws)
                 {
-                    ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF, p.to_string().utf8().c_str()));
+                    ES_THROW(EsTypeError, es_fmt_msg(
+                            ES_MSG_TYPE_PROP_DEF,
+                            p.to_string()->utf8().c_str()));
                     return false;
                 }
                 defined = false;
@@ -638,8 +652,9 @@ bool EsObject::update_own_propertyT(EsPropertyKey p, EsPropertyReference &curren
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF,
-                                                 p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_DEF,
+                        p.to_string()->utf8().c_str()));
                 return false;
             }
 
@@ -656,8 +671,9 @@ bool EsObject::update_own_propertyT(EsPropertyKey p, EsPropertyReference &curren
             {
                 if (throws)
                 {
-                    ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF,
-                                                     p.to_string().utf8().c_str()));
+                    ES_THROW(EsTypeError, es_fmt_msg(
+                            ES_MSG_TYPE_PROP_DEF,
+                            p.to_string()->utf8().c_str()));
                     return false;
                 }
 
@@ -914,7 +930,8 @@ bool EsArguments::define_own_propertyT(EsPropertyKey p, const EsPropertyDescript
     {
         if (throws)
         {
-            ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF, p.to_string().utf8().c_str()));
+            ES_THROW(EsTypeError, es_fmt_msg(
+                    ES_MSG_TYPE_PROP_DEF, p.to_string()->utf8().c_str()));
             return false;
         }
         defined = false;
@@ -1084,8 +1101,9 @@ bool EsArray::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor &
         {
             // NOTE: This should always be thrown, no matter if the throws
             //       parameter is false.
-            ES_THROW(EsRangeError, es_fmt_msg(ES_MSG_RANGE_INVALID_ARRAY,
-                                              len.primitive_to_string().utf8().c_str()));
+            ES_THROW(EsRangeError, es_fmt_msg(
+                    ES_MSG_RANGE_INVALID_ARRAY,
+                    len.primitive_to_string()->utf8().c_str()));
             return false;
         }
 
@@ -1098,7 +1116,8 @@ bool EsArray::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor &
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF, p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_DEF, p.to_string()->utf8().c_str()));
                 return false;
             }
             defined = false;
@@ -1175,7 +1194,8 @@ bool EsArray::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor &
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF, p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_DEF, p.to_string()->utf8().c_str()));
                 return false;
             }
 
@@ -1191,7 +1211,8 @@ bool EsArray::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor &
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF, p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_DEF, p.to_string()->utf8().c_str()));
                 return false;
             }
 
@@ -1230,8 +1251,9 @@ bool EsArray::update_own_propertyT(EsPropertyKey p, EsPropertyReference &current
         {
             // NOTE: This should always be thrown, no matter if the throws
             //       parameter is false.
-            ES_THROW(EsRangeError, es_fmt_msg(ES_MSG_RANGE_INVALID_ARRAY,
-                                              len.primitive_to_string().utf8().c_str()));
+            ES_THROW(EsRangeError, es_fmt_msg(
+                    ES_MSG_RANGE_INVALID_ARRAY,
+                    len.primitive_to_string()->utf8().c_str()));
             return false;
         }
 
@@ -1242,8 +1264,9 @@ bool EsArray::update_own_propertyT(EsPropertyKey p, EsPropertyReference &current
         {
             if (throws)
             {
-                ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DEF,
-                                                 p.to_string().utf8().c_str()));
+                ES_THROW(EsTypeError, es_fmt_msg(
+                        ES_MSG_TYPE_PROP_DEF,
+                        p.to_string()->utf8().c_str()));
                 return false;
             }
             return true;
@@ -1587,10 +1610,11 @@ EsFunction *EsNumberObject::default_constr()
 EsFunction *EsStringObject::default_constr_ = NULL;
 
 EsStringObject::EsStringObject()
+    : primitive_value_(EsString::create())
 {
 }
 
-EsStringObject::EsStringObject(const String &primitive_value)
+EsStringObject::EsStringObject(const EsString *primitive_value)
     : primitive_value_(primitive_value)
 {
 }
@@ -1643,20 +1667,21 @@ EsStringObject *EsStringObject::create_raw()
     return new (GC)EsStringObject();
 }
 
-EsStringObject *EsStringObject::create_inst(String primitive_value)
+EsStringObject *EsStringObject::create_inst(const EsString *primitive_value)
 {
     EsStringObject *s = new (GC)EsStringObject(primitive_value);
     s->make_inst();
     
     // 15.5.5.1
     s->define_new_own_property(property_keys.length,
-        EsPropertyDescriptor(false, false, false,
-                             EsValue::from_num(static_cast<double>(primitive_value.length()))));    // VERIFIED: 15.5.5.1
+            EsPropertyDescriptor(false, false, false,
+                    EsValue::from_num(static_cast<double>(
+                            primitive_value->length()))));      // VERIFIED: 15.5.5.1
     
     return s;
 }
 
-const String &EsStringObject::primitive_value() const
+const EsString *EsStringObject::primitive_value() const
 {
     return primitive_value_;
 }
@@ -1679,13 +1704,14 @@ EsPropertyReference EsStringObject::get_own_property(EsPropertyKey p)
         return EsPropertyReference();
     
     // Make sure the indexer is within range.
-    if (p.as_index() >= primitive_value_.length())
+    if (p.as_index() >= primitive_value_->length())
         return EsPropertyReference();
     
     // Create property.
     return EsPropertyReference(this,
-                               new (GC)EsProperty(true, false, false,
-                                                  EsValue::from_str(String(primitive_value_[p.as_index()]))));
+            new (GC)EsProperty(true, false, false,
+                    EsValue::from_str(EsString::create(
+                            primitive_value_->at(p.as_index())))));
 }
 
 EsFunction *EsFunction::default_constr_ = NULL;
@@ -1974,7 +2000,7 @@ bool EsEvalFunction::callT(EsCallFrame &frame, int flags)
     {
         try
         {
-            StringStream str(prog_arg.as_string());
+            StringStream str(prog_arg.as_string()->str());
             Lexer lexer(str);
             Parser parser(lexer, Parser::CODE_EVAL, direct_eval_call && EsContextStack::instance().top()->is_strict());
 
@@ -1985,11 +2011,13 @@ bool EsEvalFunction::callT(EsCallFrame &frame, int flags)
             switch (e.kind())
             {
                 case ParseException::KIND_REFERENCE:
-                    ES_THROW(EsReferenceError, String(e.what().c_str()));
+                    ES_THROW(EsReferenceError,
+                            EsString::create_from_utf8(e.what().c_str()));
                     return false;
 
                 case ParseException::KIND_SYNTAX:
-                    ES_THROW(EsSyntaxError, String(e.what().c_str()));
+                    ES_THROW(EsSyntaxError,
+                            EsString::create_from_utf8(e.what().c_str()));
                     return false;
             }
 
@@ -2158,14 +2186,16 @@ EsRegExp::MatchResult::MatchResult(const char *subject, int *ptr, int count)
             int substr_length = end - start;
 
             end_index_ = std::max(end_index_, end);
-            matches_.push_back(MatchState(start, substr_length, String(substr_start, substr_length)));
+            matches_.push_back(MatchState(
+                    start, substr_length, EsString::create_from_utf8(
+                            substr_start, substr_length)));
         }
     }
 }
 
 EsFunction *EsRegExp::default_constr_ = NULL;
 
-EsRegExp::EsRegExp(const String &pattern, bool global, bool ignore_case,
+EsRegExp::EsRegExp(const EsString *pattern, bool global, bool ignore_case,
                    bool multiline)
     : pattern_(pattern)
     , global_(global)
@@ -2201,10 +2231,11 @@ bool EsRegExp::compile()
     // without being tied to the way it's written in ECMA-262.
     flags |= PCRE_ANCHORED;
 
-    re_ = pcre_compile(pattern_.utf8().c_str(), flags, &err, &err_off, NULL);
+    re_ = pcre_compile(pattern_->utf8().c_str(), flags, &err, &err_off, NULL);
     if (re_ == NULL)
     {
-        ES_THROW(EsSyntaxError, es_fmt_msg(ES_MSG_SYNTAX_REGEXP_COMPILE, err_off, err));
+        ES_THROW(EsSyntaxError, es_fmt_msg(
+                ES_MSG_SYNTAX_REGEXP_COMPILE, err_off, err));
         return false;
     }
 
@@ -2212,7 +2243,8 @@ bool EsRegExp::compile()
     re_capt_cnt_ = 0;
     if (pcre_fullinfo(re_, NULL, PCRE_INFO_CAPTURECOUNT, &re_capt_cnt_) != 0)
     {
-        ES_THROW(EsSyntaxError, es_fmt_msg(ES_MSG_SYNTAX_REGEXP_EXAMINE, pattern_.utf8().c_str()));
+        ES_THROW(EsSyntaxError, es_fmt_msg(
+                ES_MSG_SYNTAX_REGEXP_EXAMINE, pattern_->utf8().c_str()));
         return false;
     }
 
@@ -2252,23 +2284,28 @@ void EsRegExp::make_proto()
 
     // 15.10.7
     define_new_own_property(property_keys.source,
-        EsPropertyDescriptor(false, false, false, EsValue::from_str(String())));    // VERIFIED: 15.10.7.1
+            EsPropertyDescriptor(false, false, false,
+                    EsValue::from_str(EsString::create())));    // VERIFIED: 15.10.7.1
     define_new_own_property(property_keys.global,
-        EsPropertyDescriptor(false, false, false, EsValue::from_bool(false)));      // VERIFIED: 15.10.7.2
+            EsPropertyDescriptor(false, false, false,
+                    EsValue::from_bool(false)));                // VERIFIED: 15.10.7.2
     define_new_own_property(property_keys.ignore_case,
-        EsPropertyDescriptor(false, false, false, EsValue::from_bool(false)));      // VERIFIED: 15.10.7.3
+            EsPropertyDescriptor(false, false, false,
+                    EsValue::from_bool(false)));                // VERIFIED: 15.10.7.3
     define_new_own_property(property_keys.multiline,
-        EsPropertyDescriptor(false, false, false, EsValue::from_bool(false)));      // VERIFIED: 15.10.7.4
+            EsPropertyDescriptor(false, false, false,
+                    EsValue::from_bool(false)));                // VERIFIED: 15.10.7.4
     define_new_own_property(property_keys.last_index,
-        EsPropertyDescriptor(false, false, true, EsValue::from_u32(0)));            // VERIFIED: 15.10.7.5
+            EsPropertyDescriptor(false, false, true,
+                    EsValue::from_u32(0)));                     // VERIFIED: 15.10.7.5
 }
 
 EsRegExp *EsRegExp::create_raw()
 {
-    return new (GC)EsRegExp(String(), false, false, false);
+    return new (GC)EsRegExp(EsString::create(), false, false, false);
 }
 
-EsRegExp *EsRegExp::create_inst(const String &pattern, bool global,
+EsRegExp *EsRegExp::create_inst(const EsString *pattern, bool global,
                                 bool ignore_case, bool multiline)
 {
     EsRegExp *r = new (GC)EsRegExp(pattern, global, ignore_case, multiline);
@@ -2292,18 +2329,19 @@ EsRegExp *EsRegExp::create_inst(const String &pattern, bool global,
     return r;
 }
 
-EsRegExp *EsRegExp::create_inst(const String &pattern, const String &flags)
+EsRegExp *EsRegExp::create_inst(const EsString *pattern, const EsString *flags)
 {
     // Parse the flags.
     bool global = false, ignore_case = false, multiline = false;
-    for (size_t i = 0; i < flags.length(); i++)
+    for (size_t i = 0; i < flags->length(); i++)
     {
-        switch (flags[i])
+        switch (flags->at(i))
         {
             case 'g':
                 if (global)
                 {
-                    ES_THROW(EsSyntaxError, es_fmt_msg(ES_MSG_SYNTAX_REGEXP_ILLEGAL_FLAG, (char)flags[i]));
+                    ES_THROW(EsSyntaxError, es_fmt_msg(
+                            ES_MSG_SYNTAX_REGEXP_ILLEGAL_FLAG, (char)flags->at(i)));
                     return NULL;
                 }
                 global = true;
@@ -2311,7 +2349,8 @@ EsRegExp *EsRegExp::create_inst(const String &pattern, const String &flags)
             case 'i':
                 if (ignore_case)
                 {
-                    ES_THROW(EsSyntaxError, es_fmt_msg(ES_MSG_SYNTAX_REGEXP_ILLEGAL_FLAG, (char)flags[i]));
+                    ES_THROW(EsSyntaxError, es_fmt_msg(
+                            ES_MSG_SYNTAX_REGEXP_ILLEGAL_FLAG, (char)flags->at(i)));
                     return NULL;
                 }
                 ignore_case = true;
@@ -2319,13 +2358,15 @@ EsRegExp *EsRegExp::create_inst(const String &pattern, const String &flags)
             case 'm':
                 if (multiline)
                 {
-                    ES_THROW(EsSyntaxError, es_fmt_msg(ES_MSG_SYNTAX_REGEXP_ILLEGAL_FLAG, (char)flags[i]));
+                    ES_THROW(EsSyntaxError, es_fmt_msg(
+                            ES_MSG_SYNTAX_REGEXP_ILLEGAL_FLAG, (char)flags->at(i)));
                     return NULL;
                 }
                 multiline = true;
                 break;
             default:
-                ES_THROW(EsSyntaxError, es_fmt_msg(ES_MSG_SYNTAX_REGEXP_ILLEGAL_FLAG, (char)flags[i]));
+                ES_THROW(EsSyntaxError, es_fmt_msg(
+                        ES_MSG_SYNTAX_REGEXP_ILLEGAL_FLAG, (char)flags->at(i)));
                 return NULL;
         }
     }
@@ -2333,10 +2374,10 @@ EsRegExp *EsRegExp::create_inst(const String &pattern, const String &flags)
     return create_inst(pattern, global, ignore_case, multiline);
 }
 
-String EsRegExp::flags() const
+const EsString *EsRegExp::flags() const
 {
     // FIXME: This only works because the properties are read-only.
-    StringBuilder sb;
+    EsStringBuilder sb;
     if (global_)
         sb.append('g');
     if (ignore_case_)
@@ -2347,13 +2388,13 @@ String EsRegExp::flags() const
     return sb.string();
 }
 
-EsRegExp::MatchResult *EsRegExp::match(const String &subject, int offset)
+EsRegExp::MatchResult *EsRegExp::match(const EsString *subject, int offset)
 {
     assert(re_);
     if (re_ == NULL)
         return NULL;
 
-    std::string utf8_subject = subject.utf8();
+    std::string utf8_subject = subject->utf8();
     size_t utf8_offset = utf8_off(reinterpret_cast<const byte *>(utf8_subject.c_str()),
                                   utf8_subject.size(), offset);
 
@@ -2427,7 +2468,9 @@ bool EsArrayConstructor::constructT(EsCallFrame &frame)
             }
             else
             {
-                ES_THROW(EsRangeError, es_fmt_msg(ES_MSG_RANGE_INVALID_ARRAY, es_num_to_str(len).utf8().c_str()));
+                ES_THROW(EsRangeError, es_fmt_msg(
+                        ES_MSG_RANGE_INVALID_ARRAY,
+                        es_num_to_str(len)->utf8().c_str()));
                 return false;
             }
         }
@@ -2632,10 +2675,12 @@ bool EsFunctionConstructor::constructT(EsCallFrame &frame)
     int argc = frame.argc();
     EsValue *argv = frame.fp();
     // 15.3.2.1
-    EsValue body = argc == 0 ? EsValue::from_str(String()) : argv[argc - 1];
+    EsValue body = argc == 0
+        ? EsValue::from_str(EsString::create())
+        : argv[argc - 1];
 
     // Concatenate all arguments to a string for parsing later.
-    StringBuilder p;
+    EsStringBuilder p;
     if (argc > 1)
     {
         // Concatenate all arguments to a string and then parse it as a formal
@@ -2646,8 +2691,8 @@ bool EsFunctionConstructor::constructT(EsCallFrame &frame)
             if (i > 0)
                 p.append(',');
 
-            String str;
-            if (!argv[i].to_string(str))
+            const EsString *str = argv[i].to_string();
+            if (!str)
                 return false;
 
             p.append(str);
@@ -2655,15 +2700,15 @@ bool EsFunctionConstructor::constructT(EsCallFrame &frame)
         p.append(") {}");
     }
 
-    String body_str;
-    if (!body.to_string(body_str))
+    const EsString *body_str = body.to_string();
+    if (!body_str)
         return false;
 
     // Parse the body.
     FunctionLiteral *prog = NULL;
     try
     {
-        StringStream str(body_str);
+        StringStream str(body_str->str());
         Lexer lexer(str);
         Parser parser(lexer, Parser::CODE_FUNCTION);
 
@@ -2671,7 +2716,7 @@ bool EsFunctionConstructor::constructT(EsCallFrame &frame)
     }
     catch (ParseException &e)
     {
-        ES_THROW(EsSyntaxError, String(e.what().c_str()));
+        ES_THROW(EsSyntaxError, EsString::create_from_utf8(e.what().c_str()));
         return false;
     }
 
@@ -2680,7 +2725,7 @@ bool EsFunctionConstructor::constructT(EsCallFrame &frame)
     {
         // The way we parse the formal parameter list is by putting it into a
         // function declaration and then parse it using the standard parser.
-        StringStream str(p.string());
+        StringStream str(p.string()->str());
         Lexer lexer(str);
         Parser parser(lexer, Parser::CODE_PROGRAM, prog->is_strict_mode());
 
@@ -2847,9 +2892,14 @@ EsFunction *EsStringConstructor::create_inst()
 
 bool EsStringConstructor::constructT(EsCallFrame &frame)
 {
-    String value;
-    if (frame.argc() > 0 && !frame.fp()[0].to_string(value))
-        return false;
+    const EsString *value = EsString::create();
+
+    if (frame.argc() > 0)
+    {
+        value = frame.fp()[0].to_string();
+        if (!value)
+            return false;
+    }
     
     frame.set_result(EsValue::from_obj(EsStringObject::create_inst(value)));
     return true;
@@ -2885,7 +2935,7 @@ bool EsRegExpConstructor::constructT(EsCallFrame &frame)
     EsValue pattern_arg = argc >= 1 ? argv[0] : EsValue::undefined;
     EsValue flags_arg = argc >= 2 ? argv[1] : EsValue::undefined;
 
-    String pattern, flags;
+    const EsString *pattern = EsString::create(), *flags = EsString::create();
 
     // FIXME: es_as_regexp
     if (pattern_arg.is_object())
@@ -2907,26 +2957,40 @@ bool EsRegExpConstructor::constructT(EsCallFrame &frame)
         }
         else
         {
-            pattern = String();
-            if (!pattern_arg.is_undefined() && !pattern_arg.to_string(pattern))
-                return false;
+            if (!pattern_arg.is_undefined())
+            {
+                pattern = pattern_arg.to_string();
+                if (!pattern)
+                    return false;
+            }
 
-            flags = String();
-            if (!flags_arg.is_undefined() && !flags_arg.to_string(flags))
-                return false;
+            if (!flags_arg.is_undefined())
+            {
+                flags = flags_arg.to_string();
+                if (!flags)
+                    return false;
+            }
         }
     }
     else
     {
-        pattern = String();
-        if (!pattern_arg.is_undefined() && !pattern_arg.to_string(pattern))
-            return false;
+        if (!pattern_arg.is_undefined())
+        {
+            pattern = pattern_arg.to_string();
+            if (!pattern)
+                return false;
+        }
 
-        flags = String();
-        if (!flags_arg.is_undefined() && !flags_arg.to_string(flags))
-            return false;
+        if (!flags_arg.is_undefined())
+        {
+            flags = flags_arg.to_string();
+            if (!flags)
+                return false;
+        }
     }
     
+    assert(pattern);
+    assert(flags);
     EsRegExp *obj = EsRegExp::create_inst(pattern, flags);
     if (obj == NULL)
         return false;

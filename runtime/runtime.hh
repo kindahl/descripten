@@ -17,7 +17,6 @@
  */
 
 #pragma once
-#include "common/string.hh"
 #include "operation.hh"
 #include "value.hh"
 

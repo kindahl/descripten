@@ -739,10 +739,10 @@ public:
 class EsStringObject : public EsObject
 {
 private:
-    String primitive_value_;    ///< [[PrimitiveValue]]
+    const EsString *primitive_value_;       ///< [[PrimitiveValue]]
     
     EsStringObject();
-    EsStringObject(const String &primitive_value);
+    EsStringObject(const EsString *primitive_value);
     
     static EsFunction *default_constr_;     // Points to the default constructor, initialized lazily.
 
@@ -762,13 +762,13 @@ public:
     virtual void make_proto() OVERRIDE;
     
     static EsStringObject *create_raw();
-    static EsStringObject *create_inst(String primitive_value);
+    static EsStringObject *create_inst(const EsString *primitive_value);
     
     /**
      * @return Value of the internal [[PrimitiveValue]] property.
      * @see ECMA-262: [[PrimitiveValue]].
      */
-    const String &primitive_value() const;
+    const EsString *primitive_value() const;
 
     /**
      * @return Default string constructor.
@@ -984,21 +984,21 @@ public:
     class MatchState
     {
     private:
-        int off_;       ///< Offset of match in subject string.
-        int len_;       ///< Length of match in subject string.
-        String str_;    ///< Matched string.
+        int off_;               ///< Offset of match in subject string.
+        int len_;               ///< Length of match in subject string.
+        const EsString *str_;   ///< Matched string.
 
     public:
         MatchState()
-            : off_(-1), len_(-1) {}
-        MatchState(int off, int len, String str)
+            : off_(-1), len_(-1), str_(EsString::create()) {}
+        MatchState(int off, int len, const EsString *str)
             : off_(off), len_(len), str_(str) {}
 
-        bool empty() const { return off_ == -1 && len_ == -1 && str_.empty(); }
+        bool empty() const { return off_ == -1 && len_ == -1 && str_->empty(); }
 
         int offset() const { return off_; }
         int length() const { return len_; }
-        const String &string() const { return str_; }
+        const EsString *string() const { return str_; }
     };
 
     // FIXME: Merge with algorithm::MatchResult?
@@ -1034,7 +1034,7 @@ public:
 private:
     static EsFunction *default_constr_;     // Points to the default constructor, initialized lazily.
 
-    String pattern_;
+    const EsString *pattern_;
     bool global_;
     bool ignore_case_;
     bool multiline_;
@@ -1051,7 +1051,7 @@ private:
     bool compile();
 
 protected:
-    EsRegExp(const String &pattern, bool global, bool ignore_case,
+    EsRegExp(const EsString *pattern, bool global, bool ignore_case,
              bool multiline);
     
 public:
@@ -1070,19 +1070,19 @@ public:
     virtual void make_proto() OVERRIDE;
 
     static EsRegExp *create_raw();
-    static EsRegExp *create_inst(const String &pattern, bool global,
+    static EsRegExp *create_inst(const EsString *pattern, bool global,
                                  bool ignore_case, bool multiline);
-    static EsRegExp *create_inst(const String &pattern, const String &flags);
+    static EsRegExp *create_inst(const EsString *pattern, const EsString *flags);
 
     /**
      * @return Regular expression pattern.
      */
-    const String &pattern() const { return pattern_; }
+    const EsString *pattern() const { return pattern_; }
 
     /**
      * @return Regular expression flags.
      */
-    String flags() const;
+    const EsString *flags() const;
 
     /**
      * Executes the regular expression given the specified subject.
@@ -1090,7 +1090,7 @@ public:
      * @param [in] offset Offset in subject to start matching on.
      * @return Pointer to match result object on success and NULL on failure.
      */
-    MatchResult *match(const String &subject, int offset);
+    MatchResult *match(const EsString *subject, int offset);
     
     /**
      * @return Default string constructor.

@@ -59,8 +59,9 @@ bool JsonParser::expect(const char *text)
 
         if (c != static_cast<uni_char>(*ptr))
         {
-            ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C', expected '%c' at position %d in '%s'.",
-                                                           c, *ptr, ptr - text, text));
+            ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                    "unexpected token '%C', expected '%c' at position %d in '%s'.",
+                    c, *ptr, ptr - text, text));
             return false;
         }
 
@@ -127,7 +128,8 @@ bool JsonParser::parse_object(EsValue &result)
         stream_.push(c1);
         if (c1 != '"')
         {
-            ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C', expected '\"'.", c1));
+            ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                    "unexpected token '%C', expected '\"'.", c1));
             return false;
         }
 
@@ -159,7 +161,8 @@ bool JsonParser::parse_object(EsValue &result)
         }
         else if (c1 != '}')
         {
-            ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C' in json object member.", c1));
+            ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                    "unexpected token '%C' in json object member.", c1));
             return false;
         }
     }
@@ -167,7 +170,8 @@ bool JsonParser::parse_object(EsValue &result)
     skip_white_space();
     if (c1 != '}')
     {
-        ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C', expected '}' in json object.", c1));
+        ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                "unexpected token '%C', expected '}' in json object.", c1));
         return false;
     }
 
@@ -206,7 +210,8 @@ bool JsonParser::parse_array(EsValue &result)
         }
         else if (c1 != ']')
         {
-            ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C' in json array member.", c1));
+            ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                    "unexpected token '%C' in json array member.", c1));
             return false;
         }
     }
@@ -214,7 +219,8 @@ bool JsonParser::parse_array(EsValue &result)
     skip_white_space();
     if (c1 != ']')
     {
-        ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C', expected ']' in json array.", c1));
+        ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                "unexpected token '%C', expected ']' in json array.", c1));
         return false;
     }
 
@@ -270,7 +276,8 @@ bool JsonParser::parse_string(EsValue &result)
                     int32_t val = read_hex_number(4);
                     if (val == -1)
                     {
-                        ES_THROW(EsSyntaxError, StringBuilder::sprintf("illegal character in unicode escape sequence."));
+                        ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                                "illegal character in unicode escape sequence."));
                         return false;
                     }
                     else
@@ -280,7 +287,8 @@ bool JsonParser::parse_string(EsValue &result)
                     break;
                 }
                 default:
-                    ES_THROW(EsSyntaxError, StringBuilder::sprintf("illegal character in escape sequence."));
+                    ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                            "illegal character in escape sequence."));
                     return false;
             }
         }
@@ -294,7 +302,8 @@ bool JsonParser::parse_string(EsValue &result)
 
     if (c1 != '"')
     {
-        ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C' in json string.", c1));
+        ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                "unexpected token '%C' in json string.", c1));
         return false;
     }
 
@@ -354,7 +363,8 @@ bool JsonParser::parse_number(EsValue &result)
 
         if (!es_is_dec_digit(c))
         {
-            ES_THROW(EsSyntaxError, StringBuilder::sprintf("illegal token '%C' in json number literal.", c));
+            ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                    "illegal token '%C' in json number literal.", c));
             return false;
         }
 
@@ -421,7 +431,8 @@ bool JsonParser::parse_value(EsValue &result)
             return parse_number(result);
         //case -1:
         default:
-            ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C' in json value.", c0));
+            ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                    "unexpected token '%C' in json value.", c0));
             return false;
     }
 
@@ -438,7 +449,8 @@ bool JsonParser::parse(EsValue &result)
     uni_char c0 = stream_.next();
     if (c0 != static_cast<uni_char>(-1))
     {
-        ES_THROW(EsSyntaxError, StringBuilder::sprintf("unexpected token '%C', expected end of input.", c0));
+        ES_THROW(EsSyntaxError, EsStringBuilder::sprintf(
+                "unexpected token '%C', expected end of input.", c0));
         return false;
     }
 

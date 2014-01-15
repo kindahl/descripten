@@ -18,8 +18,8 @@
 
 #pragma once
 #include <gc/gc_allocator.h>
-#include "common/stringbuilder.hh"
 #include "parser/stream.hh"
+#include "stringbuilder.hh"
 
 bool json_is_white_space(uni_char c);
 
@@ -33,7 +33,7 @@ class JsonParser
 private:
     UnicodeStream &stream_;     ///< Source input stream.
 
-    StringBuilder sb_;          ///< Stateless string builder shared by many routines.
+    EsStringBuilder sb_;        ///< Stateless string builder shared by many routines.
 
     bool expect(const char *text);
 

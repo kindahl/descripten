@@ -17,7 +17,8 @@
  */
 
 #pragma once
-#include "common/string.hh"
+
+class EsString;
 
 /**
  * Defines the URI predicate function for encoding and decoding URIs.
@@ -62,16 +63,16 @@ bool es_uri_component_unescaped_predicate(uni_char c);
  * Encodes an URI string according to 15.1.3.
  * @param [in] str String to encode.
  * @param [in] unescaped Set of characters that shouldn't be escaped.
- * @param [out] result URI encoded string.
- * @return true on normal return, false if an exception was thrown.
+ * @return Pointer to encoded string on normal return, a NULL pointer if an
+ *         exception was thrown.
  */
-bool es_uri_encode(String str, EsUriSetPredicate pred, String &result);
+const EsString *es_uri_encode(const EsString *str, EsUriSetPredicate pred);
 
 /**
  * Decodes an URU string according to 15.1.3.
  * @param [in] str String to decode.
  * @param [in] reserve Set of reserved character that shouldn't be decoded.
- * @param [out] result Decoded string.
- * @return true on normal return, false if an exception was thrown.
+ * @return Pointer to decoded string on normal return, a NULL pointer if an
+ *         exception was thrown.
  */
-bool es_uri_decode(String str, EsUriSetPredicate pred, String &result);
+const EsString *es_uri_decode(const EsString *str, EsUriSetPredicate pred);

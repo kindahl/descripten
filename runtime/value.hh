@@ -17,11 +17,11 @@
  */
 
 #pragma once
-#include "common/string.hh"
 #include "types.hh"
 #include "value_boxed_base.hh"
 
 class EsObject;
+class EsString;
 
 /**
  * @brief Holds a primitive value or a pointer to an object.
@@ -98,7 +98,7 @@ public:
      * @param [in] val String value.
      * @return Wrapped string value.
      */
-    inline static EsValue from_str(const String &val) { EsValue res; res.set_str(val); return res; }
+    inline static EsValue from_str(const EsString *val) { EsValue res; res.set_str(val); return res; }
 
     /**
      * Creates a value from an object.
@@ -149,7 +149,7 @@ public:
      * @return Current value converted into a string.
      * @pre Value is not a pointer to an object.
      */
-    String primitive_to_string() const;
+    const EsString *primitive_to_string() const;
 
     /**
      * Converts the current value into a boolean value.
@@ -188,10 +188,10 @@ public:
 
     /**
      * Converts the current value into a string.
-     * @param [out] result Current value converted into a string.
-     * @return true on normal return, false if an exception was thrown.
+     * @return Current value converted into a string on success, a NULL-pointer
+     *         if an exception was thrown.
      */
-    bool to_string(String &result) const;
+    const EsString *to_string() const;
 
     /**
      * Converts the current value into an object.

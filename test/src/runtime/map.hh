@@ -30,25 +30,25 @@ public:
         Gc::instance().init();
 
         EsMap map0(NULL);
-        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(String("0"))));
+        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("0"))));
         TS_ASSERT_EQUALS(map0.size(), 0);
         TS_ASSERT_EQUALS(map0.props_.size(), 0);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        EsPropertyReference prop0 = map0.lookup(EsPropertyKey::from_str(String("0")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        EsPropertyReference prop0 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("0")));
         TS_ASSERT(prop0);
         TS_ASSERT_EQUALS(map0.size(), 1);
         TS_ASSERT_EQUALS(map0.props_.size(), 1);
 
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(String("1")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(prop1);
         TS_ASSERT(prop1 != prop0);
         TS_ASSERT_EQUALS(map0.size(), 2);
         TS_ASSERT_EQUALS(map0.props_.size(), 2);
 
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
-        EsPropertyReference prop2 = map0.lookup(EsPropertyKey::from_str(String("2")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        EsPropertyReference prop2 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("2")));
         TS_ASSERT(prop2);
         TS_ASSERT(prop2 != prop0);
         TS_ASSERT(prop2 != prop1);
@@ -65,27 +65,27 @@ public:
         for (size_t i = 0; i < EsMap::MAX_NUM_NON_MAPPED; i++)
         {
             TS_ASSERT(!map0.map_);
-            map0.add(EsPropertyKey::from_str(String(lexical_cast<const char *>(i))), EsProperty(false, false, false, Maybe<EsValue>()));
+            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(lexical_cast<const char *>(i))), EsProperty(false, false, false, Maybe<EsValue>()));
         }
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED);
 
-        map0.add(EsPropertyKey::from_str(String("_0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_0")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0.map_);
-        EsPropertyReference prop0 = map0.lookup(EsPropertyKey::from_str(String("_0")));
+        EsPropertyReference prop0 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_0")));
         TS_ASSERT(prop0);
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED + 1);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED + 1);
 
-        map0.add(EsPropertyKey::from_str(String("_1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(String("_1")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1")));
         TS_ASSERT(prop1);
         TS_ASSERT(prop1 != prop0);
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED + 2);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED + 2);
 
-        map0.add(EsPropertyKey::from_str(String("_2")), EsProperty(false, false, false, Maybe<EsValue>()));
-        EsPropertyReference prop2 = map0.lookup(EsPropertyKey::from_str(String("_2")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        EsPropertyReference prop2 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_2")));
         TS_ASSERT(prop2);
         TS_ASSERT(prop2 != prop0);
         TS_ASSERT(prop2 != prop1);
@@ -94,7 +94,7 @@ public:
 
         for (size_t i = 0; i < EsMap::MAX_NUM_NON_MAPPED; i++)
         {
-            TS_ASSERT(map0.lookup(EsPropertyKey::from_str(String(lexical_cast<const char *>(i)))));
+            TS_ASSERT(map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8(lexical_cast<const char *>(i)))));
         }
     }
 
@@ -103,32 +103,32 @@ public:
         Gc::instance().init();
 
         EsMap map0(NULL);
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(String("1")));
+        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(prop1);
         TS_ASSERT_EQUALS(map0.size(), 3);
         TS_ASSERT_EQUALS(map0.props_.size(), 3);
 
-        map0.remove(EsPropertyKey::from_str(String("1")));
-        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(String("1"))));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
+        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1"))));
         TS_ASSERT_EQUALS(map0.size(), 2);
         TS_ASSERT_EQUALS(map0.props_.size(), 3);
 
         // Add new property "3".
-        map0.add(EsPropertyKey::from_str(String("3")), EsProperty(false, false, false, Maybe<EsValue>()));
-        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(String("1"))));
-        EsPropertyReference prop3 = map0.lookup(EsPropertyKey::from_str(String("3")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("3")), EsProperty(false, false, false, Maybe<EsValue>()));
+        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1"))));
+        EsPropertyReference prop3 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("3")));
         TS_ASSERT(prop3);
         TS_ASSERT_EQUALS(map0.size(), 3);       // Re-using slot.
         TS_ASSERT_EQUALS(map0.props_.size(), 3);
         TS_ASSERT_EQUALS(prop1, prop3);         // Re-using slot.
 
         // Re-add "1".
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        EsPropertyReference prop1_ = map0.lookup(EsPropertyKey::from_str(String("1")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        EsPropertyReference prop1_ = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(prop1);
         TS_ASSERT_EQUALS(map0.size(), 4);
         TS_ASSERT_EQUALS(map0.props_.size(), 4);
@@ -146,38 +146,38 @@ public:
         for (size_t i = 0; i < EsMap::MAX_NUM_NON_MAPPED; i++)
         {
             TS_ASSERT(!map0.map_);
-            map0.add(EsPropertyKey::from_str(String(lexical_cast<const char *>(i))),
+            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(lexical_cast<const char *>(i))),
                      EsProperty(false, false, false, Maybe<EsValue>()));
         }
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED);
 
-        map0.add(EsPropertyKey::from_str(String("_0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("_1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("_2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(String("_1")));
+        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1")));
         TS_ASSERT(prop1);
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED + 3);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED + 3);
 
-        map0.remove(EsPropertyKey::from_str(String("_1")));
-        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(String("_1"))));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("_1")));
+        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1"))));
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED + 2);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED + 3);
 
         // Add new property "_3".
-        map0.add(EsPropertyKey::from_str(String("_3")), EsProperty(false, false, false, Maybe<EsValue>()));
-        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(String("_1"))));
-        EsPropertyReference prop3 = map0.lookup(EsPropertyKey::from_str(String("_3")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_3")), EsProperty(false, false, false, Maybe<EsValue>()));
+        TS_ASSERT(!map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1"))));
+        EsPropertyReference prop3 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_3")));
         TS_ASSERT(prop3);
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED + 3);   // Re-using slot.
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED + 3);
         TS_ASSERT_EQUALS(prop1, prop3);         // Re-using slot.
 
         // Re-add "_1".
-        map0.add(EsPropertyKey::from_str(String("_1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        EsPropertyReference prop1_ = map0.lookup(EsPropertyKey::from_str(String("_1")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        EsPropertyReference prop1_ = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1")));
         TS_ASSERT(prop1);
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED + 4);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED + 4);
@@ -192,18 +192,18 @@ public:
         EsMap map0(NULL), map1(NULL);
 
         TS_ASSERT_EQUALS(map0, map1);
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT_EQUALS(map0, map1);
 
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
 
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT_EQUALS(map0, map1);
     }
 
@@ -212,16 +212,16 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
 
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
     }
 
@@ -230,17 +230,17 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.remove(EsPropertyKey::from_str(String("0")));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("0")));
         TS_ASSERT_EQUALS(map0, map1);
 
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
 
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT_EQUALS(map0, map1);
     }
 
@@ -249,15 +249,15 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
         TS_ASSERT(map0 != map1);
-        map0.remove(EsPropertyKey::from_str(String("1")));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
 
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
         //TS_ASSERT_EQUALS(map0, map1);
         TS_ASSERT(map0 != map1);
     }
@@ -267,15 +267,15 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
         TS_ASSERT(map0 != map1);
-        map0.remove(EsPropertyKey::from_str(String("1")));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         //TS_ASSERT_EQUALS(map0, map1);
         TS_ASSERT(map0 != map1);
     }
@@ -285,16 +285,16 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
         TS_ASSERT(map0 == map1);
-        map0.remove(EsPropertyKey::from_str(String("0")));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("0")));
         TS_ASSERT(map0 != map1);
     }
 
@@ -303,16 +303,16 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
         TS_ASSERT(map0 == map1);
-        map1.remove(EsPropertyKey::from_str(String("0")));
+        map1.remove(EsPropertyKey::from_str(EsString::create_from_utf8("0")));
         TS_ASSERT(map0 != map1);
     }
 
@@ -321,16 +321,16 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
         TS_ASSERT(map0 == map1);
-        map0.remove(EsPropertyKey::from_str(String("1")));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(map0 != map1);
     }
 
@@ -339,16 +339,16 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
         TS_ASSERT(map0 == map1);
-        map1.remove(EsPropertyKey::from_str(String("1")));
+        map1.remove(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(map0 != map1);
     }
 
@@ -357,16 +357,16 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
         TS_ASSERT(map0 == map1);
-        map0.remove(EsPropertyKey::from_str(String("2")));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("2")));
         TS_ASSERT(map0 != map1);
     }
 
@@ -375,16 +375,16 @@ public:
         Gc::instance().init();
         EsMap map0(NULL), map1(NULL);
 
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        map1.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map1.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map1.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
         TS_ASSERT(map0 == map1);
-        map1.remove(EsPropertyKey::from_str(String("2")));
+        map1.remove(EsPropertyKey::from_str(EsString::create_from_utf8("2")));
         TS_ASSERT(map0 != map1);
     }
 
@@ -393,35 +393,35 @@ public:
         Gc::instance().init();
 
         EsMap map0(NULL);
-        map0.add(EsPropertyKey::from_str(String("0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(String("1")));
+        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(prop1);
-        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(String("1"))), 1);
+        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(EsString::create_from_utf8("1"))), 1);
         TS_ASSERT_EQUALS(prop1->is_enumerable(), false);
         prop1->set_enumerable(true);
         TS_ASSERT_EQUALS(prop1->is_enumerable(), true);
 
-        EsPropertyReference prop1_ = map0.lookup(EsPropertyKey::from_str(String("1")));
+        EsPropertyReference prop1_ = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(prop1_);
-        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(String("1"))), 1);
+        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(EsString::create_from_utf8("1"))), 1);
         TS_ASSERT_EQUALS(prop1_->is_enumerable(), true);
 
-        map0.add(EsPropertyKey::from_str(String("3")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("4")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("3")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("4")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        prop1_ = map0.lookup(EsPropertyKey::from_str(String("1")));
+        prop1_ = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(prop1_);
-        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(String("1"))), 1);
+        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(EsString::create_from_utf8("1"))), 1);
         TS_ASSERT_EQUALS(prop1_->is_enumerable(), true);
 
-        map0.remove(EsPropertyKey::from_str(String("0")));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("0")));
 
-        prop1_ = map0.lookup(EsPropertyKey::from_str(String("1")));
+        prop1_ = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("1")));
         TS_ASSERT(prop1_);
-        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(String("1"))), 1);
+        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(EsString::create_from_utf8("1"))), 1);
         TS_ASSERT_EQUALS(prop1_->is_enumerable(), true);
     }
 
@@ -434,41 +434,41 @@ public:
         for (size_t i = 0; i < EsMap::MAX_NUM_NON_MAPPED; i++)
         {
             TS_ASSERT(!map0.map_);
-            map0.add(EsPropertyKey::from_str(String(lexical_cast<const char *>(i))),
+            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(lexical_cast<const char *>(i))),
                      EsProperty(false, false, false, Maybe<EsValue>()));
         }
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED);
 
-        map0.add(EsPropertyKey::from_str(String("_0")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("_1")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("_2")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_0")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_1")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_2")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(String("_1")));
+        EsPropertyReference prop1 = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1")));
         TS_ASSERT(prop1);
-        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(String("_1"))), EsMap::MAX_NUM_NON_MAPPED + 1);
+        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(EsString::create_from_utf8("_1"))), EsMap::MAX_NUM_NON_MAPPED + 1);
         TS_ASSERT_EQUALS(prop1->is_enumerable(), false);
         prop1->set_enumerable(true);
         TS_ASSERT_EQUALS(prop1->is_enumerable(), true);
 
-        EsPropertyReference prop1_ = map0.lookup(EsPropertyKey::from_str(String("_1")));
+        EsPropertyReference prop1_ = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1")));
         TS_ASSERT(prop1_);
-        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(String("_1"))), EsMap::MAX_NUM_NON_MAPPED + 1);
+        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(EsString::create_from_utf8("_1"))), EsMap::MAX_NUM_NON_MAPPED + 1);
         TS_ASSERT_EQUALS(prop1_->is_enumerable(), true);
 
-        map0.add(EsPropertyKey::from_str(String("_3")), EsProperty(false, false, false, Maybe<EsValue>()));
-        map0.add(EsPropertyKey::from_str(String("_4")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_3")), EsProperty(false, false, false, Maybe<EsValue>()));
+        map0.add(EsPropertyKey::from_str(EsString::create_from_utf8("_4")), EsProperty(false, false, false, Maybe<EsValue>()));
 
-        prop1_ = map0.lookup(EsPropertyKey::from_str(String("_1")));
+        prop1_ = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1")));
         TS_ASSERT(prop1_);
-        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(String("_1"))), EsMap::MAX_NUM_NON_MAPPED + 1);
+        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(EsString::create_from_utf8("_1"))), EsMap::MAX_NUM_NON_MAPPED + 1);
         TS_ASSERT_EQUALS(prop1_->is_enumerable(), true);
 
-        map0.remove(EsPropertyKey::from_str(String("_0")));
+        map0.remove(EsPropertyKey::from_str(EsString::create_from_utf8("_0")));
 
-        prop1_ = map0.lookup(EsPropertyKey::from_str(String("_1")));
+        prop1_ = map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8("_1")));
         TS_ASSERT(prop1_);
-        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(String("_1"))), EsMap::MAX_NUM_NON_MAPPED + 1);
+        TS_ASSERT_EQUALS(map0.slot(EsPropertyKey::from_str(EsString::create_from_utf8("_1"))), EsMap::MAX_NUM_NON_MAPPED + 1);
         TS_ASSERT_EQUALS(prop1_->is_enumerable(), true);
     }
 };

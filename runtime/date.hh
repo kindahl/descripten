@@ -17,9 +17,10 @@
  */
 
 #pragma once
-#include "common/string.hh"
 
 #define ES_DATE_MAX_TIME            8640000000000000.0
+
+class EsString;
 
 /**
  * Parses a date time string.
@@ -28,7 +29,7 @@
  *         returned.
  * @see ECMA-262 15.9.1.15
  */
-double es_date_parse(const String &str);
+double es_date_parse(const EsString *str);
 
 /**
  * Converts hours, minutes, seconds and milliseconds into ECMAScript time.
@@ -145,4 +146,4 @@ int64_t es_year_from_time(double time);
  * @return Time in ISO 8601 format.
  * @see ECMA-262 15.9.1.15
  */
-String es_date_time_iso_str(double time);
+const EsString *es_date_time_iso_str(double time);

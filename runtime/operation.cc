@@ -79,17 +79,17 @@ public:
     }
 };
 
-void data_reg_str(const String &str, uint32_t id)
+void data_reg_str(const EsString *str, uint32_t id)
 {
     strings().unsafe_intern(str, id);
 }
 
-void op_stk_alloc(size_t count)
+void op_stk_alloc(uint32_t count)
 {
     g_call_stack.alloc(count);
 }
 
-void op_stk_free(size_t count)
+void op_stk_free(uint32_t count)
 {
     g_call_stack.free(count);
 }
@@ -397,7 +397,7 @@ bool op_ctx_get(EsContext *ctx, uint64_t raw_key, EsValue &result,
 
     ES_THROW(EsReferenceError,
              es_fmt_msg(ES_MSG_REF_NOT_DEFINED,
-                        key.to_string().utf8().c_str()));
+                        key.to_string()->utf8().c_str()));
     return false;
 }
 
@@ -437,7 +437,7 @@ bool op_ctx_put(EsContext *ctx, uint64_t raw_key, const EsValue &val,
     {
         ES_THROW(EsReferenceError,
                  es_fmt_msg(ES_MSG_REF_UNRESOLVABLE,
-                            key.to_string().utf8().c_str()));
+                            key.to_string()->utf8().c_str()));
         return false;
     }
 
@@ -584,7 +584,8 @@ bool op_ctx_decl_fun(EsContext *ctx, bool is_eval, bool is_strict,
                  (!existing_prop->is_writable() &&
                   !existing_prop->is_enumerable()))
         {
-            ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_DECL, fn_key.to_string().utf8().c_str()));
+            ES_THROW(EsTypeError, es_fmt_msg(
+                    ES_MSG_TYPE_DECL, fn_key.to_string()->utf8().c_str()));
             return false;
         }
 
@@ -720,12 +721,12 @@ bool op_prp_def_data(EsValue &obj_val, const EsValue &key, const EsValue &val)
 {
     assert(obj_val.is_object());
 
-    String name;
-    if (!key.to_string(name))
+    const EsString *name = key.to_string();
+    if (!name)
         return false;
 
     uint32_t index = 0;
-    if (es_str_to_index(name, index))
+    if (es_str_to_index(name->str(), index))
         return obj_val.as_object()->define_own_propertyT(
             EsPropertyKey::from_u32(index), EsPropertyDescriptor(true, true, true, val), false);
 
@@ -771,8 +772,8 @@ bool op_prp_get(const EsValue &obj_val, const EsValue &key_val,
                           result, cid);
     }
 
-    String key_str;
-    if (!key_val.to_string(key_str))
+    const EsString *key_str = key_val.to_string();
+    if (!key_str)
         return false;
 
     return op_prp_get(obj_val, EsPropertyKey::from_str(key_str).as_raw(), result, cid);
@@ -915,8 +916,8 @@ bool op_prp_put(EsContext *ctx, const EsValue &obj_val, const EsValue &key_val,
                           EsPropertyKey::from_u32(key_idx).as_raw(), val, cid);
     }
 
-    String key_str;
-    if (!key_val.to_string(key_str))
+    const EsString *key_str = key_val.to_string();
+    if (!key_str)
         return false;
 
     return op_prp_put(ctx, obj_val, EsPropertyKey::from_str(key_str).as_raw(), val, cid);
@@ -947,8 +948,8 @@ bool op_prp_del(EsContext *ctx, EsValue &obj_val, const EsValue &key_val,
                           EsPropertyKey::from_u32(key_idx).as_raw(), result);
     }
 
-    String key_str;
-    if (!key_val.to_string(key_str))
+    const EsString *key_str = key_val.to_string();
+    if (!key_str)
         return false;
 
     return op_prp_del(ctx, obj_val, EsPropertyKey::from_str(key_str).as_raw(), result);
@@ -1045,8 +1046,8 @@ bool op_call_keyed(const EsValue &obj_val, const EsValue &key_val, int argc,
                           argc, result);
     }
 
-    String key_str;
-    if (!key_val.to_string(key_str))
+    const EsString *key_str = key_val.to_string();
+    if (!key_str)
         return false;
 
     guard.release();
@@ -1074,7 +1075,7 @@ bool op_call_named(uint64_t raw_key, int argc,
     {
         ES_THROW(EsReferenceError,
                  es_fmt_msg(ES_MSG_REF_NOT_DEFINED,
-                            key.to_string().utf8().c_str()));
+                            key.to_string()->utf8().c_str()));
         return false;
     }
 
@@ -1131,6 +1132,11 @@ bool op_call_new(const EsValue &fun, int argc, EsValue &result)
     return true;
 }
 
+const EsString *op_new_str(const void *str, uint32_t len)
+{
+    return EsString::create(reinterpret_cast<const uni_char *>(str), len);
+}
+
 EsValue op_new_arr(int count, EsValue items[])
 {
     return EsValue::from_obj(EsArray::create_inst_from_lit(count, items));
@@ -1166,7 +1172,7 @@ EsValue op_new_fun_expr(EsContext *ctx, ES_API_FUN_PTR(fun),
     return EsValue::from_obj(obj);
 }
 
-EsValue op_new_reg_exp(const String &pattern, const String &flags)
+EsValue op_new_reg_exp(const EsString *pattern, const EsString *flags)
 {
     return EsValue::from_obj(EsRegExp::create_inst(pattern, flags));
 }
@@ -1176,22 +1182,24 @@ bool op_u_typeof(const EsValue &val, EsValue &result)
     switch (val.type())
     {
         case EsValue::TYPE_UNDEFINED:
-            result = EsValue::from_str(_USTR("undefined"));
+            result = EsValue::from_str(_ESTR("undefined"));
             return true;
         case EsValue::TYPE_NULL:
-            result = EsValue::from_str(_USTR("object"));
+            result = EsValue::from_str(_ESTR("object"));
             return true;
         case EsValue::TYPE_BOOLEAN:
-            result = EsValue::from_str(_USTR("boolean"));
+            result = EsValue::from_str(_ESTR("boolean"));
             return true;
         case EsValue::TYPE_NUMBER:
-            result = EsValue::from_str(_USTR("number"));
+            result = EsValue::from_str(_ESTR("number"));
             return true;
         case EsValue::TYPE_STRING:
-            result = EsValue::from_str(_USTR("string"));
+            result = EsValue::from_str(_ESTR("string"));
             return true;
         case EsValue::TYPE_OBJECT:
-            result = EsValue::from_str(val.is_callable() ? _USTR("function") : _USTR("object"));
+            result = EsValue::from_str(val.is_callable()
+                ? _ESTR("function")
+                : _ESTR("object"));
             return true;
         default:
             assert(false);
@@ -1199,7 +1207,7 @@ bool op_u_typeof(const EsValue &val, EsValue &result)
     }
 
     assert(false);
-    result = EsValue::from_str(_USTR("undefined"));
+    result = EsValue::from_str(_ESTR("undefined"));
     return true;
 }
 
@@ -1341,8 +1349,9 @@ bool op_b_add(const EsValue &lval, const EsValue &rval, EsValue &result)
     // string, otherwise the resulting type will be number.    
     if (lprim.is_string() || rprim.is_string())
     {
-        result = EsValue::from_str(lprim.primitive_to_string() +
-                                   rprim.primitive_to_string());
+        result = EsValue::from_str(
+                lprim.primitive_to_string()->concat(
+                        rprim.primitive_to_string()));
     }
     else
     {
@@ -1419,11 +1428,12 @@ bool op_c_in(const EsValue &lval, const EsValue &rval, EsValue &result)
         return false;
     }
     
-    String lstr;
-    if (!lval.to_string(lstr))
+    const EsString *lstr = lval.to_string();
+    if (!lstr)
         return false;
 
-    result = EsValue::from_bool(rval.as_object()->has_property(EsPropertyKey::from_str(lstr)));
+    result = EsValue::from_bool(rval.as_object()->has_property(
+            EsPropertyKey::from_str(lstr)));
     return true;
 }
 

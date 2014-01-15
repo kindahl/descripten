@@ -19,11 +19,11 @@
 #pragma once
 #include <cassert>
 #include "common/cast.hh"
-#include "common/string.hh"
 #include "types.hh"
 
 class EsFunction;
 class EsObject;
+class EsString;
 
 #define ES_VALUE_MASK               UINT64_C(0xffff000000000000)
 #define ES_VALUE_MASK_NO_TAG        UINT64_C(0xfff8000000000000)
@@ -102,8 +102,6 @@ private:
         double num_;
     } data_;
 
-    uint32_t str_len_;  // FIXME: TYPE_STRING shouldn't represent a String object, but rather be a pointer to an EsString.
-
 protected:
     /**
      * Creates a value of the specified type, this should only be used for null
@@ -173,42 +171,12 @@ public:
 
     /**
      * Sets a string value.
-     * @param [in] ptr Pointer to NULL-terminated UTF-8 string.
-     */
-    inline void set_str(const char *ptr)
-    {
-        String str(ptr);
-        assert(reinterpret_cast<uintptr_t>(str.data()) < UINT64_C(0xffffffffffff));
-
-        data_.bits_ = ES_VALUE_TAG_STRING | reinterpret_cast<uint64_t>(str.data());
-        str_len_ = str.length();    // FIXME:
-    }
-    
-    /**
-     * Sets a string value.
-     * @param [in] raw Pointer to a potentially non-NULL-terminated UTF-8
-     *                 string.
-     * @param [in] len Number of bytes to read from raw.
-     */
-    inline void set_str(const char *raw, size_t len)
-    {
-        String str(raw, len);
-        assert(reinterpret_cast<uintptr_t>(str.data()) < UINT64_C(0xffffffffffff));
-
-        data_.bits_ = ES_VALUE_TAG_STRING | reinterpret_cast<uint64_t>(str.data());
-        str_len_ = str.length();    // FIXME:
-    }
-    
-    /**
-     * Sets a string value.
      * @param [in] str String value.
      */
-    inline void set_str(const String &str)
+    inline void set_str(const EsString *str)
     {
-        assert(reinterpret_cast<uintptr_t>(str.data()) < UINT64_C(0xffffffffffff));
-
-        data_.bits_ = ES_VALUE_TAG_STRING | reinterpret_cast<uint64_t>(str.data());
-        str_len_ = str.length();    // FIXME:
+        assert(reinterpret_cast<uintptr_t>(str) < UINT64_C(0xffffffffffff));
+        data_.bits_ = ES_VALUE_TAG_STRING | reinterpret_cast<uint64_t>(str);
     }
 
     /**
@@ -308,14 +276,10 @@ public:
      *         empty string will be returned.
      * @pre Value is a string.
      */
-    inline String as_string() const
+    inline EsString *as_string() const
     {
         assert(is_string());
-
-        const uni_char *data = reinterpret_cast<const uni_char *>(
-            data_.bits_ - ES_VALUE_TAG_STRING);
-        
-        return String::wrap(data, str_len_);
+        return reinterpret_cast<EsString *>(data_.bits_ - ES_VALUE_TAG_STRING);
     }
 
     /**

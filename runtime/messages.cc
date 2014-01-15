@@ -20,6 +20,7 @@
 #include <cstdarg>
 #include <stdio.h>
 #include "messages.hh"
+#include "string.hh"
 
 static const char *es_messages_[] =
 {
@@ -78,12 +79,12 @@ static const char *es_messages_[] =
     "couldn't encode string in uri format."
 };
 
-String es_get_msg(EsMessage msg)
+const EsString *es_get_msg(EsMessage msg)
 {
-    return String(es_messages_[msg]);
+    return EsString::create_from_utf8(es_messages_[msg]);
 }
 
-String es_fmt_msg(EsMessage msg, ...)
+const EsString *es_fmt_msg(EsMessage msg, ...)
 {
     va_list vl;
     va_start(vl, msg);
@@ -93,12 +94,12 @@ String es_fmt_msg(EsMessage msg, ...)
     
     std::string str;
     
-    const int char_cnt = vsnprintf(NULL,0, es_get_msg(msg).utf8().c_str(), vl);
+    const int char_cnt = vsnprintf(NULL,0, es_get_msg(msg)->utf8().c_str(), vl);
     if (char_cnt == 0)
-        return String();
+        return EsString::create();
     
     str.resize(char_cnt + 1);
-    if (char_cnt != vsnprintf(&str[0], char_cnt + 1, es_get_msg(msg).utf8().c_str(), vl_copy))
+    if (char_cnt != vsnprintf(&str[0], char_cnt + 1, es_get_msg(msg)->utf8().c_str(), vl_copy))
         assert(false);
     
     // Remove the null terminator, std::string will add its own if
@@ -107,5 +108,5 @@ String es_fmt_msg(EsMessage msg, ...)
     
     va_end(vl);
     
-    return String(str.c_str(), char_cnt);
+    return EsString::create_from_utf8(str.c_str(), char_cnt);
 }

@@ -17,17 +17,19 @@
  */
 
 #pragma once
+#include <cstdint>
 #include "api.hh"
 
 class EsContext;
 class EsPropertyIterator;
+class EsString;
 class EsValue;
 
-void data_reg_str(const String &str, uint32_t id);
+void data_reg_str(const EsString *str, uint32_t id);
 
 // FIXME: Rename to op_frm_alloc instead? Since we're allocating in the call frame.
-void op_stk_alloc(size_t count);
-void op_stk_free(size_t count);
+void op_stk_alloc(uint32_t count);
+void op_stk_free(uint32_t count);
 void op_stk_push(const EsValue &val);
 
 void op_init_args(EsValue dst[], int argc, const EsValue argv[], int prmc);
@@ -133,9 +135,10 @@ bool op_call_named(uint64_t raw_key, int argc, EsValue &result);
 bool op_call_new(const EsValue &fun, int argc, EsValue &result);
 
 // Literal functions.
-EsValue op_new_obj();
+const EsString *op_new_str(const void *str, uint32_t len);
 EsValue op_new_arr(int count, EsValue items[]);
-EsValue op_new_reg_exp(const String &pattern, const String &flags);
+EsValue op_new_obj();
+EsValue op_new_reg_exp(const EsString *pattern, const EsString *flags);
 EsValue op_new_fun_decl(EsContext *ctx, ES_API_FUN_PTR(fun),
                         bool strict, int prmc);
 EsValue op_new_fun_expr(EsContext *ctx, ES_API_FUN_PTR(fun),

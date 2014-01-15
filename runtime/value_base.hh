@@ -18,12 +18,11 @@
 
 #pragma once
 #include <cassert>
-#include "common/cast.hh"
-#include "common/string.hh"
 #include "types.hh"
 
 class EsFunction;
 class EsObject;
+class EsString;
 
 class EsValueBase
 {
@@ -51,11 +50,7 @@ private:
         bool bool_;     ///< Boolean value for TYPE_BOOLEAN.
         double num_;    ///< Number value for TYPE_NUMBER.
         EsObject *obj_; ///< Object pointer for TYPE_OBJECT.
-        struct
-        {
-            const uni_char *data_;  ///< Pointer to Unicode points, see String::data_.
-            uint32_t len_;          ///< Number of Unicode points, see String::len_;
-        } str_;         ///< String value for TYPE_STRING.
+        const EsString *str_;   ///< String value for TYPE_STRING.
     } data_;
 
 protected:
@@ -120,41 +115,12 @@ public:
 
     /**
      * Sets a string value.
-     * @param [in] ptr Pointer to NULL-terminated UTF-8 string.
-     */
-    inline void set_str(const char *ptr)
-    {
-        type_ = TYPE_STRING;
-
-        String str(ptr);
-        data_.str_.data_ = str.data();
-        data_.str_.len_ = str.length();
-    }
-
-    /**
-     * Sets a string value.
-     * @param [in] raw Pointer to a potentially non-NULL-terminated UTF-8
-     *                 string.
-     * @param [in] len Number of bytes to read from raw.
-     */
-    inline void set_str(const char *raw, size_t len)
-    {
-        type_ = TYPE_STRING;
-
-        String str(raw, len);
-        data_.str_.data_ = str.data();
-        data_.str_.len_ = str.length();
-    }
-
-    /**
-     * Sets a string value.
      * @param [in] str String value.
      */
-    inline void set_str(const String &str)
+    inline void set_str(const EsString *str)
     {
         type_ = TYPE_STRING;
-        data_.str_.data_ = str.data();
-        data_.str_.len_ = str.length();
+        data_.str_ = str;
     }
 
     /**
@@ -232,10 +198,10 @@ public:
      *         empty string will be returned.
      * @pre Value is a string.
      */
-    inline String as_string() const
+    inline const EsString *as_string() const
     {
         assert(type_ == TYPE_STRING);
-        return type_ == TYPE_STRING ? String::wrap(data_.str_.data_, data_.str_.len_) : String();
+        return type_ == TYPE_STRING ? data_.str_ : NULL;
     }
 
     /**

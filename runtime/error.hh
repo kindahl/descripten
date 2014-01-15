@@ -22,9 +22,9 @@
 #include <gc/gc_cpp.h>
 #include "common/core.hh"
 #include "common/exception.hh"
-#include "common/stringbuilder.hh"
 #include "context.hh"
 #include "object.hh"
+#include "stringbuilder.hh"
 
 #ifdef DEBUG
 #  ifndef ES_THROW
@@ -38,11 +38,12 @@
 
 template <typename T>
 #ifdef DEBUG
-void es_throw(const char *file, int line, const String &orig_message)
+void es_throw(const char *file, int line, const EsString *orig_message)
 {
-    String message = StringBuilder::sprintf("[%s:%d] %S", file, line, orig_message.data());
+    const EsString *message = EsStringBuilder::sprintf(
+            "[%s:%d] %S", file, line, orig_message->data());
 #else
-inline void es_throw(const String &message)
+inline void es_throw(const EsString *message)
 {
 #endif
     EsValue e = EsValue::from_obj(T::create_inst(message));
@@ -61,25 +62,25 @@ public:
     static EsObject *prototype();
     
 private:
-    String name_;
-    String message_;
+    const EsString *name_;
+    const EsString *message_;
     
     static EsFunction *default_constr_;     // Points to the default constructor, initialized lazily.
     
     EsError();
-    EsError(const String &message);
+    EsError(const EsString *message);
     
 protected:
-    EsError(const String &name, const String &message);
+    EsError(const EsString *name, const EsString *message);
     
 public:
     virtual ~EsError();
     
     static EsError *create_raw();
-    static EsError *create_inst(const String &message);
+    static EsError *create_inst(const EsString *message);
     
-    const String &name() const { return name_; }
-    const String &message() const { return message_; }
+    const EsString *name() const { return name_; }
+    const EsString *message() const { return message_; }
     
     /**
      * @return Default error constructor.
@@ -106,13 +107,13 @@ private:
     static EsFunction *default_constr_;     // Points to the default constructor, initialized lazily.
     
 protected:
-    EsNativeError(const String &name, const String &message);
+    EsNativeError(const EsString *name, const EsString *message);
     
 public:
     virtual ~EsNativeError();
     
     static T *create_raw();
-    static T *create_inst(const String &message);
+    static T *create_inst(const EsString *message);
     
     /**
      * @return Default native error constructor.
@@ -135,7 +136,8 @@ public:
     static EsObject *prototype();
     
 public:
-    EsEvalError(const String &message) : EsNativeError<EsEvalError>(_USTR("EvalError"), message) {}
+    EsEvalError(const EsString *message) :
+        EsNativeError<EsEvalError>(_ESTR("EvalError"), message) {}
 };
 
 /**
@@ -147,7 +149,8 @@ public:
     static EsObject *prototype();
     
 public:
-    EsRangeError(const String &message) : EsNativeError<EsRangeError>(_USTR("RangeError"), message) {}
+    EsRangeError(const EsString *message) :
+        EsNativeError<EsRangeError>(_ESTR("RangeError"), message) {}
 };
 
 /**
@@ -159,7 +162,8 @@ public:
     static EsObject *prototype();
     
 public:
-    EsReferenceError(const String &message) : EsNativeError<EsReferenceError>(_USTR("ReferenceError"), message) {}
+    EsReferenceError(const EsString *message) :
+        EsNativeError<EsReferenceError>(_ESTR("ReferenceError"), message) {}
 };
 
 /**
@@ -171,7 +175,8 @@ public:
     static EsObject *prototype();
     
 public:
-    EsSyntaxError(const String &message) : EsNativeError<EsSyntaxError>(_USTR("SyntaxError"), message) {}
+    EsSyntaxError(const EsString *message) :
+        EsNativeError<EsSyntaxError>(_ESTR("SyntaxError"), message) {}
 };
 
 /**
@@ -183,7 +188,8 @@ public:
     static EsObject *prototype();
     
 public:
-    EsTypeError(const String &message) : EsNativeError<EsTypeError>(_USTR("TypeError"), message) {}
+    EsTypeError(const EsString *message) :
+        EsNativeError<EsTypeError>(_ESTR("TypeError"), message) {}
 };
 
 /**
@@ -195,7 +201,8 @@ public:
     static EsObject *prototype();
     
 public:
-    EsUriError(const String &message) : EsNativeError<EsUriError>(_USTR("URIError"), message) {}
+    EsUriError(const EsString *message) :
+        EsNativeError<EsUriError>(_ESTR("URIError"), message) {}
 };
 
 /**

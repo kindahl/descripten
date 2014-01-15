@@ -24,23 +24,24 @@
 #include "common/cast.hh"
 #include "common/exception.hh"
 #include "common/lexical.hh"
-#include "common/stringbuilder.hh"
 #include "conversion.hh"
 #include "error.hh"
 #include "messages.hh"
 #include "property.hh"
+#include "string.hh"
+#include "stringbuilder.hh"
 #include "types.hh"
 #include "utility.hh"
 #include "value.hh"
 
-double es_str_to_num(const String &str)
+double es_str_to_num(const EsString *str)
 {
     // 9.3.1
 
     // Optimization.
-    if (str.length() == 1)
+    if (str->length() == 1)
     {
-        uni_char c = str[0];
+        uni_char c = str->at(0);
         if (c >= '0' && c <= '9')
             return static_cast<double>(c - '0');
 
@@ -50,8 +51,8 @@ double es_str_to_num(const String &str)
         return std::numeric_limits<double>::quiet_NaN();
     }
 
-    const uni_char *ptr = str.data();
-    const uni_char *end = ptr + str.length();
+    const uni_char *ptr = str->data();
+    const uni_char *end = ptr + str->length();
 
     es_str_skip_white_spaces(ptr);
 
@@ -82,22 +83,22 @@ double es_str_to_num(const String &str)
 extern "C" char *dtoa(double d, int mode, int ndigits,
                       int *decpt, int *sign, char **rve);
 
-String es_num_to_str(double m, int num_digits)
+const EsString *es_num_to_str(double m, int num_digits)
 {
-    // FIXME: Use StringBuilder.
+    // FIXME: Use a string builder.
 
     // 9.8.1
     if (std::isnan(m))
-        return _USTR("NaN");
+        return _ESTR("NaN");
     
     if (m == 0.0 || m == -0.0)
-        return _USTR("0");
+        return _ESTR("0");
     
     if (m < 0.0)
-        return _USTR("-") + es_num_to_str(-m, num_digits);
+        return _ESTR("-")->concat(es_num_to_str(-m, num_digits));
     
     if (std::isinf(m))
-        return _USTR("Infinity");
+        return _ESTR("Infinity");
 
     bool fixed = num_digits != INT_MIN;
 
@@ -113,7 +114,7 @@ String es_num_to_str(double m, int num_digits)
     // 9.8.1:6
     if (length <= point && point <= 21)
     {
-        String res(beg_ptr, length);
+        const EsString *res = EsString::create_from_utf8(beg_ptr, length);
         
         int pad_len = point - length;
         char zeros[] = "00000000000000000000000000000000";
@@ -123,7 +124,7 @@ String es_num_to_str(double m, int num_digits)
             int cur_pad_len = pad_len > static_cast<int>(sizeof(zeros))
                 ? static_cast<int>(sizeof(zeros)) : pad_len;
 
-            res = res + String(zeros, cur_pad_len);
+            res = res->concat(EsString::create_from_utf8(zeros, cur_pad_len));
             pad_len -= cur_pad_len;
         }
         
@@ -133,9 +134,10 @@ String es_num_to_str(double m, int num_digits)
     // 9.8.1:7
     if (0 < point && point <= 21)
     {
-        String res(beg_ptr, point);
-        res = res + _USTR(".");
-        res = res + String(beg_ptr + point, length - point);
+        const EsString *res = EsString::create_from_utf8(beg_ptr, point);
+        res = res->concat(_ESTR("."));
+        res = res->concat(EsString::create_from_utf8(
+                beg_ptr + point, length - point));
         
         return res;
     }
@@ -143,7 +145,7 @@ String es_num_to_str(double m, int num_digits)
     // 9.8.1:8
     if (point <= 0 && point > -6)
     {
-        String res = _USTR("0.");
+        const EsString *res = _ESTR("0.");
         
         int pad_len = -point;
         char zeros[] = "00000000000000000000000000000000";
@@ -153,21 +155,21 @@ String es_num_to_str(double m, int num_digits)
             int cur_pad_len = pad_len > static_cast<int>(sizeof(zeros))
                 ? static_cast<int>(sizeof(zeros)) : pad_len;
             
-            res = res + String(zeros, cur_pad_len);
+            res = res->concat(EsString::create_from_utf8(zeros, cur_pad_len));
             pad_len -= cur_pad_len;
         }
         
-        res = res + String(beg_ptr, length);
+        res = res->concat(EsString::create_from_utf8(beg_ptr, length));
         
         return res;
     }
     
     // 9.8.1:9-10
-    String res(static_cast<uni_char>(beg_ptr[0]));
+    const EsString *res = EsString::create(static_cast<uni_char>(beg_ptr[0]));
     if (length != 1)
     {
-        res = res + _USTR(".");
-        res = res + String(beg_ptr + 1, length - 1);
+        res = res->concat(_ESTR("."));
+        res = res->concat(EsString::create_from_utf8(beg_ptr + 1, length - 1));
     }
     
     char buffer2[2 + 64] = { 'e', point >= 0 ? '+' : '-' };
@@ -196,11 +198,11 @@ String es_num_to_str(double m, int num_digits)
         number /= 10;
     }
     
-    res = res + String(buffer2, buffer2_pos);
+    res = res->concat(EsString::create_from_utf8(buffer2, buffer2_pos));
     return res;
 }
 
-String es_date_to_str(struct tm *timeinfo)
+const EsString *es_date_to_str(struct tm *timeinfo)
 {
     assert(timeinfo);
     assert(timeinfo->tm_sec >= 0 && timeinfo->tm_sec <= 60);
@@ -225,11 +227,11 @@ String es_date_to_str(struct tm *timeinfo)
 
     // Format: Thu Feb 16 2012 19:09:52 GMT+0100 (CET)
     long gmt = timeinfo->tm_gmtoff / 3600;  // FIXME: Does fraction of an hour offsets exist? Consider the +0100 format.
-    return StringBuilder::sprintf("%s %s %.2d %d %.2d:%.2d:%.2d GMT%s%d (%s)",
-                                  day[timeinfo->tm_wday], mon[timeinfo->tm_mon],
-                                  timeinfo->tm_mday, timeinfo->tm_year + 1900,
-                                  timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec,
-                                  gmt < 0 ? "-" : "+", gmt, timeinfo->tm_zone);
+    return EsStringBuilder::sprintf("%s %s %.2d %d %.2d:%.2d:%.2d GMT%s%d (%s)",
+                                    day[timeinfo->tm_wday], mon[timeinfo->tm_mon],
+                                    timeinfo->tm_mday, timeinfo->tm_year + 1900,
+                                    timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec,
+                                    gmt < 0 ? "-" : "+", gmt, timeinfo->tm_zone);
 }
 
 EsValue es_from_property_descriptor(const EsPropertyReference &prop)
@@ -354,7 +356,7 @@ bool es_to_property_descriptor(const EsValue &val, EsPropertyDescriptor &desc)
     {
         if (value || writable)
         {
-            ES_THROW(EsTypeError, String());    // FIXME: What's this?
+            ES_THROW(EsTypeError, EsString::create());      // FIXME: What's this?
             return false;
         }
 

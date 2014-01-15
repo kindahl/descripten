@@ -88,10 +88,10 @@ public:
         TS_ASSERT(!val.is_string());
         TS_ASSERT(!val.is_object());
 
-        val.set_str(String("some text"));
+        val.set_str(EsString::create_from_utf8("some text"));
         TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_STRING);
-        TS_ASSERT_EQUALS(val.as_string(), String("some text"));
-        TS_ASSERT_EQUALS(val.as_string().length(), 9);
+        TS_ASSERT(val.as_string()->equals(EsString::create_from_utf8("some text")));
+        TS_ASSERT_EQUALS(val.as_string()->length(), 9);
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
         TS_ASSERT(!val.is_null());

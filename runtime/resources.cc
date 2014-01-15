@@ -18,8 +18,8 @@
 
 #include "resources.hh"
 
-Strings &strings()
+EsStrings &strings()
 {
-    static Strings inst;
+    static EsStrings inst;
     return inst;
 }

@@ -68,6 +68,7 @@ using parser::WithStatement;
 using parser::ValueVisitor;
 
 class EsCallFrame;
+class EsString;
 
 /**
  * @brief Reference specification type.
@@ -76,7 +77,7 @@ class EsReference
 {
 private:
     bool strict_;
-    String name_;
+    const EsString *name_;
     EsObject *base_;
 
 public:
@@ -85,6 +86,7 @@ public:
      */
     EsReference()
         : strict_(false)
+        , name_(NULL)
         , base_(NULL)
     {
     }
@@ -94,11 +96,12 @@ public:
      * @param [in] name Reference name.
      * @param [in] strict true for a strict reference, false otherwise.
      */
-    EsReference(const String &name, bool strict)
+    EsReference(const EsString *name, bool strict)
         : strict_(strict)
         , name_(name)
         , base_(NULL)
     {
+        assert(name);
     }
 
     /**
@@ -107,11 +110,12 @@ public:
      * @param [in] strict true for a strict reference, false otherwise.
      * @param [in] base Base value.
      */
-    EsReference(const String &name, bool strict, EsObject *base)
+    EsReference(const EsString *name, bool strict, EsObject *base)
         : strict_(strict)
         , name_(name)
         , base_(base)
     {
+        assert(name);
         assert(base);
     }
 
@@ -126,7 +130,7 @@ public:
     /**
      * @return The name of the referenced entity.
      */
-    const String &get_referenced_name() const
+    const EsString *get_referenced_name() const
     {
         return name_;
     }

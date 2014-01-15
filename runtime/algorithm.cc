@@ -20,7 +20,6 @@
 #include <cmath>
 #include <limits>
 #include "common/cast.hh"
-#include "common/stringbuilder.hh"
 #include "algorithm.hh"
 #include "conversion.hh"
 #include "error.hh"
@@ -28,6 +27,7 @@
 #include "object.hh"
 #include "property.hh"
 #include "property_key.hh"
+#include "stringbuilder.hh"
 #include "utility.hh"
 #include "value.hh"
 #include <stdio.h>
@@ -55,7 +55,7 @@ namespace algorithm
 
         if (px.is_string() && py.is_string())
         {
-            result = px.as_string() < py.as_string();
+            result = px.as_string()->less(py.as_string());
             return true;
         }
         else
@@ -113,9 +113,9 @@ namespace algorithm
             }
             if (x.is_string())
             {
-                String x_val = x.primitive_to_string();
-                String y_val = y.primitive_to_string();
-                result = x_val == y_val;
+                const EsString *x_val = x.primitive_to_string();
+                const EsString *y_val = y.primitive_to_string();
+                result = x_val->equals(y_val);
                 return true;
             }
             if (x.is_boolean())
@@ -183,9 +183,9 @@ namespace algorithm
         }
         if (x.is_string())
         {
-            String x_val = x.primitive_to_string();
-            String y_val = y.primitive_to_string();
-            return x_val == y_val;
+            const EsString *x_val = x.primitive_to_string();
+            const EsString *y_val = y.primitive_to_string();
+            return x_val->equals(y_val);
         }
         if (x.is_boolean())
         {
@@ -222,9 +222,9 @@ namespace algorithm
         }
         if (x.is_string())
         {
-            String x_val = x.primitive_to_string();
-            String y_val = y.primitive_to_string();
-            return x_val == y_val;
+            const EsString *x_val = x.primitive_to_string();
+            const EsString *y_val = y.primitive_to_string();
+            return x_val->equals(y_val);
         }
         if (x.is_boolean())
         {
@@ -237,7 +237,7 @@ namespace algorithm
         return x.as_object() == y.as_object();
     }
 
-    MatchResult *split_match(const String &s, uint32_t q, EsRegExp *r)
+    MatchResult *split_match(const EsString *s, uint32_t q, EsRegExp *r)
     {
         EsRegExp::MatchResult *state = r->match(s, q);
         if (!state)
@@ -253,19 +253,19 @@ namespace algorithm
         return res;
     }
 
-    MatchResult *split_match(const String &s, uint32_t q, const String &r)
+    MatchResult *split_match(const EsString *s, uint32_t q, const EsString *r)
     {
-        if (q + r.length() > s.length())
+        if (q + r->length() > s->length())
             return NULL;
 
-        for (size_t i = 0; i < r.length(); i++)
+        for (size_t i = 0; i < r->length(); i++)
         {
-            if (s[q + i] != r[i])
+            if (s->at(q + i) != r->at(i))
                 return NULL;
         }
 
         MatchResult *res = new (GC)MatchResult();
-        res->end_index_ = static_cast<int>(q + r.length());
+        res->end_index_ = static_cast<int>(q + r->length());
         return res;
     }
 
@@ -334,16 +334,16 @@ namespace algorithm
             return true;
         }
 
-        String x_str;
-        if (!x.to_string(x_str))
+        const EsString *x_str = x.to_string();
+        if (!x_str)
             return false;
-        String y_str;
-        if (!y.to_string(y_str))
+        const EsString *y_str = y.to_string();
+        if (!y_str)
             return false;
 
-        if (x_str < y_str)
+        if (x_str->less(y_str))
             result = -1.0;
-        else if (y_str < x_str)
+        else if (y_str->less(x_str))
             result = 1.0;
         else
             result = 0.0;
@@ -351,7 +351,7 @@ namespace algorithm
         return true;
     }
 
-    bool json_walk(const String &name, EsObject *holder, EsFunction *reviver, EsValue &result)
+    bool json_walk(const EsString *name, EsObject *holder, EsFunction *reviver, EsValue &result)
     {
         EsValue val;
         if (!holder->getT(EsPropertyKey::from_str(name), val))
@@ -369,7 +369,8 @@ namespace algorithm
                 for (uint32_t i = 0; i < len.primitive_to_uint32(); i++)
                 {
                     EsValue new_elem;
-                    if (!json_walk(String(lexical_cast<const char *>(i)), val_obj, reviver, new_elem))
+                    if (!json_walk(EsString::create_from_utf8(
+                            lexical_cast<const char *>(i)), val_obj, reviver, new_elem))
                         return false;
 
                     if (new_elem.is_undefined())
@@ -424,7 +425,7 @@ namespace algorithm
         return true;
     }
 
-    bool json_str(const String &key, EsObject *holder, JsonState &state,
+    bool json_str(const EsString *key, EsObject *holder, JsonState &state,
                   EsValue &result)
     {
         EsValue val;
@@ -477,13 +478,15 @@ namespace algorithm
                 if (!val.to_number(num))
                     return false;
 
-                result = EsValue::from_str(std::isfinite(num) ? es_num_to_str(num) : _USTR("null"));
+                result = EsValue::from_str(std::isfinite(num)
+                    ? es_num_to_str(num)
+                    : _ESTR("null"));
                 return true;
             }
             if (val_obj->class_name() == _USTR("String"))
             {
-                String str;
-                if (!val.to_string(str))
+                const EsString *str = val.to_string();
+                if (!str)
                     return false;
 
                 result = EsValue::from_str(json_quote(str));
@@ -491,20 +494,24 @@ namespace algorithm
             }
             if (EsBooleanObject *bool_obj = dynamic_cast<EsBooleanObject *>(val_obj))
             {
-                result = EsValue::from_str(bool_obj->primitive_value() ? _USTR("true") : _USTR("false"));
+                result = EsValue::from_str(bool_obj->primitive_value()
+                    ? _ESTR("true")
+                    : _ESTR("false"));
                 return true;
             }
         }
 
         if (val.is_null())
         {
-            result = EsValue::from_str(_USTR("null"));
+            result = EsValue::from_str(_ESTR("null"));
             return true;
         }
 
         if (val.is_boolean())
         {
-            result = EsValue::from_str(val.as_boolean() ? _USTR("true") : _USTR("false"));
+            result = EsValue::from_str(val.as_boolean()
+                ? _ESTR("true")
+                : _ESTR("false"));
             return true;
         }
         else if (val.is_string())
@@ -514,8 +521,9 @@ namespace algorithm
         }
         else if (val.is_number())
         {
-            result = EsValue::from_str(std::isfinite(val.as_number()) ?
-                es_num_to_str(val.as_number()) : _USTR("null"));
+            result = EsValue::from_str(std::isfinite(val.as_number())
+                ? es_num_to_str(val.as_number())
+                : _ESTR("null"));
             return true;
         }
 
@@ -536,14 +544,14 @@ namespace algorithm
         return true;
     }
 
-    String json_quote(const String &val)
+    const EsString *json_quote(const EsString *val)
     {
-        StringBuilder product;
+        EsStringBuilder product;
         product.append('"');
 
-        for (size_t i = 0; i < val.length(); i++)
+        for (size_t i = 0; i < val->length(); i++)
         {
-            uni_char c = val[i];
+            uni_char c = val->at(i);
             switch (c)
             {
                 case '"':
@@ -577,7 +585,9 @@ namespace algorithm
                     {
                         product.append('\\');
                         product.append('u');
-                        product.append(StringBuilder::sprintf("%.4x", static_cast<int>(c)));
+                        product.append(
+                                EsStringBuilder::sprintf("%.4x",
+                                        static_cast<int>(c)));
                     }
                     else
                     {
@@ -607,7 +617,7 @@ namespace algorithm
 
                 if (cur_val.is_object() && cur_val.as_object() == val)
                 {
-                    ES_THROW(EsTypeError, _USTR("FIXME: cannot serialize json object, the structure is cyclical."));
+                    ES_THROW(EsTypeError, _ESTR("FIXME: cannot serialize json object, the structure is cyclical."));
                     return false;
                 }
             }
@@ -615,10 +625,10 @@ namespace algorithm
 
         state.stack.push_back(EsValue::from_obj(val));
 
-        String stepback = state.indent;
-        state.indent = state.indent + state.gap;
+        const EsString *stepback = state.indent;
+        state.indent = state.indent->concat(state.gap);
 
-        StringVector partial;
+        EsStringVector partial;
 
         EsValue len;
         if (!val->getT(property_keys.length, len))
@@ -627,42 +637,45 @@ namespace algorithm
         for (uint32_t i = 0; i < len.primitive_to_uint32(); i++)
         {
             EsValue str_p;
-            if (!json_str(String(lexical_cast<const char *>(i)), val, state, str_p))
+            if (!json_str(EsString::create_from_utf8(
+                    lexical_cast<const char *>(i)), val, state, str_p))
                 return false;
 
             if (str_p.is_undefined())
-                partial.push_back(_USTR("null"));
+            {
+                partial.push_back(_ESTR("null"));
+            }
             else
             {
-                String str;
-                if (!str_p.to_string(str))
+                const EsString *str = str_p.to_string();
+                if (!str)
                     return false;
 
                 partial.push_back(str); // CUSTOM: to_string.
             }
         }
 
-        StringBuilder final;
+        EsStringBuilder final;
         if (partial.empty())
         {
             final.append("[]");
         }
         else
         {
-            String separator = _USTR(",\n");
-            if (state.gap.empty())
+            const EsString *separator = NULL;
+            if (state.gap->empty())
             {
-                separator = _USTR(",");
+                separator = _ESTR(",");
             }
             else
             {
-                separator = _USTR(",\n");
-                separator = separator + state.indent;
+                separator = _ESTR(",\n");
+                separator = separator->concat(state.indent);
             }
 
             final.append('[');
 
-            StringVector::const_iterator it;
+            EsStringVector::const_iterator it;
             for (it = partial.begin(); it != partial.end(); ++it)
             {
                 if (it != partial.begin())
@@ -696,7 +709,7 @@ namespace algorithm
 
                 if (cur_val.is_object() && cur_val.as_object() == val)
                 {
-                    ES_THROW(EsTypeError, _USTR("FIXME: cannot serialize json object, the structure is cyclical."));
+                    ES_THROW(EsTypeError, _ESTR("FIXME: cannot serialize json object, the structure is cyclical."));
                     return false;
                 }
             }
@@ -704,10 +717,10 @@ namespace algorithm
 
         state.stack.push_back(EsValue::from_obj(val));
 
-        String stepback = state.indent;
-        state.indent = state.indent + state.gap;
+        const EsString *stepback = state.indent;
+        state.indent = state.indent->concat(state.gap);
 
-        StringVector k;
+        EsStringVector k;
         if (!state.prop_list.empty())   // NOTE: Emptiness used to test undefinedness.
         {
             k = state.prop_list;
@@ -727,12 +740,12 @@ namespace algorithm
             }
         }
 
-        StringBuilder member;
+        EsStringBuilder member;
 
-        StringVector partial;
-        for (StringVector::const_iterator it = k.begin(); it != k.end(); ++it)
+        EsStringVector partial;
+        for (EsStringVector::const_iterator it = k.begin(); it != k.end(); ++it)
         {
-            const String &p = *it;
+            const EsString *p = *it;
 
             EsValue str_p;
             if (!json_str(p, val, state, str_p))
@@ -743,11 +756,11 @@ namespace algorithm
                 member.clear();
                 member.append(json_quote(p));
                 member.append(':');
-                if (!state.gap.empty())
+                if (!state.gap->empty())
                     member.append(' ');
 
-                String str;
-                if (!str_p.to_string(str))
+                const EsString *str = str_p.to_string();
+                if (!str)
                     return false;
 
                 member.append(str); // CUSTOM: to_string.
@@ -756,27 +769,27 @@ namespace algorithm
             }
         }
 
-        StringBuilder final;
+        EsStringBuilder final;
         if (partial.empty())
         {
             final.append("{}");
         }
         else
         {
-            String separator = _USTR(",\n");
-            if (state.gap.empty())
+            const EsString *separator = NULL;
+            if (state.gap->empty())
             {
-                separator = _USTR(",");
+                separator = _ESTR(",");
             }
             else
             {
-                separator = _USTR(",\n");
-                separator = separator + state.indent;
+                separator = _ESTR(",\n");
+                separator = separator->concat(state.indent);
             }
 
             final.append('{');
 
-            for (StringVector::const_iterator it = partial.begin(); it != partial.end(); ++it)
+            for (EsStringVector::const_iterator it = partial.begin(); it != partial.end(); ++it)
             {
                 if (it != partial.begin())
                     final.append(separator);

@@ -22,8 +22,8 @@
 #include <stdint.h>
 #include "common/cast.hh"
 #include "common/conversion.hh"
-#include "common/string.hh"
 #include "resources.hh"
+#include "string.hh"
 
 /**
  * @brief Represents key, identifying a property.
@@ -89,7 +89,7 @@ public:
         return EsPropertyKey(id);
     }
 
-    static EsPropertyKey from_str(const String &str);
+    static EsPropertyKey from_str(const EsString *str);
     static EsPropertyKey from_u32(uint32_t i);
 
     uint64_t as_raw() const
@@ -103,7 +103,7 @@ public:
      * is an index, the index will be converted into a string.
      * @return Property key in string format.
      */
-    String to_string() const;
+    const EsString *to_string() const;
 
     inline bool is_string() const
     {
@@ -115,7 +115,7 @@ public:
         return (id_ & IS_STRING) == 0;
     }
 
-    inline const String &as_string() const
+    inline const EsString *as_string() const
     {
         assert(is_string());
         return strings().lookup(id_ & 0xffffffff);

@@ -53,10 +53,11 @@ bin/test-runtime: test-runtime.cc
 	$(CXX) $(CXXFLAGS_RUNTIME) test-runtime.cc -o bin/test-runtime
 
 test-runtime.cc: src/runtime/map.hh src/runtime/property_array.hh \
-				 src/runtime/shape.hh src/runtime/value_boxed_base.hh
+				 src/runtime/shape.hh src/runtime/string.hh \
+				 src/runtime/value_boxed_base.hh
 	$(CXXTESTGEN) --error-printer -o test-runtime.cc \
 		src/runtime/map.hh src/runtime/property_array.hh src/runtime/shape.hh \
-		src/runtime/value_boxed_base.hh
+		src/runtime/string.hh src/runtime/value_boxed_base.hh
 
 lexer:
 	$(CXX) $(CXXFLAGS_PARSER) lexer.cc -o bin/lexer

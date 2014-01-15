@@ -20,8 +20,8 @@
 #include <vector>
 #include <gc_cpp.h>             // NOTE: 3rd party.
 #include <gc/gc_allocator.h>    // NOTE: 3rd party.
-#include "common/string.hh"
 #include "container.hh"
+#include "string.hh"
 #include "types.hh"
 
 class EsFunction;
@@ -37,7 +37,7 @@ namespace algorithm
     {
     public:
         int end_index_;     ///< Index of last matched substring.
-        StringVector cap_;
+        EsStringVector cap_;
     };
 
     /**
@@ -46,13 +46,16 @@ namespace algorithm
      */
     struct JsonState
     {
-        String indent;
-        String gap;
-        StringVector prop_list;
+        const EsString *indent;
+        const EsString *gap;
+        EsStringVector prop_list;
         EsFunction *replacer_fun;   ///< Replacer function, NULL means undefined.
         EsValueVector stack;
 
-        JsonState() : replacer_fun(NULL) {}
+        JsonState()
+            : indent(EsString::create())
+            , gap(EsString::create())
+            , replacer_fun(NULL) {}
     };
 
     /**
@@ -105,7 +108,7 @@ namespace algorithm
      * @param [in] r Regular expression pattern for splitting.
      * @return On success the sub strings, on failure NULL.
      */
-    MatchResult *split_match(const String &s, uint32_t q, EsRegExp *r);
+    MatchResult *split_match(const EsString *s, uint32_t q, EsRegExp *r);
 
     /**
      * Implements the split match algorithm according to 15.5.4.14.
@@ -114,7 +117,7 @@ namespace algorithm
      * @param [in] r String separate to split by.
      * @return On success the sub strings, on failure NULL.
      */
-    MatchResult *split_match(const String &s, uint32_t q, const String &r);
+    MatchResult *split_match(const EsString *s, uint32_t q, const EsString *r);
 
     /**
      * Implements the sort compare algorithm according to 15.4.4.11.
@@ -139,7 +142,7 @@ namespace algorithm
      * @param [out] result Result of calling reviver with walk data.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool json_walk(const String &name, EsObject *holder, EsFunction *reviver,
+    bool json_walk(const EsString *name, EsObject *holder, EsFunction *reviver,
                    EsValue &result);
 
     /**
@@ -151,7 +154,7 @@ namespace algorithm
      * @param [out] result JSON expression in string format.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool json_str(const String &key, EsObject *holder, JsonState &state,
+    bool json_str(const EsString *key, EsObject *holder, JsonState &state,
                   EsValue &result);
 
     /**
@@ -160,7 +163,7 @@ namespace algorithm
      * @param [in] val String to wrap and escape.
      * @return val with escaped content wrapped in quotes.
      */
-    String json_quote(const String &val);
+    const EsString *json_quote(const EsString *val);
 
     /**
      * Implements the JSON array serialization algorithm according to 15.12.3.

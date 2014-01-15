@@ -129,7 +129,7 @@ std::string CcGenerator::string(const String &str)
     std::string esc_str = escape(str);
 
     std::stringstream strstr;
-    strstr << "String::wrap(U\"" << esc_str << "\", " << str.length() << ")";
+    strstr << "op_new_str(U\"" << esc_str << "\", " << str.length() << ")";
     return strstr.str();
 }
 
@@ -190,7 +190,7 @@ std::string CcGenerator::type(const ir::Type *type)
             str << "double";
             break;
         case ir::Type::ID_STRING:
-            str << "String";
+            str << "const EsString *";
             break;
 
         // Complex types.

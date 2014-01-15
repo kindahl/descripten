@@ -619,7 +619,9 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
         else if (IdentifierLiteral * ident =
             dynamic_cast<IdentifierLiteral *>(expr->expression()))
         {
-            if (!op_ctx_del(EsContextStack::instance().top(), EsPropertyKey::from_str(ident->value()).as_raw(), t))
+            if (!op_ctx_del(EsContextStack::instance().top(),
+                    EsPropertyKey::from_str(
+                            EsString::create(ident->value())).as_raw(), t))
             {
                 return Completion(Completion::TYPE_THROW,
                                   EsContextStack::instance().top()->get_pending_exception());
@@ -915,8 +917,8 @@ Completion Evaluator::parse_prop_expr(PropertyExpression *expr)
         return Completion(Completion::TYPE_THROW,
                           EsContextStack::instance().top()->get_pending_exception());
 
-    String key_str;
-    if (!key_val.to_string(key_str))
+    const EsString *key_str = key_val.to_string();
+    if (!key_str)
         return Completion(Completion::TYPE_THROW,
                           EsContextStack::instance().top()->get_pending_exception());
 
@@ -979,9 +981,9 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
     else if (IdentifierLiteral * ident =
         dynamic_cast<IdentifierLiteral *>(expr->expression()))
     {
-        success =
-            op_call_named(EsPropertyKey::from_str(ident->value()).as_raw(),
-                          argc, r);
+        success = op_call_named(
+                EsPropertyKey::from_str(EsString::create(ident->value())).as_raw(),
+                        argc, r);
     }
     else
     {
@@ -1038,7 +1040,8 @@ Completion Evaluator::parse_call_new_expr(CallNewExpression *expr)
 
 Completion Evaluator::parse_regular_expr(RegularExpression *expr)
 {
-    EsValue r = op_new_reg_exp(expr->pattern(), expr->flags());
+    EsValue r = op_new_reg_exp(EsString::create(expr->pattern()),
+                               EsString::create(expr->flags()));
     return Completion(Completion::TYPE_NORMAL, r);
 }
 
@@ -1058,7 +1061,7 @@ Completion Evaluator::parse_ident_lit(IdentifierLiteral *lit)
 {
     EsContext *ctx = EsContextStack::instance().top();
 
-    EsReference t(lit->value(), ctx->is_strict());
+    EsReference t(EsString::create(lit->value()), ctx->is_strict());
     return Completion(Completion::TYPE_NORMAL, t);
 }
 
@@ -1069,17 +1072,22 @@ Completion Evaluator::parse_null_lit(NullLiteral *lit)
 
 Completion Evaluator::parse_bool_lit(BoolLiteral *lit)
 {
-    return Completion(Completion::TYPE_NORMAL, EsValue::from_bool(lit->value()));
+    return Completion(Completion::TYPE_NORMAL,
+            EsValue::from_bool(lit->value()));
 }
 
 Completion Evaluator::parse_num_lit(NumberLiteral *lit)
 {
-    return Completion(Completion::TYPE_NORMAL, EsValue::from_num(es_str_to_num(lit->as_string())));
+    // FIXME: Performance hit when creating new string.
+    return Completion(Completion::TYPE_NORMAL,
+            EsValue::from_num(
+                    es_str_to_num(EsString::create(lit->as_string()))));
 }
 
 Completion Evaluator::parse_str_lit(StringLiteral *lit)
 {
-    return Completion(Completion::TYPE_NORMAL, EsValue::from_str(lit->value()));
+    return Completion(Completion::TYPE_NORMAL,
+            EsValue::from_str(EsString::create(lit->value())));
 }
 
 Completion Evaluator::parse_fun_lit(FunctionLiteral *lit)
@@ -1104,7 +1112,9 @@ Completion Evaluator::parse_fun_lit(FunctionLiteral *lit)
             EsDeclarativeEnvironmentRecord *env =
                 static_cast<EsDeclarativeEnvironmentRecord *>(fun_env->env_rec());
 
-            env->create_immutable_binding(EsPropertyKey::from_str(lit->name()), EsValue::from_obj(fun));
+            env->create_immutable_binding(
+                    EsPropertyKey::from_str(EsString::create(lit->name())),
+                    EsValue::from_obj(fun));
         }
         else
         {
@@ -1189,8 +1199,9 @@ Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
                 return Completion(Completion::TYPE_THROW,
                                   EsContextStack::instance().top()->get_pending_exception());
 
-            if (!op_prp_def_accessor(new_obj, EsPropertyKey::from_str(prop->accessor_name()).as_raw(),
-                                     val, prop->type() == ObjectLiteral::Property::SETTER))
+            if (!op_prp_def_accessor(new_obj,
+                    EsPropertyKey::from_str(EsString::create(prop->accessor_name())).as_raw(),
+                            val, prop->type() == ObjectLiteral::Property::SETTER))
                 return Completion(Completion::TYPE_THROW,
                                   EsContextStack::instance().top()->get_pending_exception());
         }
@@ -1525,7 +1536,7 @@ Completion Evaluator::parse_cont_stmt(ContinueStatement *stmt)
     {
         if (!is_in_iteration())
         {
-            ES_THROW(EsError, _USTR("error: non-labeled continue statements are only allowed in loops."));
+            ES_THROW(EsError, _ESTR("error: non-labeled continue statements are only allowed in loops."));
             return Completion(Completion::TYPE_THROW,
                               EsContextStack::instance().top()->get_pending_exception());
         }
@@ -1547,7 +1558,7 @@ Completion Evaluator::parse_break_stmt(BreakStatement *stmt)
     {
         if (!is_in_iteration() && !is_in_switch())
         {
-            ES_THROW(EsError, _USTR("error: non-labeled break statements are only allowed in loops and switch statements."));
+            ES_THROW(EsError, _ESTR("error: non-labeled break statements are only allowed in loops and switch statements."));
             return Completion(Completion::TYPE_THROW,
                               EsContextStack::instance().top()->get_pending_exception());
         }
@@ -1719,7 +1730,8 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
         if (b.type() == Completion::TYPE_THROW)
         {
             if (!op_ctx_enter_catch(EsContextStack::instance().top(),
-                                    EsPropertyKey::from_str(stmt->catch_identifier()).as_raw()))
+                    EsPropertyKey::from_str(
+                            EsString::create(stmt->catch_identifier())).as_raw()))
             {
                 return Completion(Completion::TYPE_THROW,
                                   EsContextStack::instance().top()->get_pending_exception());
@@ -1742,7 +1754,7 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
             return try_res;
 
         if (!op_ctx_enter_catch(EsContextStack::instance().top(),
-                                EsPropertyKey::from_str(stmt->catch_identifier()).as_raw()))
+                EsPropertyKey::from_str(EsString::create(stmt->catch_identifier())).as_raw()))
         {
             return Completion(Completion::TYPE_THROW,
                               EsContextStack::instance().top()->get_pending_exception());
@@ -1790,11 +1802,12 @@ void Evaluator::parse_fun_decls(const DeclarationVector &decls)
             FunctionLiteral *lit = decl->as_function();
             EsFunction *fun = parse(lit).value().value().as_function();
 
-            op_ctx_decl_fun(EsContextStack::instance().top(),
-                            type_ == TYPE_EVAL,
-                            code_->is_strict_mode(),
-                            EsPropertyKey::from_str(lit->name()).as_raw(),
-                            EsValue::from_obj(fun));
+            op_ctx_decl_fun(
+                    EsContextStack::instance().top(),
+                    type_ == TYPE_EVAL,
+                    code_->is_strict_mode(),
+                    EsPropertyKey::from_str(EsString::create(lit->name())).as_raw(),
+                    EsValue::from_obj(fun));
         }
     }
 
@@ -1806,10 +1819,11 @@ void Evaluator::parse_fun_decls(const DeclarationVector &decls)
             VariableLiteral *var = decl->as_variable();
             parse(var);
 
-            op_ctx_decl_var(EsContextStack::instance().top(),
-                            type_ == TYPE_EVAL,
-                            code_->is_strict_mode(),
-                            EsPropertyKey::from_str(var->name()).as_raw());
+            op_ctx_decl_var(
+                    EsContextStack::instance().top(),
+                    type_ == TYPE_EVAL,
+                    code_->is_strict_mode(),
+                    EsPropertyKey::from_str(EsString::create(var->name())).as_raw());
         }
     }
 }
@@ -1859,16 +1873,20 @@ bool Evaluator::exec(EsContext *ctx)
                 // Link the parameter to the coresponding slot in the arguments
                 // vector. Updating an argument through the arguments object
                 // should reflect in the parameter and vice versa.
-                op_ctx_link_var(EsContextStack::instance().top(),
-                                EsPropertyKey::from_str(code_->parameters()[i]).as_raw(),
-                                &argv_heap[i]);
+                op_ctx_link_var(
+                        EsContextStack::instance().top(),
+                        EsPropertyKey::from_str(
+                                EsString::create(code_->parameters()[i])).as_raw(),
+                        &argv_heap[i]);
             }
             else
             {
-                op_ctx_decl_prm(EsContextStack::instance().top(),
-                                code_->is_strict_mode(),
-                                EsPropertyKey::from_str(code_->parameters()[i]).as_raw(),
-                                EsValue::undefined);
+                op_ctx_decl_prm(
+                        EsContextStack::instance().top(),
+                        code_->is_strict_mode(),
+                        EsPropertyKey::from_str(
+                                EsString::create(code_->parameters()[i])).as_raw(),
+                        EsValue::undefined);
             }
         }
     }
@@ -1877,10 +1895,12 @@ bool Evaluator::exec(EsContext *ctx)
         // Function prologue: parameters.
         for (int i = 0; i < static_cast<int>(code_->parameters().size()); i++)
         {
-            op_ctx_decl_prm(EsContextStack::instance().top(),
-                            code_->is_strict_mode(),
-                            EsPropertyKey::from_str(code_->parameters()[i]).as_raw(),
-                            i < argc ? argv[i] : EsValue::undefined);
+            op_ctx_decl_prm(
+                    EsContextStack::instance().top(),
+                    code_->is_strict_mode(),
+                    EsPropertyKey::from_str(
+                            EsString::create(code_->parameters()[i])).as_raw(),
+                    i < argc ? argv[i] : EsValue::undefined);
         }
     }
 

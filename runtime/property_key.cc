@@ -22,10 +22,10 @@
 
 EsPropertyKeySet property_keys;
 
-EsPropertyKey EsPropertyKey::from_str(const String &str)
+EsPropertyKey EsPropertyKey::from_str(const EsString *str)
 {
     uint32_t index = 0;
-    if (es_str_to_index(str, index))
+    if (es_str_to_index(str->str(), index))
         return from_u32(index);
 
     return EsPropertyKey(static_cast<uint64_t>(IS_STRING) | strings().intern(str));
@@ -36,12 +36,13 @@ EsPropertyKey EsPropertyKey::from_u32(uint32_t i)
     return EsPropertyKey(i);
 }
 
-String EsPropertyKey::to_string() const
+const EsString *EsPropertyKey::to_string() const
 {
     if (is_string())
         return as_string();
 
-    return String(lexical_cast<const char *>(as_index()));
+    return EsString::create_from_utf8(
+            lexical_cast<const char *>(as_index()));
 }
 
 void EsPropertyKeySet::initialize()

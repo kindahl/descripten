@@ -17,7 +17,8 @@
  */
 
 #pragma once
-#include "common/string.hh"
+
+class EsString;
 
 enum EsMessage
 {
@@ -76,5 +77,5 @@ enum EsMessage
     ES_MSG_URI_ENC_FAIL
 };
 
-String es_get_msg(EsMessage msg);
-String es_fmt_msg(EsMessage msg, ...);
+const EsString *es_get_msg(EsMessage msg);
+const EsString *es_fmt_msg(EsMessage msg, ...);

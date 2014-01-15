@@ -19,18 +19,18 @@
 #pragma once
 #include <limits.h>
 #include <stdint.h>
-#include "common/string.hh"
 #include "object.hh"
 #include "value.hh"
 
 class EsPropertyDescriptor;
+class EsString;
 
 /**
  * Converts a string into a number value according to 9.3.1.
  * @param [in] str String to convert.
  * @return str converted to a number value.
  */
-double es_str_to_num(const String &str);
+double es_str_to_num(const EsString *str);
 
 /**
  * Converts a double value to a string value.
@@ -39,14 +39,14 @@ double es_str_to_num(const String &str);
  *                        as many as possible.
  * @return m converted to a string value.
  */
-String es_num_to_str(double m, int num_digits = INT_MIN);
+const EsString *es_num_to_str(double m, int num_digits = INT_MIN);
 
 /**
  * Converts a time stamp into a human readable date string.
  * @param [in] timeinfo Pointer to tm structure, may not be NULL.
  * @return timeinfo converted to a human readable date string.
  */
-String es_date_to_str(struct tm *timeinfo);
+const EsString *es_date_to_str(struct tm *timeinfo);
 
 /**
  * Converts the specified property into an object.

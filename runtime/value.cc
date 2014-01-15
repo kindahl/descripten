@@ -22,6 +22,7 @@
 #include "messages.hh"
 #include "native.hh"
 #include "object.hh"
+#include "string.hh"
 #include "value.hh"
 
 const EsValue EsValue::null(TYPE_NULL);
@@ -86,27 +87,27 @@ uint32_t EsValue::primitive_to_uint32() const
     return es_to_uint32(primitive_to_number());
 }
 
-String EsValue::primitive_to_string() const
+const EsString *EsValue::primitive_to_string() const
 {
     switch (type())
     {
         case TYPE_UNDEFINED:
-            return _USTR("undefined");
+            return _ESTR("undefined");
         case TYPE_NULL:
-            return _USTR("null");
+            return _ESTR("null");
         case TYPE_BOOLEAN:
-            return as_boolean() ? _USTR("true") : _USTR("false");
+            return as_boolean() ? _ESTR("true") : _ESTR("false");
         case TYPE_NUMBER:
             return es_num_to_str(as_number());
         case TYPE_STRING:
             return as_string();
         default:
             assert(false);
-            return String();
+            return EsString::create();
     }
 
     assert(false);
-    return String();
+    return EsString::create();
 }
 
 bool EsValue::to_boolean() const
@@ -121,7 +122,7 @@ bool EsValue::to_boolean() const
         case TYPE_NUMBER:
             return as_number() != 0.0 && !std::isnan(as_number());
         case TYPE_STRING:
-            return as_string().length() > 0;
+            return as_string()->length() > 0;
         case TYPE_OBJECT:
             return true;
         default:
@@ -206,42 +207,35 @@ bool EsValue::to_uint32(uint32_t &result) const
     return true;
 }
 
-bool EsValue::to_string(String &result) const
+const EsString *EsValue::to_string() const
 {
     switch (type())
     {
         case TYPE_UNDEFINED:
-            result = _USTR("undefined");
-            return true;
+            return _ESTR("undefined");
         case TYPE_NULL:
-            result = _USTR("null");
-            return true;
+            return _ESTR("null");
         case TYPE_BOOLEAN:
-            result = as_boolean() ? _USTR("true") : _USTR("false");
-            return true;
+            return as_boolean() ? _ESTR("true") : _ESTR("false");
         case TYPE_NUMBER:
-            result = es_num_to_str(as_number());
-            return true;
+            return es_num_to_str(as_number());
         case TYPE_STRING:
-            result = as_string();
-            return true;
+            return as_string();
         case TYPE_OBJECT:
         {
             EsValue v;
             if (!to_primitive(ES_HINT_STRING, v))
-                return false;
+                return NULL;
 
-            return v.to_string(result);
+            return v.to_string();
         }
         default:
             assert(false);
-            result = String();
-            return true;
+            return EsString::create();
     }
 
     assert(false);
-    result = String();
-    return true;
+    return EsString::create();
 }
 
 EsObject *EsValue::to_objectT() const

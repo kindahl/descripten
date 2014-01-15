@@ -27,6 +27,7 @@
 #include "object.hh"
 #include "property.hh"
 #include "prototype.hh"
+#include "string.hh"
 #include "utility.hh"
 
 bool es_as_boolean(const EsValue &val, bool &boolean)
@@ -67,7 +68,7 @@ bool es_as_number(const EsValue &val, double &number)
     return false;
 }
 
-bool es_as_string(const EsValue &val, String &str)
+bool es_as_string(const EsValue &val, const EsString *&str)
 {
     if (val.is_object())
     {

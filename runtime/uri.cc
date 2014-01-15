@@ -17,10 +17,11 @@
  */
 
 #include "common/lexical.hh"
-#include "common/stringbuilder.hh"
 #include "common/unicode.hh"
 #include "error.hh"
 #include "messages.hh"
+#include "string.hh"
+#include "stringbuilder.hh"
 #include "uri.hh"
 
 bool es_uri_reserved_predicate(uni_char c)
@@ -114,16 +115,16 @@ bool es_uri_component_unescaped_predicate(uni_char c)
     return false;
 }
 
-bool es_uri_encode(String str, EsUriSetPredicate pred, String &result)
+const EsString *es_uri_encode(const EsString *str, EsUriSetPredicate pred)
 {
     // 15.1.3.
-    size_t str_len = str.length();
+    size_t str_len = str->length();
 
-    StringBuilder r;
+    EsStringBuilder r;
 
     for (size_t k = 0; k < str_len; k++)
     {
-        uni_char c = str[k];
+        uni_char c = str->at(k);
         if (pred(c))
         {
             r.append(c);
@@ -133,7 +134,7 @@ bool es_uri_encode(String str, EsUriSetPredicate pred, String &result)
             if (c >= 0xdc00 && c <= 0xdfff)
             {
                 ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_ENC_FAIL));
-                return false;
+                return NULL;
             }
 
             uni_char v = 0;
@@ -147,14 +148,14 @@ bool es_uri_encode(String str, EsUriSetPredicate pred, String &result)
                 if (k == str_len)
                 {
                     ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_ENC_FAIL));
-                    return false;
+                    return NULL;
                 }
 
-                uni_char kchar = str[k];
+                uni_char kchar = str->at(k);
                 if (kchar < 0xdc00 || kchar > 0xdfff)
                 {
                     ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_ENC_FAIL));
-                    return false;
+                    return NULL;
                 }
 
                 v = (c - 0xd800) * 0x400 + (kchar - 0xdc00) + 0x10000;
@@ -167,31 +168,30 @@ bool es_uri_encode(String str, EsUriSetPredicate pred, String &result)
             for (byte j = 0; j < l; j++)
             {
                 byte joctet = octets[j];
-                r.append(StringBuilder::sprintf("%%%.2X", joctet));
+                r.append(EsStringBuilder::sprintf("%%%.2X", joctet));
             }
         }
     }
 
-    result =  r.string();
-    return true;
+    return r.string();
 }
 
-bool es_uri_decode(String str, EsUriSetPredicate pred, String &result)
+const EsString *es_uri_decode(const EsString *str, EsUriSetPredicate pred)
 {
     // 15.1.3.
-    size_t str_len = str.length();
+    size_t str_len = str->length();
 
-    StringBuilder r;
+    EsStringBuilder r;
 
     for (size_t k = 0; k < str_len; k++)
     {
-        uni_char c = str[k];
+        uni_char c = str->at(k);
 
-        String s;
+        const EsString *s = EsString::create();
         if (c != '%')
         {
             // FIXME: Remove s and append to r directly.
-            s = String(c);
+            s = EsString::create(c);
         }
         else
         {
@@ -199,16 +199,18 @@ bool es_uri_decode(String str, EsUriSetPredicate pred, String &result)
             if (k + 2 >= str_len)
             {
                 ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_BAD_FORMAT));
-                return false;
+                return NULL;
             }
 
-            if (!es_is_hex_digit(str[k + 1]) || !es_is_hex_digit(str[k + 2]))
+            if (!es_is_hex_digit(str->at(k + 1)) ||
+                !es_is_hex_digit(str->at(k + 2)))
             {
                 ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_BAD_FORMAT));
-                return false;
+                return NULL;
             }
 
-            uint8_t b = es_as_hex_digit(str[k + 1]) * 16 + es_as_hex_digit(str[k + 2]);
+            uint8_t b = es_as_hex_digit(str->at(k + 1)) * 16 +
+                        es_as_hex_digit(str->at(k + 2));
 
             k += 2;
 
@@ -216,9 +218,9 @@ bool es_uri_decode(String str, EsUriSetPredicate pred, String &result)
             {
                 uni_char c = static_cast<uni_char>(b);
                 if (!pred(c))
-                    s = String(c);
+                    s = EsString::create(c);
                 else
-                    s = str.substr(start, k - start + 1);
+                    s = str->substr(start, k - start + 1);
             }
             else
             {
@@ -232,7 +234,7 @@ bool es_uri_decode(String str, EsUriSetPredicate pred, String &result)
                 if (n == 1 || n > 4)
                 {
                     ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_BAD_FORMAT));
-                    return false;
+                    return NULL;
                 }
 
                 byte octets[6];     // Even though we only use 4 bytes, utf8_dec expects 6.
@@ -243,29 +245,31 @@ bool es_uri_decode(String str, EsUriSetPredicate pred, String &result)
                 if (k + 3 * (n - 1) >= str_len)
                 {
                     ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_BAD_FORMAT));
-                    return false;
+                    return NULL;
                 }
 
                 for (int j = 1; j < n; j++)
                 {
                     k++;
-                    if (str[k] != '%')
+                    if (str->at(k) != '%')
                     {
                         ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_BAD_FORMAT));
-                        return false;
+                        return NULL;
                     }
 
-                    if (!es_is_hex_digit(str[k + 1]) || !es_is_hex_digit(str[k + 2]))
+                    if (!es_is_hex_digit(str->at(k + 1)) ||
+                        !es_is_hex_digit(str->at(k + 2)))
                     {
                         ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_BAD_FORMAT));
-                        return false;
+                        return NULL;
                     }
 
-                    b = es_as_hex_digit(str[k + 1]) * 16 + es_as_hex_digit(str[k + 2]);
+                    b = es_as_hex_digit(str->at(k + 1)) * 16 +
+                        es_as_hex_digit(str->at(k + 2));
                     if ((b & 0xc0) != 0x80)
                     {
                         ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_BAD_FORMAT));
-                        return false;
+                        return NULL;
                     }
 
                     k += 2;
@@ -276,7 +280,7 @@ bool es_uri_decode(String str, EsUriSetPredicate pred, String &result)
                 if (!utf8_test(octets))
                 {
                     ES_THROW(EsUriError, es_fmt_msg(ES_MSG_URI_BAD_FORMAT));
-                    return false;
+                    return NULL;
                 }
 
                 const byte *ptr = octets;
@@ -284,17 +288,17 @@ bool es_uri_decode(String str, EsUriSetPredicate pred, String &result)
                 if (c < 0x10000)
                 {
                     if (!pred(c))
-                        s = String(c);
+                        s = EsString::create(c);
                     else
-                        s = str.substr(start, k - start + 1);
+                        s = str->substr(start, k - start + 1);
                 }
                 else
                 {
                     uni_char l = ((c - 0x10000) & 0x3ff) + 0xdc00;
                     uni_char h = (((c - 0x10000) >> 10) & 0x3ff) + 0xd800;
 
-                    s = String(h);
-                    s = s + String(l);
+                    s = EsString::create(h);
+                    s = s->concat(EsString::create(l));
                 }
             }
         }
@@ -302,6 +306,5 @@ bool es_uri_decode(String str, EsUriSetPredicate pred, String &result)
         r.append(s);
     }
 
-    result = r.string();
-    return true;
+    return r.string();
 }

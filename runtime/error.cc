@@ -35,17 +35,17 @@ EsObject *EsError::prototype()
 }
 
 EsError::EsError()
-    : name_(_USTR("Error"))         // VERIFIED: 15.11.4.2
+    : name_(_ESTR("Error"))     // VERIFIED: 15.11.4.2
 {
 }
 
-EsError::EsError(const String &message)
-    : name_(_USTR("Error"))
+EsError::EsError(const EsString *message)
+    : name_(_ESTR("Error"))
     , message_(message)
 {
 }
 
-EsError::EsError(const String &name, const String &message)
+EsError::EsError(const EsString *name, const EsString *message)
     : name_(name)
     , message_(message)
 {
@@ -67,14 +67,14 @@ void EsError::make_proto()
                                                  EsValue::from_obj(default_constr()))); // VERIFIED: 15.11.4.1
     define_new_own_property(property_keys.name,
                             EsPropertyDescriptor(false, true, true,
-                                                 EsValue::from_str(_USTR("Error"))));   // VERIFIED: 15.11.4.2
+                                                 EsValue::from_str(_ESTR("Error"))));   // VERIFIED: 15.11.4.2
     define_new_own_property(property_keys.message,
                             EsPropertyDescriptor(false, true, true,
-                                                 EsValue::from_str(String())));         // VERIFIED: 15.11.4.3
+                                                 EsValue::from_str(EsString::create())));   // VERIFIED: 15.11.4.3
     define_new_own_property(property_keys.to_string,
                             EsPropertyDescriptor(false, true, true,
                                                  EsValue::from_obj(EsBuiltinFunction::create_inst(es_global_env(),
-                                                                   es_std_err_proto_to_str, 0))));    // VERIFIED: 15.11.4.4
+                                                                   es_std_err_proto_to_str, 0))));      // VERIFIED: 15.11.4.4
 }
 
 EsError *EsError::create_raw()
@@ -82,7 +82,7 @@ EsError *EsError::create_raw()
     return new (GC)EsError();
 }
 
-EsError *EsError::create_inst(const String &message)
+EsError *EsError::create_inst(const EsString *message)
 {
     EsError *e = new (GC)EsError(message);
     
@@ -90,7 +90,7 @@ EsError *EsError::create_inst(const String &message)
     e->class_ = _USTR("Error");     // VERIFIED: 15.11.5
     e->extensible_ = true;
     
-    if (!message.empty())
+    if (!message->empty())
     {
         e->define_new_own_property(property_keys.message,
                                    EsPropertyDescriptor(false, true, true,
@@ -112,7 +112,7 @@ template <typename T>
 EsFunction *EsNativeError<T>::default_constr_ = NULL;
 
 template <typename T>
-EsNativeError<T>::EsNativeError(const String &name, const String &message)
+EsNativeError<T>::EsNativeError(const EsString *name, const EsString *message)
     : EsError(name, message)
 {
 }
@@ -138,17 +138,17 @@ void EsNativeError<T>::make_proto()
                                                  EsValue::from_str(name())));           // VERIFIED: 15.11.7.9
     define_new_own_property(property_keys.message,
                             EsPropertyDescriptor(false, true, true,
-                                                 EsValue::from_str(String())));         // VERIFIED: 15.11.7.10
+                                                 EsValue::from_str(EsString::create())));   // VERIFIED: 15.11.7.10
 }
 
 template <typename T>
 T *EsNativeError<T>::create_raw()
 {
-    return new (GC)T(String());
+    return new (GC)T(EsString::create());
 }
 
 template <typename T>
-T *EsNativeError<T>::create_inst(const String &message)
+T *EsNativeError<T>::create_inst(const EsString *message)
 {
     T *e = new (GC)T(message);
     
@@ -156,7 +156,7 @@ T *EsNativeError<T>::create_inst(const String &message)
     e->class_ = _USTR("Error");     // VERIFIED: 15.11.7.2
     e->extensible_ = true;          // VERIFIED: 15.11.7.2
 
-    if (!message.empty())
+    if (!message->empty())
     {
         e->define_new_own_property(property_keys.message,
                                    EsPropertyDescriptor(false, true, true,
@@ -205,11 +205,15 @@ EsFunction *EsErrorConstructor<T>::create_inst()
 template <typename T>
 bool EsErrorConstructor<T>::constructT(EsCallFrame &frame)
 {
-    EsValue msg = frame.arg(0);
+    const EsString *msg_str = EsString::create();
 
-    String msg_str;
-    if (!msg.is_undefined() && !msg.to_string(msg_str))
-        return false;
+    EsValue msg = frame.arg(0);
+    if (!msg.is_undefined())
+    {
+        msg_str = msg.to_string();
+        if (!msg_str)
+            return false;
+    }
     
     frame.set_result(EsValue::from_obj(T::create_inst(msg_str)));
     return true;

@@ -54,11 +54,11 @@ ES_API_FUN(es_std_print)
     if (argc == 0)
         return true;
 
-    String msg;
-    if (!frame.arg(0).to_string(msg))
+    const EsString *msg = frame.arg(0).to_string();
+    if (!msg)
         return false;
 
-    printf("%s\n", msg.utf8().c_str());
+    printf("%s\n", msg->utf8().c_str());
     return true;
 }
 
@@ -69,11 +69,11 @@ ES_API_FUN(es_std_error)
     if (argc == 0)
         return true;
     
-    String msg;
-    if (!frame.arg(0).to_string(msg))
+    const EsString *msg = frame.arg(0).to_string();
+    if (!msg)
         return false;
 
-    ES_THROW(EsError, (_USTR("test262 error: ") + msg));
+    ES_THROW(EsError, _ESTR("test262 error: ")->concat(msg));
     return false;
 }
 
@@ -82,7 +82,7 @@ ES_API_FUN(es_std_run_test_case)
     EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
 
     if (argc == 0 || !frame.arg(0).is_callable())
-        ES_THROW(EsError, _USTR("test262 error: runTestCase failed, no test function."));
+        ES_THROW(EsError, _ESTR("test262 error: runTestCase failed, no test function."));
 
     EsCallFrame new_frame = EsCallFrame::push_function(
         0, frame.arg(0).as_function(), frame.this_value());
@@ -90,7 +90,7 @@ ES_API_FUN(es_std_run_test_case)
         return false;
 
     if (!new_frame.result().to_boolean())
-        ES_THROW(EsError, _USTR("test262 error: runTestCase failed."));
+        ES_THROW(EsError, _ESTR("test262 error: runTestCase failed."));
 
     return true;
 }
@@ -109,8 +109,8 @@ ES_API_FUN(es_std_fn_exists)
 
     ES_API_PARAMETER(0, name_arg);
 
-    String name;
-    if (!name_arg.to_string(name))
+    const EsString *name = name_arg.to_string();
+    if (!name)
         return false;
 
     for (auto lex = ctx->lex_env(); lex; lex = lex->outer())
@@ -316,13 +316,13 @@ ES_API_FUN(es_std_decode_uri)
 
     ES_API_PARAMETER(0, encoded_uri);
 
-    String encoded_uri_str;
-    if (!encoded_uri.to_string(encoded_uri_str))
+    const EsString *encoded_uri_str = encoded_uri.to_string();
+    if (!encoded_uri_str)
         return false;
 
-    String decoded_str;
-    if (!es_uri_decode(encoded_uri_str, es_uri_reserved_predicate,
-                       decoded_str))
+    const EsString *decoded_str =
+            es_uri_decode(encoded_uri_str, es_uri_reserved_predicate);
+    if (!decoded_str)
         return false;
 
     frame.set_result(EsValue::from_str(decoded_str));
@@ -335,13 +335,15 @@ ES_API_FUN(es_std_decode_uri_component)
 
     ES_API_PARAMETER(0, encoded_uri_component);
 
-    String encoded_uri_component_str;
-    if (!encoded_uri_component.to_string(encoded_uri_component_str))
+    const EsString *encoded_uri_component_str =
+        encoded_uri_component.to_string();
+    if (!encoded_uri_component_str)
         return false;
 
-    String decoded_component;
-    if (!es_uri_decode(encoded_uri_component_str,
-                       es_uri_component_reserved_predicate, decoded_component))
+    const EsString *decoded_component =
+            es_uri_decode(encoded_uri_component_str,
+                          es_uri_component_reserved_predicate);
+    if (!decoded_component)
         return false;
 
     frame.set_result(EsValue::from_str(decoded_component));
@@ -354,12 +356,13 @@ ES_API_FUN(es_std_encode_uri)
 
     ES_API_PARAMETER(0, uri);
 
-    String uri_str;
-    if (!uri.to_string(uri_str))
+    const EsString *uri_str = uri.to_string();
+    if (!uri_str)
         return false;
 
-    String encoded_str;
-    if (!es_uri_encode(uri_str, es_uri_unescaped_predicate, encoded_str))
+    const EsString *encoded_str =
+            es_uri_encode(uri_str, es_uri_unescaped_predicate);
+    if (!encoded_str)
         return false;
 
     frame.set_result(EsValue::from_str(encoded_str));
@@ -372,13 +375,14 @@ ES_API_FUN(es_std_encode_uri_component)
 
     ES_API_PARAMETER(0, uri_component);
 
-    String uri_component_str;
-    if (!uri_component.to_string(uri_component_str))
+    const EsString *uri_component_str = uri_component.to_string();
+    if (!uri_component_str)
         return false;
 
-    String encoded_component;
-    if (!es_uri_encode(uri_component_str,
-                       es_uri_component_unescaped_predicate, encoded_component))
+    const EsString *encoded_component =
+            es_uri_encode(uri_component_str,
+                          es_uri_component_unescaped_predicate);
+    if (!encoded_component)
         return false;
 
     frame.set_result(EsValue::from_str(encoded_component));
@@ -425,11 +429,11 @@ ES_API_FUN(es_std_parse_float)
 
     ES_API_PARAMETER(0, string);
 
-    String input_str;
-    if (!string.to_string(input_str))
+    const EsString *input_str = string.to_string();
+    if (!input_str)
         return false;
 
-    const uni_char *input_str_ptr = input_str.data();   // WARNING: May return NULL for empty strings.
+    const uni_char *input_str_ptr = input_str->data();  // WARNING: May return NULL for empty strings.
     es_str_skip_white_spaces(input_str_ptr);
 
     if (!input_str_ptr || !*input_str_ptr)
@@ -452,11 +456,11 @@ ES_API_FUN(es_std_parse_int)
     ES_API_PARAMETER(0, string);
     ES_API_PARAMETER(1, radix);
 
-    String input_str;
-    if (!string.to_string(input_str))
+    const EsString *input_str = string.to_string();
+    if (!input_str)
         return false;
 
-    const uni_char *input_ptr = input_str.data();   // WARNING: May return NULL for empty strings.
+    const uni_char *input_ptr = input_str->data();  // WARNING: May return NULL for empty strings.
     es_str_skip_white_spaces(input_ptr);
 
     if (!input_ptr || !*input_ptr)
@@ -590,13 +594,13 @@ ES_API_FUN(es_std_arr_proto_to_locale_str)
 
     if (len == 0)
     {
-        frame.set_result(EsValue::from_str(String()));
+        frame.set_result(EsValue::from_str(EsString::create()));
         return true;
     }
 
-    String separator = _USTR(",");  // FIXME: Should be locale specific.
+    const EsString *separator = _ESTR(","); // FIXME: Should be locale specific.
 
-    String r;
+    const EsString *r = EsString::create();
 
     EsValue first_elem;
     if (!array->getT(EsPropertyKey::from_u32(0), first_elem))
@@ -623,19 +627,20 @@ ES_API_FUN(es_std_arr_proto_to_locale_str)
         if (!fun.as_function()->callT(fun_frame))
             return false;
 
-        if (!fun_frame.result().to_string(r))   // CUSTOM: to_string().
+        r = fun_frame.result().to_string();     // CUSTOM: to_string().
+        if (!r)
             return false;
     }
 
     for (uint32_t k = 1; k < len; k++)
     {
-        r = r + separator;
+        r = r->concat(separator);
 
         EsValue next_elem;
         if (!array->getT(EsPropertyKey::from_u32(k), next_elem))
             return false;
 
-        String next;
+        const EsString *next = EsString::create();
         if (!next_elem.is_undefined() && !next_elem.is_null())
         {
             EsObject *elem_obj = next_elem.to_objectT();
@@ -657,11 +662,12 @@ ES_API_FUN(es_std_arr_proto_to_locale_str)
             if (!fun.as_function()->callT(next_frame))
                 return false;
 
-            if (!next_frame.result().to_string(next))   // CUSTOM: to_string().
+            next = next_frame.result().to_string();     // CUSTOM: to_string().
+            if (!next)
                 return false;
         }
 
-        r = r + next;
+        r = r->concat(next);
     }
 
     frame.set_result(EsValue::from_str(r));
@@ -759,40 +765,53 @@ ES_API_FUN(es_std_arr_proto_join)
     if (!len_val.to_uint32(len))
         return false;
 
-    String sep = _USTR(",");
-    if (!separator.is_undefined() && !separator.to_string(sep))
-        return false;
+    const EsString *sep = NULL;
+    if (!separator.is_undefined())
+    {
+        sep = separator.to_string();
+        if (!sep)
+            return false;
+    }
+    else
+    {
+        sep = _ESTR(",");
+    }
 
     if (len == 0)
     {
-        frame.set_result(EsValue::from_str(String()));
+        frame.set_result(EsValue::from_str(EsString::create()));
         return true;
     }
-    
-    String r;
     
     EsValue element0;
     if (!o->getT(EsPropertyKey::from_u32(0), element0))
         return false;
 
+    const EsString *r = EsString::create();
     if (!element0.is_undefined() && !element0.is_null())
-        if (!element0.to_string(r))
+    {
+        r = element0.to_string();
+        if (!r)
             return false;
+    }
     
     for (uint32_t k = 1; k < len; k++)
     {
-        r = r + sep;
+        r = r->concat(sep);
 
         EsValue element;
         if (!o->getT(EsPropertyKey::from_u32(k), element))
             return false;
 
-        String next;
+        const EsString *next = EsString::create();
         if (!element.is_undefined() && !element.is_null())
-            if (!element.to_string(next))
+        {
+            next = element.to_string();
+            if (!next)
                 return false;
+        }
 
-        r = r + next;
+        r = r->concat(next);
     }
     
     frame.set_result(EsValue::from_str(r));
@@ -856,7 +875,9 @@ ES_API_FUN(es_std_arr_proto_push)
         if (n > ES_ARRAY_INDEX_MAX)
         {
             // FIXME: This looks like a mess.
-            if (!o->putT(EsPropertyKey::from_str(String(lexical_cast<const char *>(n++))), arg, true))
+            if (!o->putT(EsPropertyKey::from_str(
+                    EsString::create_from_utf8(
+                            lexical_cast<const char *>(n++))), arg, true))
                 return false;
         }
         else
@@ -1879,7 +1900,7 @@ ES_API_FUN(es_std_bool_proto_to_str)
     bool val = false;
     if (es_as_boolean(frame.this_value(), val))
     {
-        frame.set_result(EsValue::from_str(val ? _USTR("true") : _USTR("false")));
+        frame.set_result(EsValue::from_str(val ? _ESTR("true") : _ESTR("false")));
         return true;
     }
     
@@ -1930,7 +1951,7 @@ ES_API_FUN(es_std_date_proto_to_str)
     if (local_time)
         frame.set_result(EsValue::from_str(es_date_to_str(local_time)));
     else
-        frame.set_result(EsValue::from_str(_USTR("Invalid Date")));
+        frame.set_result(EsValue::from_str(_ESTR("Invalid Date")));
 
     return true;
 }
@@ -2388,8 +2409,8 @@ ES_API_FUN(es_std_date_constr_parse)
 
     ES_API_PARAMETER(0, string);
 
-    String s;
-    if (!string.to_string(s))
+    const EsString *s = string.to_string();
+    if (!s)
         return false;
 
     frame.set_result(EsValue::from_num(es_date_parse(s)));
@@ -2439,36 +2460,45 @@ ES_API_FUN(es_std_err_proto_to_str)
     if (!o->getT(property_keys.name, name_val))
         return false;
 
-    String name;
+    const EsString *name = NULL;
     if (name_val.is_undefined())
-        name = _USTR("Error");
+    {
+        name = _ESTR("Error");
+    }
     else
-        if (!name_val.to_string(name))
+    {
+        name = name_val.to_string();
+        if (!name)
             return false;
+    }
 
     EsValue msg_val;
     if (!o->getT(property_keys.message, msg_val))
         return false;
     
-    String msg;
-    if (!msg_val.is_undefined() && !msg_val.to_string(msg))
-        return false;
+    const EsString *msg = EsString::create();
+    if (!msg_val.is_undefined())
+    {
+        msg = msg_val.to_string();
+        if (!msg)
+            return false;
+    }
     
-    if (name.empty())
+    if (name->empty())
     {
         frame.set_result(EsValue::from_str(msg));
         return true;
     }
     
-    if (msg.empty())
+    if (msg->empty())
     {
         frame.set_result(EsValue::from_str(name));
         return true;
     }
     
-    String res = name;
-    res = res + _USTR(": ");
-    res = res + msg;
+    const EsString *res = name;
+    res = res->concat(_ESTR(": "));
+    res = res->concat(msg);
     
     frame.set_result(EsValue::from_str(res));
     return true;
@@ -2491,7 +2521,7 @@ ES_API_FUN(es_std_fun_proto_to_str)
     }
 
     frame.set_result(EsValue::from_str(
-        _USTR("function Function() { [native code] }")));
+        _ESTR("function Function() { [native code] }")));
     return true;
 }
 
@@ -2615,11 +2645,11 @@ ES_API_FUN(es_std_json_parse)
     ES_API_PARAMETER(0, text);
     ES_API_PARAMETER(1, reviver);
 
-    String text_str;
-    if (!text.to_string(text_str))
+    const EsString *text_str = text.to_string();
+    if (!text_str)
         return false;
 
-    StringStream jtext(text_str);
+    StringStream jtext(text_str->str());
     JsonParser parser(jtext);
 
     EsValue unfiltered;
@@ -2629,11 +2659,13 @@ ES_API_FUN(es_std_json_parse)
     if (reviver.is_callable())
     {
         EsObject *root = EsObject::create_inst();
-        if (!ES_DEF_PROPERTY(root, EsPropertyKey::from_str(String()), unfiltered, true, true, true))
+        if (!ES_DEF_PROPERTY(root, EsPropertyKey::from_str(
+                EsString::create()), unfiltered, true, true, true))
             return false;
 
         EsValue result;
-        if (!algorithm::json_walk(String(), root, reviver.as_function(), result))
+        if (!algorithm::json_walk(EsString::create(), root,
+                                  reviver.as_function(), result))
             return false;
 
         frame.set_result(result);
@@ -2694,8 +2726,8 @@ ES_API_FUN(es_std_json_stringify)
                     String class_name = v.as_object()->class_name();
                     if (class_name == _USTR("String") || class_name == _USTR("Number"))
                     {
-                        String v_str;
-                        if (!v.to_string(v_str))
+                        const EsString *v_str = v.to_string();
+                        if (!v_str)
                             return false;
 
                         state.prop_list.push_back(v_str);
@@ -2707,7 +2739,7 @@ ES_API_FUN(es_std_json_stringify)
 
     // Calculate gap.
     double space_num = 0.0;
-    String space_str;
+    const EsString *space_str = NULL;
 
     if (es_as_number(space, space_num))
     {
@@ -2715,7 +2747,7 @@ ES_API_FUN(es_std_json_stringify)
         if (!space.to_integer(space_int))
             return false;
 
-        StringBuilder sb;
+        EsStringBuilder sb;
         for (int64_t i = 0; i < std::min(static_cast<int64_t>(10), space_int); i++)
             sb.append(' ');
 
@@ -2723,15 +2755,16 @@ ES_API_FUN(es_std_json_stringify)
     }
     else if (es_as_string(space, space_str))
     {
-        state.gap = space_str.length() <= 10 ? space_str : space_str.take(10);
+        state.gap = space_str->length() <= 10 ? space_str : space_str->take(10);
     }
 
     EsObject *wrapper = EsObject::create_inst();
-    if (!ES_DEF_PROPERTY(wrapper, EsPropertyKey::from_str(String()), value, true, true ,true))
+    if (!ES_DEF_PROPERTY(wrapper, EsPropertyKey::from_str(
+            EsString::create()), value, true, true ,true))
         return false;
 
     EsValue result;
-    if (!algorithm::json_str(String(), wrapper, state, result))
+    if (!algorithm::json_str(EsString::create(), wrapper, state, result))
         return false;
 
     frame.set_result(result);
@@ -3264,7 +3297,7 @@ ES_API_FUN(es_std_num_proto_to_str)
         else
         {
             double_to_cstring(val, radix, buffer);
-            frame.set_result(EsValue::from_str(String(buffer)));
+            frame.set_result(EsValue::from_str(EsString::create_from_utf8(buffer)));
         }
         return true;
     }
@@ -3317,7 +3350,7 @@ ES_API_FUN(es_std_num_proto_to_fixed)
     }
 
     // FIXME: Use StringBuilder to construct s.
-    String s = es_num_to_str(x, static_cast<int>(f));
+    const EsString *s = es_num_to_str(x, static_cast<int>(f));
 
     if (x < 1e21)
     {
@@ -3326,19 +3359,19 @@ ES_API_FUN(es_std_num_proto_to_fixed)
         bool found_point = false;
 
         int pad_digits = static_cast<int>(f);
-        for (size_t i = 0; i < s.length(); i++)
+        for (size_t i = 0; i < s->length(); i++)
         {
-            if (s[i] == '.')
+            if (s->at(i) == '.')
                 found_point = true;
             else if (found_point)
                 pad_digits--;
         }
 
         if (!found_point && pad_digits > 0)
-            s = s + _USTR(".");
+            s = s->concat(_ESTR("."));
 
         for (int i = 0; i < pad_digits; i++)
-            s = s + _USTR("0");
+            s = s->concat(_ESTR("0"));
     }
 
     frame.set_result(EsValue::from_str(s));
@@ -3412,13 +3445,13 @@ ES_API_FUN(es_std_obj_proto_to_str)
 
     if (frame.this_value().is_undefined())
     {
-        frame.set_result(EsValue::from_str(_USTR("[object Undefined]")));
+        frame.set_result(EsValue::from_str(_ESTR("[object Undefined]")));
         return true;
     }
 
     if (frame.this_value().is_null())
     {
-        frame.set_result(EsValue::from_str(_USTR("[object Null]")));
+        frame.set_result(EsValue::from_str(_ESTR("[object Null]")));
         return true;
     }
     
@@ -3426,7 +3459,8 @@ ES_API_FUN(es_std_obj_proto_to_str)
     if (!o)
         return false;
     
-    String res = _USTR("[object ") + o->class_name() + _USTR("]");
+    const EsString *res = _ESTR("[object ")->concat(EsString::create(
+            o->class_name()))->concat(_ESTR("]"));
     frame.set_result(EsValue::from_str(res));
     return true;
 }
@@ -3476,8 +3510,8 @@ ES_API_FUN(es_std_obj_proto_has_own_prop)
 
     ES_API_PARAMETER(0, v);
 
-    String p;
-    if (!v.to_string(p))
+    const EsString *p = v.to_string();
+    if (!p)
         return false;
 
     EsObject *o = frame.this_value().to_objectT();
@@ -3534,8 +3568,8 @@ ES_API_FUN(es_std_obj_proto_prop_is_enum)
 
     ES_API_PARAMETER(0, v);
 
-    String p;
-    if (!v.to_string(p))
+    const EsString *p = v.to_string();
+    if (!p)
         return false;
 
     EsObject *o = frame.this_value().to_objectT();
@@ -3601,8 +3635,8 @@ ES_API_FUN(es_std_obj_get_own_prop_desc)
 
     EsObject *o_obj = o.as_object();
 
-    String name;
-    if (!p.to_string(name))
+    const EsString *name = p.to_string();
+    if (!name)
         return false;
 
     frame.set_result(es_from_property_descriptor(
@@ -3631,10 +3665,11 @@ ES_API_FUN(es_std_obj_get_own_prop_names)
     //           string indexing properties.
     if (EsStringObject *str = dynamic_cast<EsStringObject *>(o_obj))
     {
-        String val = str->primitive_value();
-        for (size_t j = 0; j < val.length(); j++)
+        const EsString *val = str->primitive_value();
+        for (size_t j = 0; j < val->length(); j++)
         {
-            if (!ES_DEF_PROPERTY(array, EsPropertyKey::from_u32(i++), EsValue::from_str(String(j)), true, true, true))
+            if (!ES_DEF_PROPERTY(array, EsPropertyKey::from_u32(i++),
+                    EsValue::from_str(EsString::create(j)), true, true, true))
                 return false;
         }
     }
@@ -3701,8 +3736,8 @@ ES_API_FUN(es_std_obj_def_prop)
 
     EsObject *o_obj = o.as_object();
 
-    String name;
-    if (!p.to_string(name))
+    const EsString *name = p.to_string();
+    if (!name)
         return false;
 
     EsPropertyDescriptor prop;
@@ -3968,7 +4003,7 @@ ES_API_FUN(es_std_str_proto_to_str)
     EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
 
     // 15.5.4.2
-    String val;
+    const EsString *val = NULL;
     if (es_as_string(frame.this_value(), val))
     {
         frame.set_result(EsValue::from_str(val));
@@ -3984,7 +4019,7 @@ ES_API_FUN(es_std_str_proto_val_of)
     EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
 
     // 15.5.4.3
-    String val;
+    const EsString *val = NULL;
     if (es_as_string(frame.this_value(), val))
     {
         frame.set_result(EsValue::from_str(val));
@@ -4004,20 +4039,20 @@ ES_API_FUN(es_std_str_proto_char_at)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
     
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
     int64_t position = 0;
     if (!pos.to_integer(position))
         return false;
 
-    size_t size = s.length();
+    size_t size = s->length();
     
     if (position < 0 || position >= static_cast<int64_t>(size))
-        frame.set_result(EsValue::from_str(String()));
+        frame.set_result(EsValue::from_str(EsString::create()));
     else
-        frame.set_result(EsValue::from_str(String(s[position])));
+        frame.set_result(EsValue::from_str(EsString::create(s->at(position))));
     
     return true;
 }
@@ -4031,19 +4066,19 @@ ES_API_FUN(es_std_str_proto_char_code_at)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
     
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
     int64_t pos_int = 0;
     if (!pos.to_integer(pos_int))
         return false;
     
-    if (pos_int < 0 || pos_int >= static_cast<int64_t>(s.length()))
+    if (pos_int < 0 || pos_int >= static_cast<int64_t>(s->length()))
         frame.set_result(EsValue::from_num(
             std::numeric_limits<double>::quiet_NaN()));
     else
-        frame.set_result(EsValue::from_i32(s[pos_int]));
+        frame.set_result(EsValue::from_i32(s->at(pos_int)));
 
     return true;
 }
@@ -4055,17 +4090,17 @@ ES_API_FUN(es_std_str_proto_concat)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String r;
-    if (!frame.this_value().to_string(r))
+    const EsString *r = frame.this_value().to_string();
+    if (!r)
         return false;
 
     for (const EsValue &arg : frame.arguments())
     {
-        String str;
-        if (!arg.to_string(str))
+        const EsString *str = arg.to_string();
+        if (!str)
             return false;
 
-        r = r + str;
+        r = r->concat(str);
     }
 
     frame.set_result(EsValue::from_str(r));
@@ -4082,22 +4117,22 @@ ES_API_FUN(es_std_str_proto_index_of)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    String search_str;
-    if (!search_string.to_string(search_str))
+    const EsString *search_str = search_string.to_string();
+    if (!search_str)
         return false;
 
     int64_t pos = 0;
     if (!position.is_undefined() && !position.to_integer(pos))
         return false;
 
-    int64_t len = static_cast<int64_t>(s.length());
+    int64_t len = static_cast<int64_t>(s->length());
 
     int64_t start = std::min(std::max(pos, static_cast<int64_t>(0)), len);
-    frame.set_result(EsValue::from_i64(s.index_of(search_str, start)));
+    frame.set_result(EsValue::from_i64(s->index_of(search_str, start)));
     return true;
 }
 
@@ -4111,22 +4146,22 @@ ES_API_FUN(es_std_str_proto_last_index_of)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    String search_str;
-    if (!search_string.to_string(search_str))
+    const EsString *search_str = search_string.to_string();
+    if (!search_str)
         return false;
 
     int64_t pos = 0;
     if (!position.to_integer(pos))  // 0xffffffff is not really positive infinity.
         return false;
 
-    int64_t len = static_cast<int64_t>(s.length());
+    int64_t len = static_cast<int64_t>(s->length());
 
     int64_t start = std::min(std::max(pos, static_cast<int64_t>(0)), len);
-    frame.set_result(EsValue::from_i64(s.last_index_of(search_str, start)));
+    frame.set_result(EsValue::from_i64(s->last_index_of(search_str, start)));
     return true;
 }
 
@@ -4139,17 +4174,17 @@ ES_API_FUN(es_std_str_proto_locale_compare)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
-    String t;
-    if (!that.to_string(t))
+    const EsString *t = that.to_string();
+    if (!t)
         return false;
 
     // From ECMA-262 15.5.4.9:
     // If no language-sensitive comparison at all is available from the host
     // environment, this function may perform a bitwise comparison.
-    frame.set_result(EsValue::from_i32(s.compare(t)));
+    frame.set_result(EsValue::from_i32(s->compare(t)));
     return true;
 }
 
@@ -4162,18 +4197,20 @@ ES_API_FUN(es_std_str_proto_match)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
     EsRegExp *rx = es_as_reg_exp(regexp);
     if (!rx)
     {
-        String regexp_str;
-        if (!regexp.to_string(regexp_str))
+        const EsString *regexp_str = regexp.to_string();
+        if (!regexp_str)
             return false;
 
-        rx = EsRegExp::create_inst(regexp.is_undefined() ? String() : regexp_str, String());
+        rx = EsRegExp::create_inst(regexp.is_undefined()
+            ? EsString::create()
+            : regexp_str, EsString::create());
         if (rx == NULL)
             return false;
     }
@@ -4268,8 +4305,8 @@ ES_API_FUN(es_std_str_proto_replace)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
     typedef std::vector<EsRegExp::MatchResult::MatchStateVector,
@@ -4289,7 +4326,7 @@ ES_API_FUN(es_std_str_proto_replace)
         {
             EsRegExp::MatchResult *res = NULL;
 
-            for (size_t i = 0; i <= s.length(); i++)
+            for (size_t i = 0; i <= s->length(); i++)
             {
                 res = rx->match(s, i);
                 if (res != NULL)
@@ -4312,7 +4349,7 @@ ES_API_FUN(es_std_str_proto_replace)
 
                 if (last_index >= 0)
                 {
-                    for (size_t i = last_index; i <= s.length(); i++)
+                    for (size_t i = last_index; i <= s->length(); i++)
                     {
                         res = rx->match(s, i);
                         if (res != NULL)
@@ -4342,21 +4379,21 @@ ES_API_FUN(es_std_str_proto_replace)
     }
     else
     {
-        String search_str;
-        if (!search_value.to_string(search_str))
+        const EsString *search_str = search_value.to_string();
+        if (!search_str)
             return false;
 
-        ssize_t i = s.index_of(search_str);
+        ssize_t i = s->index_of(search_str);
         if (i != -1)
         {
             EsRegExp::MatchResult::MatchStateVector tmp;
-            tmp.push_back(EsRegExp::MatchState(i, search_str.length(), search_str));
+            tmp.push_back(EsRegExp::MatchState(i, search_str->length(), search_str));
 
             matches.push_back(tmp);
         }
     }
 
-    StringBuilder sb;
+    EsStringBuilder sb;
 
     int last_off = 0;
 
@@ -4375,8 +4412,8 @@ ES_API_FUN(es_std_str_proto_replace)
         if (!(state.offset() >= last_off))
             continue;
 
-        if (off + len <= static_cast<int>(s.length()))
-            sb.append(s.data() + off, len);
+        if (off + len <= static_cast<int>(s->length()))
+            sb.append(s->data() + off, len);
 
         last_off = state.offset() + state.length();
 
@@ -4405,27 +4442,27 @@ ES_API_FUN(es_std_str_proto_replace)
             if (!replace_value.as_function()->callT(fun_frame))
                 return false;
 
-            String fun_res_str;
-            if (!fun_frame.result().to_string(fun_res_str))
+            const EsString *fun_res_str = fun_frame.result().to_string();
+            if (!fun_res_str)
                 return false;
 
             sb.append(fun_res_str);
         }
         else
         {
-            String replace_str;
-            if (!replace_value.to_string(replace_str))
+            const EsString *replace_str = replace_value.to_string();
+            if (!replace_str)
                 return false;
 
-            if (replace_str.empty())
+            if (replace_str->empty())
                 continue;
 
-            StringBuilder sb2;
+            EsStringBuilder sb2;
 
             bool dollar_mode = false;
-            for (size_t i = 0; i < replace_str.length(); i++)
+            for (size_t i = 0; i < replace_str->length(); i++)
             {
-                uni_char c = replace_str[i];
+                uni_char c = replace_str->at(i);
 
                 if (!dollar_mode && c == '$')
                 {
@@ -4444,13 +4481,13 @@ ES_API_FUN(es_std_str_proto_replace)
                             sb2.append(state.string());
                             break;
                         case '`':
-                            sb2.append(s.substr(0, state.offset()));
+                            sb2.append(s->substr(0, state.offset()));
                             break;
                         case '\'':
                         {
                             int off = state.offset() + state.length();
-                            int len = s.length() - off;
-                            sb2.append(s.substr(off, len));
+                            int len = s->length() - off;
+                            sb2.append(s->substr(off, len));
                             break;
                         }
                         case '1':
@@ -4466,11 +4503,12 @@ ES_API_FUN(es_std_str_proto_replace)
                             size_t n = 0;
 
                             int j = i + 1;
-                            if (j < static_cast<int>(replace_str.length()) &&
-                                es_is_dec_digit(replace_str[j]) &&
+                            if (j < static_cast<int>(replace_str->length()) &&
+                                es_is_dec_digit(replace_str->at(j)) &&
                                 (*it).size() > 9)   // Don't try to interpret two digits if one would be sufficient.
                             {
-                                n = static_cast<size_t>(c - '0') * 10 + static_cast<size_t>(replace_str[j] - '0');
+                                n = static_cast<size_t>(c - '0') * 10 +
+                                        static_cast<size_t>(replace_str->at(j) - '0');
                                 i++;    // We just consumed yet another character.
                             }
                             else
@@ -4500,15 +4538,15 @@ ES_API_FUN(es_std_str_proto_replace)
             if (dollar_mode)
             {
                 // Must have been the last character.
-                sb2.append(replace_str[replace_str.length() - 1]);
+                sb2.append(replace_str->at(replace_str->length() - 1));
             }
 
             sb.append(sb2.string());
         }
     }
 
-    if (last_off < static_cast<int>(s.length()))
-        sb.append(s.data() + last_off, s.length() - last_off);
+    if (last_off < static_cast<int>(s->length()))
+        sb.append(s->data() + last_off, s->length() - last_off);
 
     frame.set_result(EsValue::from_str(sb.string()));
     return true;
@@ -4523,23 +4561,25 @@ ES_API_FUN(es_std_str_proto_search)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
     EsRegExp *rx = es_as_reg_exp(regexp);
     if (!rx)
     {
-        String regexp_str;
-        if (!regexp.to_string(regexp_str))
+        const EsString *regexp_str = regexp.to_string();
+        if (!regexp_str)
             return false;
 
-        rx = EsRegExp::create_inst(regexp.is_undefined() ? String() : regexp_str, String());
+        rx = EsRegExp::create_inst(regexp.is_undefined()
+            ? EsString::create()
+            : regexp_str, EsString::create());
         if (rx == NULL)
             return false;
     }
 
-    for (size_t i = 0; i <= s.length(); i++)
+    for (size_t i = 0; i <= s->length(); i++)
     {
         EsRegExp::MatchResult *res = rx->match(s, i);
         if (res)
@@ -4564,11 +4604,11 @@ ES_API_FUN(es_std_str_proto_slice)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    int64_t len = s.length();
+    int64_t len = s->length();
 
     int64_t int_start = 0;
     if (!start.to_integer(int_start))
@@ -4586,7 +4626,7 @@ ES_API_FUN(es_std_str_proto_slice)
 
     int64_t span = std::max(to - from, static_cast<int64_t>(0));
 
-    frame.set_result(EsValue::from_str(s.substr(from, span)));
+    frame.set_result(EsValue::from_str(s->substr(from, span)));
     return true;
 }
 
@@ -4600,8 +4640,8 @@ ES_API_FUN(es_std_str_proto_split)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
     EsArray *a = EsArray::create_inst();
@@ -4610,9 +4650,14 @@ ES_API_FUN(es_std_str_proto_split)
         return false;
 
     EsRegExp *r_reg = es_as_reg_exp(separator);
-    String r_str;
-    if (r_reg == NULL && !separator.to_string(r_str))
-        return false;
+
+    const EsString *r_str = EsString::create();
+    if (r_reg == NULL)
+    {
+        r_str = separator.to_string();
+        if (!r_str)
+            return false;
+    }
 
     if (lim == 0)
     {
@@ -4626,7 +4671,7 @@ ES_API_FUN(es_std_str_proto_split)
         return ES_DEF_PROPERTY(a, EsPropertyKey::from_u32(0), EsValue::from_str(s), true, true, true);
     }
 
-    if (s.empty())
+    if (s->empty())
     {
         algorithm::MatchResult *z = NULL;
         if (r_reg)
@@ -4646,7 +4691,7 @@ ES_API_FUN(es_std_str_proto_split)
 
     uint32_t length_a = 0, p = 0, q = 0;
 
-    while (q != static_cast<uint32_t>(s.length()))
+    while (q != static_cast<uint32_t>(s->length()))
     {
         algorithm::MatchResult *z = NULL;
         if (r_reg)
@@ -4661,7 +4706,7 @@ ES_API_FUN(es_std_str_proto_split)
         else
         {
             uint32_t e = static_cast<uint32_t>(z->end_index_);
-            StringVector &cap = z->cap_;
+            EsStringVector &cap = z->cap_;
 
             if (e == p)
             {
@@ -4669,7 +4714,7 @@ ES_API_FUN(es_std_str_proto_split)
             }
             else
             {
-                String t = s.substr(p, q - p);
+                const EsString *t = s->substr(p, q - p);
                 if (!ES_DEF_PROPERTY(a, EsPropertyKey::from_u32(length_a++), EsValue::from_str(t), true, true, true))
                     return false;
 
@@ -4700,8 +4745,9 @@ ES_API_FUN(es_std_str_proto_split)
 
     frame.set_result(EsValue::from_obj(a));
 
-    String t = s.substr(p, s.length() - p);
-    return ES_DEF_PROPERTY(a, EsPropertyKey::from_u32(length_a), EsValue::from_str(t), true, true, true);
+    const EsString *t = s->substr(p, s->length() - p);
+    return ES_DEF_PROPERTY(a, EsPropertyKey::from_u32(length_a),
+                           EsValue::from_str(t), true, true, true);
 }
 
 ES_API_FUN(es_std_str_proto_substr)
@@ -4711,11 +4757,11 @@ ES_API_FUN(es_std_str_proto_substr)
     ES_API_PARAMETER(0, start);
     ES_API_PARAMETER(1, length);
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    int64_t s_len = static_cast<int64_t>(s.length());
+    int64_t s_len = static_cast<int64_t>(s->length());
 
     int64_t length_int = 0;
     if (!length.to_integer(length_int))
@@ -4735,8 +4781,8 @@ ES_API_FUN(es_std_str_proto_substr)
                                              s_len - final_start);
 
     frame.set_result(EsValue::from_str(final_length <= 0
-        ? String()
-        : s.substr(final_start, final_length)));;
+        ? EsString::create()
+        : s->substr(final_start, final_length)));;
     return true;
 }
 
@@ -4750,11 +4796,11 @@ ES_API_FUN(es_std_str_proto_substring)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    int64_t len = static_cast<int64_t>(s.length());
+    int64_t len = static_cast<int64_t>(s->length());
 
     int64_t int_start = 0;
     if (!start.to_integer(int_start))
@@ -4770,7 +4816,7 @@ ES_API_FUN(es_std_str_proto_substring)
     int64_t from = std::min(final_start, final_end);
     int64_t to = std::max(final_start, final_end);
 
-    frame.set_result(EsValue::from_str(s.substr(from, to - from)));
+    frame.set_result(EsValue::from_str(s->substr(from, to - from)));
     return true;
 }
 
@@ -4781,11 +4827,11 @@ ES_API_FUN(es_std_str_proto_to_lower_case)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    frame.set_result(EsValue::from_str(s.lower()));
+    frame.set_result(EsValue::from_str(s->lower()));
     return true;
 }
 
@@ -4796,11 +4842,11 @@ ES_API_FUN(es_std_str_proto_to_locale_lower_case)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    frame.set_result(EsValue::from_str(s.lower()));
+    frame.set_result(EsValue::from_str(s->lower()));
     return true;
 }
 
@@ -4811,11 +4857,11 @@ ES_API_FUN(es_std_str_proto_to_upper_case)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    frame.set_result(EsValue::from_str(s.upper()));
+    frame.set_result(EsValue::from_str(s->upper()));
     return true;
 }
 
@@ -4826,11 +4872,11 @@ ES_API_FUN(es_std_str_proto_to_locale_upper_case)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    frame.set_result(EsValue::from_str(s.upper()));
+    frame.set_result(EsValue::from_str(s->upper()));
     return true;
 }
 
@@ -4846,11 +4892,12 @@ ES_API_FUN(es_std_str_proto_trim)
     if (!frame.this_value().chk_obj_coercibleT())
         return false;
 
-    String s;
-    if (!frame.this_value().to_string(s))
+    const EsString *s = frame.this_value().to_string();
+    if (!s)
         return false;
 
-    frame.set_result(EsValue::from_str(s.trim(es_is_white_space_or_line_term)));
+    frame.set_result(EsValue::from_str(
+            s->trim(es_is_white_space_or_line_term)));
     return true;
 }
 
@@ -4858,9 +4905,13 @@ ES_API_FUN(es_std_str)
 {
     EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
 
-    String str;
-    if (argc > 0 && !frame.arg(0).to_string(str))
-        return false;
+    const EsString *str = EsString::create();
+    if (argc > 0)
+    {
+        str = frame.arg(0).to_string();
+        if (!str)
+            return false;
+    }
 
     frame.set_result(EsValue::from_str(str));
     return true;
@@ -4887,7 +4938,8 @@ ES_API_FUN(es_std_str_from_char_code)
     
     *ptr = '\0';
     
-    String str(reinterpret_cast<const char *>(buf), static_cast<int>(ptr - buf));
+    const EsString *str = EsString::create_from_utf8(
+            reinterpret_cast<const char *>(buf), static_cast<int>(ptr - buf));
     
     delete [] buf;
     frame.set_result(EsValue::from_str(str));
@@ -4907,11 +4959,11 @@ ES_API_FUN(es_std_reg_exp_proto_exec)
         return false;
     }
 
-    String s;
-    if (!string.to_string(s))
+    const EsString *s = string.to_string();
+    if (!s)
         return false;
 
-    size_t length = s.length();
+    size_t length = s->length();
 
     EsValue last_index_val;
     if (!r->getT(property_keys.last_index, last_index_val))
@@ -5000,11 +5052,11 @@ ES_API_FUN(es_std_reg_exp_proto_test)
         return false;
     }
 
-    String s;
-    if (!string.to_string(s))
+    const EsString *s = string.to_string();
+    if (!s)
         return false;
 
-    int64_t length = s.length();
+    int64_t length = s->length();
 
     EsValue last_index_val;
     if (!r->getT(property_keys.last_index, last_index_val))
@@ -5063,7 +5115,7 @@ ES_API_FUN(es_std_reg_exp_proto_to_str)
         return false;
     }
 
-    StringBuilder sb;
+    EsStringBuilder sb;
     sb.append('/');
     sb.append(r->pattern());
     sb.append('/');

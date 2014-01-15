@@ -38,6 +38,42 @@ using parser::Parser;
 using parser::StreamFactory;
 using parser::UnicodeStream;
 
+namespace {
+
+std::string change_file_ext(const std::string &path, const std::string ext)
+{
+    std::string dir_name;
+    std::string base_name;
+
+    // Split path into directory and base names.
+    size_t pos = path.find_last_of("/\\");
+    if (pos == path.npos)
+    {
+        base_name = path;
+    }
+    else
+    {
+        dir_name = path.substr(0, pos + 1);
+        base_name = path.substr(pos + 1);
+    }
+
+    // Strip file extension if present.
+    pos = base_name.find('.');
+    if (pos != path.npos)
+        base_name = base_name.substr(0, pos);
+
+    // Append new extension.
+    assert(!ext.empty());
+    if (ext[0] != '.')
+        base_name.append(".");
+
+    base_name.append(ext);
+
+    return dir_name + base_name;
+}
+
+}
+
 int main (int argc, const char *argv[])
 {
     // Initialize garbage collector.
@@ -124,7 +160,7 @@ int main (int argc, const char *argv[])
     /*try
     {
         IrGenerator generator;
-        generator.generate(module, dst_path + ".ir");
+        generator.generate(module, change_file_ext(dst_path, ".ir"));
     }
     catch (Exception &e)
     {

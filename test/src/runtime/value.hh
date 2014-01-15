@@ -19,45 +19,17 @@
 #include <cxxtest/TestSuite.h>
 #include <gc_cpp.h>
 #include <limits>
-#include "runtime/value_boxed_base.hh"
+#include "runtime/value.hh"
 
-namespace
-{
-
-class TestValue : public EsValueBoxedBase
-{
-private:
-    TestValue(Type type)
-        : EsValueBoxedBase(type) {}
-
-public:
-    static TestValue nothing()
-    {
-        return TestValue(TYPE_NOTHING);
-    }
-
-    static TestValue undefined()
-    {
-        return TestValue(TYPE_UNDEFINED);
-    }
-
-    static TestValue null()
-    {
-        return TestValue(TYPE_NULL);
-    }
-};
-
-}
-
-class ValueBoxedBaseTestSuite : public CxxTest::TestSuite
+class ValueSuite : public CxxTest::TestSuite
 {
 public:
     void test_all_types()
     {
         Gc::instance().init();
 
-        EsValueBoxedBase val;
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NOTHING);
+        EsValue val;
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NOTHING);
         TS_ASSERT(val.is_nothing());
         TS_ASSERT(!val.is_undefined());
         TS_ASSERT(!val.is_null());
@@ -67,7 +39,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_bool(true);
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_BOOLEAN);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_BOOLEAN);
         TS_ASSERT_EQUALS(val.as_boolean(), true);
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -78,7 +50,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_bool(false);
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_BOOLEAN);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_BOOLEAN);
         TS_ASSERT_EQUALS(val.as_boolean(), false);
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -89,7 +61,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_str(EsString::create_from_utf8("some text"));
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_STRING);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_STRING);
         TS_ASSERT(val.as_string()->equals(EsString::create_from_utf8("some text")));
         TS_ASSERT_EQUALS(val.as_string()->length(), 9);
         TS_ASSERT(!val.is_nothing());
@@ -101,7 +73,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_num(0.42);
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NUMBER);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NUMBER);
         TS_ASSERT_EQUALS(val.as_number(), 0.42);
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -112,7 +84,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_num(-0.123456789);
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NUMBER);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NUMBER);
         TS_ASSERT_EQUALS(val.as_number(), -0.123456789);
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -123,7 +95,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_num(std::numeric_limits<double>::quiet_NaN());
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NUMBER);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NUMBER);
         TS_ASSERT(std::isnan(val.as_number()));
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -134,7 +106,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_obj(reinterpret_cast<EsObject *>(0xdeadbeef));
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_OBJECT);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_OBJECT);
         TS_ASSERT_EQUALS(val.as_object(), reinterpret_cast<EsObject *>(0xdeadbeef));
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -144,8 +116,8 @@ public:
         TS_ASSERT(!val.is_string());
         TS_ASSERT(val.is_object());
 
-        TestValue val2 = TestValue::undefined();
-        TS_ASSERT_EQUALS(val2.type(), EsValueBoxedBase::TYPE_UNDEFINED);
+        EsValue val2 = EsValue::undefined;
+        TS_ASSERT_EQUALS(val2.type(), EsValue::TYPE_UNDEFINED);
         TS_ASSERT(!val2.is_nothing());
         TS_ASSERT(val2.is_undefined());
         TS_ASSERT(!val2.is_null());
@@ -154,8 +126,8 @@ public:
         TS_ASSERT(!val2.is_string());
         TS_ASSERT(!val2.is_object());
 
-        val2 = TestValue::null();
-        TS_ASSERT_EQUALS(val2.type(), EsValueBoxedBase::TYPE_NULL);
+        val2 = EsValue::null;
+        TS_ASSERT_EQUALS(val2.type(), EsValue::TYPE_NULL);
         TS_ASSERT(!val2.is_nothing());
         TS_ASSERT(!val2.is_undefined());
         TS_ASSERT(val2.is_null());
@@ -164,8 +136,8 @@ public:
         TS_ASSERT(!val2.is_string());
         TS_ASSERT(!val2.is_object());
 
-        val2 = TestValue::nothing();
-        TS_ASSERT_EQUALS(val2.type(), EsValueBoxedBase::TYPE_NOTHING);
+        val2 = EsValue::nothing;
+        TS_ASSERT_EQUALS(val2.type(), EsValue::TYPE_NOTHING);
         TS_ASSERT(val2.is_nothing());
         TS_ASSERT(!val2.is_undefined());
         TS_ASSERT(!val2.is_null());
@@ -179,10 +151,10 @@ public:
     {
         Gc::instance().init();
 
-        EsValueBoxedBase val;
+        EsValue val;
 
         val.set_num(0.0);
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NUMBER);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NUMBER);
         TS_ASSERT_EQUALS(val.as_number(), 0.0);
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -193,7 +165,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_num(std::numeric_limits<double>::quiet_NaN());
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NUMBER);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NUMBER);
         TS_ASSERT(std::isnan(val.as_number()));
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -204,7 +176,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_num(std::numeric_limits<double>::signaling_NaN());
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NUMBER);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NUMBER);
         TS_ASSERT(std::isnan(val.as_number()));
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -215,7 +187,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_num(std::numeric_limits<double>::infinity());
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NUMBER);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NUMBER);
         TS_ASSERT(std::isinf(val.as_number()));
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());
@@ -226,7 +198,7 @@ public:
         TS_ASSERT(!val.is_object());
 
         val.set_num(-std::numeric_limits<double>::infinity());
-        TS_ASSERT_EQUALS(val.type(), EsValueBoxedBase::TYPE_NUMBER);
+        TS_ASSERT_EQUALS(val.type(), EsValue::TYPE_NUMBER);
         TS_ASSERT(std::isinf(val.as_number()));
         TS_ASSERT(!val.is_nothing());
         TS_ASSERT(!val.is_undefined());

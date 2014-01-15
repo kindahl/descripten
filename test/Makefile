@@ -33,6 +33,9 @@ clean:
 	rm -f bin/test-common
 	rm -f bin/test-parser
 	rm -f bin/test-runtime
+	rm -f test-common.cc
+	rm -f test-parser.cc
+	rm -f test-runtime.cc
 
 bin/test-common: test-common.cc
 	$(CXX) $(CXXFLAGS_COMMON) test-common.cc -o bin/test-common

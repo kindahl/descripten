@@ -33,10 +33,9 @@ const EsValue EsValue::nothing(TYPE_NOTHING);
 
 bool EsValue::to_primitive(EsTypeHint hint, EsValue &value) const
 {
-    if (type() == TYPE_OBJECT)
+    if (is_object())
         return as_object()->default_valueT(hint, value);
 
-    assert(!is_object());
     value = *this;
     return true;
 }
@@ -264,7 +263,7 @@ EsObject *EsValue::to_objectT() const
 
 bool EsValue::chk_obj_coercibleT() const
 {
-    if (type() == TYPE_UNDEFINED || type() == TYPE_NULL)
+    if (is_undefined() || is_null())
     {
         ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_OBJ_TO_PRIMITIVE));
         return false;
@@ -275,7 +274,7 @@ bool EsValue::chk_obj_coercibleT() const
 
 bool EsValue::is_callable() const
 {
-    if (type() == TYPE_OBJECT)
+    if (is_object())
         return dynamic_cast<EsFunction *>(as_object());
 
     return false;

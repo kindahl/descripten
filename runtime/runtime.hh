@@ -20,16 +20,20 @@
 #include "operation.hh"
 #include "value_data.h"
 
-class EsContext;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace runtime
-{
-    typedef void (*tglobal_data)();
-    typedef bool (*tglobal_main)(EsContext *ctx, uint32_t argc,
-                                 EsValueData *fp, EsValueData *vp);
-    
-    bool init(tglobal_data global_data);
-    bool shutdown();
-    bool run(tglobal_main global_main);
-    const char *error();
+struct EsContext;
+
+typedef void (*GlobalDataEntry)();
+typedef bool (*GlobalMainEntry)(EsContext *ctx, uint32_t argc,
+                                EsValueData *fp, EsValueData *vp);
+
+bool esr_init(GlobalDataEntry data_entry);
+bool esr_run(GlobalMainEntry main_entry);
+const char *esr_error();
+
+#ifdef __cplusplus
 }
+#endif

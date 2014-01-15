@@ -23,17 +23,17 @@ void _global_data();
 bool _global_main(EsContext *ctx, uint32_t argc,
                   EsValueData *fp, EsValueData *vp);
 
-int main(int argc, const char * arv[])
+int main(int argc, const char *argv[])
 {
-    if (!runtime::init(_global_data))
+    if (!esr_init(_global_data))
     {
-        std::cerr << runtime::error() << std::endl;
+        std::cerr << esr_error() << std::endl;
         return 1;
     }
     
-    if (!runtime::run(_global_main))
+    if (!esr_run(_global_main))
     {
-        std::cerr << runtime::error() << std::endl;
+        std::cerr << esr_error() << std::endl;
         return 1;
     }
 

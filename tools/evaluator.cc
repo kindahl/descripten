@@ -43,7 +43,7 @@ void data()
 int main (int argc, const char *argv[])
 {
     // Initialize garbage collector.
-    if (!runtime::init(data))
+    if (!esr_init(data))
     {
         std::cerr << "error: failed to initialize runtime." << std::endl; return 1;
     }

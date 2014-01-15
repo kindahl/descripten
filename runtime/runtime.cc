@@ -32,93 +32,90 @@
 #include "profiler.hh"
 #endif
 
-namespace runtime
+std::string err_msg_;
+
+bool esr_init(GlobalDataEntry data_entry)
 {
-    std::string err_msg_;
+    // Initialize garbage collector.
+    GC_INIT();
 
-    bool init(tglobal_data global_data)
+    g_call_stack.init();
+
+    data_entry();
+
+    property_keys.initialize();
+
+    try
     {
-        // Initialize garbage collector.
-        GC_INIT();
-
-        g_call_stack.init();
-
-        global_data();
-
-        property_keys.initialize();
-
-        try
-        {
-            // Create objects.
-            es_global_create();
-            es_proto_create();
-            
-            // Initialize objects.
-            es_global_init();
-            es_proto_init();
-        }
-        catch (Exception &e)
-        {
-            err_msg_ = e.what();
-            return false;
-        }
+        // Create objects.
+        es_global_create();
+        es_proto_create();
         
-        return true;
+        // Initialize objects.
+        es_global_init();
+        es_proto_init();
+    }
+    catch (Exception &e)
+    {
+        err_msg_ = e.what();
+        return false;
     }
     
-    const char *error()
+    return true;
+}
+
+bool esr_run(GlobalMainEntry main_entry)
+{
+    bool result = true;
+
+    EsContextStack::instance().push_global(false);
+
+    try
     {
-        return err_msg_.c_str();
-    }
-    
-    bool run(tglobal_main global_main)
-    {
-        bool result = true;
-        
-        EsContextStack::instance().push_global(false);
-
-        try
+        EsCallFrame frame = EsCallFrame::push_global();
+        result = main_entry(EsContextStack::instance().top(), 0,
+                            frame.fp(), frame.vp());
+        if (!result)
         {
-            EsCallFrame frame = EsCallFrame::push_global();
-            result = global_main(EsContextStack::instance().top(), 0,
-                                 frame.fp(), frame.vp());
-            if (!result)
-            {
-                assert(EsContextStack::instance().top()->has_pending_exception());
-                EsValue e = EsContextStack::instance().top()->get_pending_exception();
-
-                const EsString *err_msg = e.to_stringT();
-                assert(err_msg);
-
-                err_msg_ = err_msg->utf8();
-            }
-        }
-        catch (EsValue &e)
-        {
-            assert(false);
+            assert(EsContextStack::instance().top()->has_pending_exception());
+            EsValue e = EsContextStack::instance().top()->get_pending_exception();
 
             const EsString *err_msg = e.to_stringT();
             assert(err_msg);
 
             err_msg_ = err_msg->utf8();
-            
-            result = false;
         }
-        catch (Exception &e)
-        {
-            assert(false);
-            err_msg_ = e.what();
-            
-            result = false;
-        }
-
-        // Make sure that we have not been sloppy with the stack.
-        //assert(g_call_stack.size() == 0);
-        // FIXME: Make sure stack is empty and do a final collect.
-        
-#ifdef PROFILE
-        profiler::print_results();
-#endif
-        return result;
     }
+    catch (EsValue &e)
+    {
+        assert(false);
+
+        const EsString *err_msg = e.to_stringT();
+        assert(err_msg);
+
+        err_msg_ = err_msg->utf8();
+
+        result = false;
+    }
+    catch (Exception &e)
+    {
+        assert(false);
+        err_msg_ = e.what();
+        
+        result = false;
+    }
+
+    // Make sure that we have not been sloppy with the stack.
+    //assert(g_call_stack.size() == 0);
+    // FIXME: Make sure stack is empty and do a final collect.
+
+#ifdef PROFILE
+    profiler::print_results();
+#endif
+    return result;
+}
+
+const char *esr_error()
+{
+    return err_msg_.c_str();
 }

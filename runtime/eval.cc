@@ -75,6 +75,13 @@ using parser::WithStatement;
 
 using parser::ValueVisitor;
 
+#ifndef RETHROW_IF
+#define RETHROW_IF(expr)\
+if (expr)\
+    return Completion(Completion::TYPE_THROW,\
+                      EsContextStack::instance().top()->get_pending_exception());
+#endif
+
 Evaluator::Evaluator(FunctionLiteral *code, Type type, EsCallFrame &frame)
     : code_(code)
     , type_(type)
@@ -158,9 +165,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
         return lhs_res;
 
     EsValue lval;
-    if (!expand_ref_get(lhs_res.value(), lval))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(lhs_res.value(), lval));
 
     switch (expr->operation())
     {
@@ -171,10 +176,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
             r = rval;
             break;
         }
@@ -187,13 +189,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_mul(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_mul(lval, rval, r));
             break;
         }
         case BinaryExpression::DIV:
@@ -203,13 +200,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_div(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_div(lval, rval, r));
             break;
         }
         case BinaryExpression::MOD:
@@ -219,13 +211,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_mod(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_mod(lval, rval, r));
             break;
         }
         case BinaryExpression::ADD:
@@ -235,13 +222,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_add(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_add(lval, rval, r));
             break;
         }
         case BinaryExpression::SUB:
@@ -251,13 +233,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_sub(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_sub(lval, rval, r));
             break;
         }
         case BinaryExpression::LS:  // <<
@@ -267,13 +244,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_shl(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_shl(lval, rval, r));
             break;
         }
         case BinaryExpression::RSS: // >>
@@ -283,13 +255,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_sar(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_sar(lval, rval, r));
             break;
         }
         case BinaryExpression::RUS: // >>>
@@ -299,13 +266,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_shr(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_shr(lval, rval, r));
             break;
         }
 
@@ -317,13 +279,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_lt(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_lt(lval, rval, r));
             break;
         }
         case BinaryExpression::GT:
@@ -333,13 +290,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_gt(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_gt(lval, rval, r));
             break;
         }
         case BinaryExpression::LTE:
@@ -349,13 +301,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_lte(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_lte(lval, rval, r));
             break;
         }
         case BinaryExpression::GTE:
@@ -365,13 +312,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_gte(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_gte(lval, rval, r));
             break;
         }
         case BinaryExpression::IN:
@@ -381,13 +323,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_in(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_in(lval, rval, r));
             break;
         }
         case BinaryExpression::INSTANCEOF:
@@ -397,13 +334,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_instance_of(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_instance_of(lval, rval, r));
             break;
         }
 
@@ -415,13 +347,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_eq(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_eq(lval, rval, r));
             break;
         }
         case BinaryExpression::NEQ:
@@ -431,13 +358,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_neq(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_neq(lval, rval, r));
             break;
         }
         case BinaryExpression::STRICT_EQ:
@@ -447,13 +369,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_strict_eq(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_strict_eq(lval, rval, r));
             break;
         }
         case BinaryExpression::STRICT_NEQ:
@@ -463,13 +380,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_c_strict_neq(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_c_strict_neq(lval, rval, r));
             break;
         }
 
@@ -481,13 +393,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_and(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_and(lval, rval, r));
             break;
         }
         case BinaryExpression::BIT_XOR:
@@ -497,13 +404,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_xor(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_xor(lval, rval, r));
             break;
         }
         case BinaryExpression::BIT_OR:
@@ -513,13 +415,8 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
                 return rhs_res;
 
             EsValue rval;
-            if (!expand_ref_get(rhs_res.value(), rval))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
-            if (!op_b_or(lval, rval, r))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
+            RETHROW_IF(!op_b_or(lval, rval, r));
             break;
         }
 
@@ -539,9 +436,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
 
                 // FIXME: rval necessary?
                 EsValue rval;
-                if (!expand_ref_get(rhs_res.value(), rval))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
                 r = rval;
             }
             break;
@@ -561,9 +456,7 @@ Completion Evaluator::parse_binary_expr(BinaryExpression *expr)
 
                 // FIXME: rval necessary?
                 EsValue rval;
-                if (!expand_ref_get(rhs_res.value(), rval))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!expand_ref_get(rhs_res.value(), rval));
                 r = rval;
             }
             break;
@@ -597,35 +490,22 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
             EsReferenceOrValue obj = obj_res.value();
 
             EsValue key_val;
-            if (!expand_ref_get(key, key_val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(key, key_val));
 
             EsValue obj_val;
-            if (!expand_ref_get(obj, obj_val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(obj, obj_val));
 
-            if (!obj_val.chk_obj_coercibleT())
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!obj_val.chk_obj_coercibleT());
 
-            if (!op_prp_del(EsContextStack::instance().top(), obj_val, key_val, t))
-            {
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-            }
+            RETHROW_IF(!op_prp_del(EsContextStack::instance().top(),
+                                   obj_val, key_val, t));
         }
         else if (IdentifierLiteral * ident =
             dynamic_cast<IdentifierLiteral *>(expr->expression()))
         {
-            if (!op_ctx_del(EsContextStack::instance().top(),
+            RETHROW_IF(!op_ctx_del(EsContextStack::instance().top(),
                     EsPropertyKey::from_str(
-                            EsString::create(ident->value())).as_raw(), t))
-            {
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-            }
+                            EsString::create(ident->value())).as_raw(), t));
         }
         else
         {
@@ -644,10 +524,7 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
         case UnaryExpression::VOID:
         {
             EsValue tmp;
-            if (!expand_ref_get(expr_res.value(), tmp))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-
+            RETHROW_IF(!expand_ref_get(expr_res.value(), tmp));
             t = EsValue::undefined;
             break;
         }
@@ -667,56 +544,46 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
                 v = expr_res.value().value();
             }
 
-            if (!op_u_typeof(v, t))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!op_u_typeof(v, t));
             break;
         }
         case UnaryExpression::PRE_INC:
         {
             EsValue rval;
             double old_val = 0.0;
-            if (!expand_ref_get(expr_res.value(), rval) || !rval.to_number(old_val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
+                       !rval.to_number(old_val));
 
             double new_val = old_val + 1.0f;
 
             t = EsValue::from_num(new_val);
-            if (!expand_ref_put(expr_res.value(), t))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_put(expr_res.value(), t));
             break;
         }
         case UnaryExpression::PRE_DEC:
         {
             EsValue rval;
             double old_val = 0.0;
-            if (!expand_ref_get(expr_res.value(), rval) || !rval.to_number(old_val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
+                       !rval.to_number(old_val));
 
             double new_val = old_val - 1.0f;
 
             t = EsValue::from_num(new_val);
-            if (!expand_ref_put(expr_res.value(), t))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_put(expr_res.value(), t));
             break;
         }
         case UnaryExpression::POST_INC:
         {
             EsValue rval;
             double old_val = 0.0;
-            if (!expand_ref_get(expr_res.value(), rval) || !rval.to_number(old_val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
+                       !rval.to_number(old_val));
 
             double new_val = old_val + 1.0f;
 
-            if (!expand_ref_put(expr_res.value(), EsValue::from_num(new_val)))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_put(expr_res.value(),
+                                       EsValue::from_num(new_val)));
 
             t = EsValue::from_num(old_val);
             break;
@@ -725,15 +592,13 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
         {
             EsValue rval;
             double old_val = 0.0;
-            if (!expand_ref_get(expr_res.value(), rval) || !rval.to_number(old_val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
+                       !rval.to_number(old_val));
 
             double new_val = old_val - 1.0f;
 
-            if (!expand_ref_put(expr_res.value(), EsValue::from_num(new_val)))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_put(expr_res.value(),
+                                       EsValue::from_num(new_val)));
 
             t = EsValue::from_num(old_val);
             break;
@@ -741,33 +606,29 @@ Completion Evaluator::parse_unary_expr(UnaryExpression *expr)
         case UnaryExpression::PLUS:
         {
             EsValue rval;
-            if (!expand_ref_get(expr_res.value(), rval) || !op_u_add(rval, t))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
+                       !op_u_add(rval, t));
             break;
         }
         case UnaryExpression::MINUS:
         {
             EsValue rval;
-            if (!expand_ref_get(expr_res.value(), rval) || !op_u_sub(rval, t))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
+                       !op_u_sub(rval, t));
             break;
         }
         case UnaryExpression::BIT_NOT:
         {
             EsValue rval;
-            if (!expand_ref_get(expr_res.value(), rval) || !op_u_bit_not(rval, t))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
+                       !op_u_bit_not(rval, t));
             break;
         }
         case UnaryExpression::LOG_NOT:
         {
             EsValue rval;
-            if (!expand_ref_get(expr_res.value(), rval) || !op_u_not(rval, t))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(expr_res.value(), rval) ||
+                       !op_u_not(rval, t));
             break;
         }
 
@@ -795,73 +656,47 @@ Completion Evaluator::parse_assign_expr(AssignmentExpression *expr)
 
     if (expr->operation() == AssignmentExpression::ASSIGN)
     {
-        if (!expand_ref_get(r, t) || !expand_ref_put(l, t))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(r, t) || !expand_ref_put(l, t));
     }
     else
     {
         EsValue lval, rval;
-        if (!expand_ref_get(l, lval) || !expand_ref_get(r, rval))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(l, lval) || !expand_ref_get(r, rval));
 
         switch (expr->operation())
         {
             case AssignmentExpression::ASSIGN_ADD:
-                if (!op_b_add(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_add(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_SUB:
-                if (!op_b_sub(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_sub(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_MUL:
-                if (!op_b_mul(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_mul(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_MOD:
-                if (!op_b_mod(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_mod(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_LS:
-                if (!op_b_shl(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_shl(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_RSS:
-                if (!op_b_sar(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_sar(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_RUS:
-                if (!op_b_shr(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_shr(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_BIT_AND:
-                if (!op_b_and(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_and(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_BIT_OR:
-                if (!op_b_or(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_or(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_BIT_XOR:
-                if (!op_b_xor(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_xor(lval, rval, t) || !expand_ref_put(l, t));
                 break;
             case AssignmentExpression::ASSIGN_DIV:
-                if (!op_b_div(lval, rval, t) || !expand_ref_put(l, t))
-                    return Completion(Completion::TYPE_THROW,
-                                      EsContextStack::instance().top()->get_pending_exception());
+                RETHROW_IF(!op_b_div(lval, rval, t) || !expand_ref_put(l, t));
                 break;
 
             default:
@@ -880,9 +715,7 @@ Completion Evaluator::parse_cond_expr(ConditionalExpression *expr)
         return cond_res;
 
     EsValue cond;
-    if (!expand_ref_get(cond_res.value(), cond))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
     if (cond.to_boolean())
         return parse(expr->left());
@@ -903,24 +736,16 @@ Completion Evaluator::parse_prop_expr(PropertyExpression *expr)
     EsReferenceOrValue obj_ref = obj_res.value();
 
     EsValue key_val;
-    if (!expand_ref_get(key, key_val))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(key, key_val));
 
     EsValue obj_val;
-    if (!expand_ref_get(obj_ref, obj_val))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(obj_ref, obj_val));
 
     EsObject *obj = obj_val.to_objectT();
-    if (!obj)
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!obj);
 
     const EsString *key_str = key_val.to_stringT();
-    if (!key_str)
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!key_str);
 
     EsReference t(key_str, EsContextStack::instance().top()->is_strict(), obj);
     return Completion(Completion::TYPE_NORMAL, t);
@@ -936,9 +761,7 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
             return arg_res;
 
         EsValue val;
-        if (!expand_ref_get(arg_res.value(), val))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(arg_res.value(), val));
 
         // FIXME: Handle exceptions properly.
         op_stk_push(val);
@@ -963,18 +786,12 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
         EsReferenceOrValue obj = obj_res.value();
 
         EsValue key_val;
-        if (!expand_ref_get(key, key_val))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(key, key_val));
 
         EsValue obj_val;
-        if (!expand_ref_get(obj, obj_val))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(obj, obj_val));
 
-        if (!obj_val.chk_obj_coercibleT())
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!obj_val.chk_obj_coercibleT());
 
         success = op_call_keyed(obj_val, key_val, argc, r);
     }
@@ -997,8 +814,8 @@ Completion Evaluator::parse_call_expr(CallExpression *expr)
         success = op_call(fun.value(), argc, r);
     }
 
-    return Completion(success ? Completion::TYPE_NORMAL : Completion::TYPE_THROW,
-                      success ? r : EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!success);
+    return Completion(Completion::TYPE_NORMAL, r);
 }
 
 Completion Evaluator::parse_call_new_expr(CallNewExpression *expr)
@@ -1017,25 +834,21 @@ Completion Evaluator::parse_call_new_expr(CallNewExpression *expr)
             return arg_res;
 
         EsValue val;
-        if (!expand_ref_get(arg_res.value(), val))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(arg_res.value(), val));
 
         // FIXME: Handle exceptions properly.
         op_stk_push(val);
     }
 
     EsValue fun;
-    if (!expand_ref_get(fun_ref, fun))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(fun_ref, fun));
 
     int argc = static_cast<int>(expr->arguments().size());
 
     EsValue r;
-    bool success = op_call_new(fun, argc, r);
-    return Completion(success ? Completion::TYPE_NORMAL : Completion::TYPE_THROW,
-                      success ? r : EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!op_call_new(fun, argc, r));
+
+    return Completion(Completion::TYPE_NORMAL, r);
 }
 
 Completion Evaluator::parse_regular_expr(RegularExpression *expr)
@@ -1144,9 +957,7 @@ Completion Evaluator::parse_array_lit(ArrayLiteral *lit)
             return val_res;
 
         EsValue val;
-        if (!expand_ref_get(val_res.value(), val))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(val_res.value(), val));
 
         items.push_back(val);
     }
@@ -1171,22 +982,16 @@ Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
                 return key_res;
 
             EsValue key;
-            if (!expand_ref_get(key_res.value(), key))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(key_res.value(), key));
 
             Completion val_res = parse(prop->value());
             if (val_res.is_abrupt())
                 return val_res;
 
             EsValue val;
-            if (!expand_ref_get(val_res.value(), val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(val_res.value(), val));
 
-            if (!op_prp_def_data(new_obj, key, val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!op_prp_def_data(new_obj, key, val));
         }
         else
         {
@@ -1195,15 +1000,11 @@ Completion Evaluator::parse_obj_lit(ObjectLiteral *lit)
                 return val_res;
 
             EsValue val;
-            if (!expand_ref_get(val_res.value(), val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(val_res.value(), val));
 
-            if (!op_prp_def_accessor(new_obj,
+            RETHROW_IF(!op_prp_def_accessor(new_obj,
                     EsPropertyKey::from_str(EsString::create(prop->accessor_name())).as_raw(),
-                            val, prop->type() == ObjectLiteral::Property::SETTER))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+                            val, prop->type() == ObjectLiteral::Property::SETTER));
         }
     }
 
@@ -1229,9 +1030,7 @@ Completion Evaluator::parse_expr_stmt(ExpressionStatement *stmt)
         return expr_res;
 
     EsValue val;
-    if (!expand_ref_get(expr_res.value(), val))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(expr_res.value(), val));
 
     return Completion(Completion::TYPE_NORMAL, val);
 }
@@ -1276,9 +1075,7 @@ Completion Evaluator::parse_if_stmt(IfStatement *stmt)
         return cond_res;
 
     EsValue cond;
-    if (!expand_ref_get(cond_res.value(), cond))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
     if (cond.to_boolean())
         return parse(stmt->if_statement());
@@ -1322,9 +1119,7 @@ Completion Evaluator::parse_do_while_stmt(DoWhileStatement *stmt)
                 return cond_res;
 
             EsValue cond;
-            if (!expand_ref_get(cond_res.value(), cond))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
             if (!cond.to_boolean())
                 iterating = false;
@@ -1348,9 +1143,7 @@ Completion Evaluator::parse_while_stmt(WhileStatement *stmt)
             return cond_res;
 
         EsValue cond;
-        if (!expand_ref_get(cond_res.value(), cond))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
         if (!cond.to_boolean())
             return Completion(Completion::TYPE_NORMAL, v);
@@ -1386,17 +1179,13 @@ Completion Evaluator::parse_for_in_stmt(ForInStatement *stmt)
         return enum_res;
 
     EsValue expr_val;
-    if (!expand_ref_get(enum_res.value(), expr_val))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(enum_res.value(), expr_val));
 
     if (expr_val.is_null() || expr_val.is_undefined())
         return Completion(Completion::TYPE_NORMAL, EsValue::nothing);
 
     EsObject *obj = expr_val.to_objectT();
-    if (!obj)
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!obj)
 
     EsReferenceOrValue v;
 
@@ -1428,9 +1217,7 @@ Completion Evaluator::parse_for_in_stmt(ForInStatement *stmt)
         if (decl_res.is_abrupt())
             return decl_res;
 
-        if (!expand_ref_put(decl_res.value(), p))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_put(decl_res.value(), p));
 
         Completion body_res = parse(stmt->body());
 
@@ -1465,9 +1252,7 @@ Completion Evaluator::parse_for_stmt(ForStatement *stmt)
             return init_res;
 
         EsValue initializer;
-        if (!expand_ref_get(init_res.value(), initializer))
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+        RETHROW_IF(!expand_ref_get(init_res.value(), initializer));
     }
 
     EsReferenceOrValue v;
@@ -1481,9 +1266,7 @@ Completion Evaluator::parse_for_stmt(ForStatement *stmt)
                 return cond_res;
 
             EsValue cond;
-            if (!expand_ref_get(cond_res.value(), cond))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(cond_res.value(), cond));
 
             if (!cond.to_boolean())
                 return Completion(Completion::TYPE_NORMAL, v);
@@ -1514,9 +1297,7 @@ Completion Evaluator::parse_for_stmt(ForStatement *stmt)
                 return next_res;
 
             EsValue next;
-            if (!expand_ref_get(next_res.value(), next))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(next_res.value(), next));
         }
     }
 
@@ -1537,8 +1318,7 @@ Completion Evaluator::parse_cont_stmt(ContinueStatement *stmt)
         if (!is_in_iteration())
         {
             ES_THROW(EsError, _ESTR("error: non-labeled continue statements are only allowed in loops."));
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(true);
         }
     }
 
@@ -1559,8 +1339,7 @@ Completion Evaluator::parse_break_stmt(BreakStatement *stmt)
         if (!is_in_iteration() && !is_in_switch())
         {
             ES_THROW(EsError, _ESTR("error: non-labeled break statements are only allowed in loops and switch statements."));
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(true);
         }
     }
 
@@ -1578,9 +1357,7 @@ Completion Evaluator::parse_ret_stmt(ReturnStatement *stmt)
         return expr_res;
 
     EsValue expr;
-    if (!expand_ref_get(expr_res.value(), expr))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(expr_res.value(), expr));
 
     return Completion(Completion::TYPE_RETURN, expr);
 }
@@ -1595,13 +1372,10 @@ Completion Evaluator::parse_with_stmt(WithStatement *stmt)
         return expr_res;
 
     EsValue expr;
-    if (!expand_ref_get(expr_res.value(), expr))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(expr_res.value(), expr));
 
-    if (!op_ctx_enter_with(EsContextStack::instance().top(), expr))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!op_ctx_enter_with(EsContextStack::instance().top(), expr));
+
     Completion body_res = parse(stmt->body());
     op_ctx_leave();
     return body_res;
@@ -1619,9 +1393,7 @@ Completion Evaluator::parse_switch_stmt(SwitchStatement *stmt)
         return expr_res;
 
     EsValue expr_val;
-    if (!expand_ref_get(expr_res.value(), expr_val))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(expr_res.value(), expr_val));
 
     bool found_case = false;
 
@@ -1638,14 +1410,10 @@ Completion Evaluator::parse_switch_stmt(SwitchStatement *stmt)
                 return clause_res;
 
             EsValue label;
-            if (!expand_ref_get(clause_res.value(), label))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!expand_ref_get(clause_res.value(), label));
 
             EsValue val;
-            if (!op_c_strict_eq(label, expr_val, val))
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
+            RETHROW_IF(!op_c_strict_eq(label, expr_val, val));
 
             found_case = val.to_boolean();
         }
@@ -1710,9 +1478,7 @@ Completion Evaluator::parse_throw_stmt(ThrowStatement *stmt)
         return expr_res;
 
     EsValue expr_val;
-    if (!expand_ref_get(expr_res.value(), expr_val))
-        return Completion(Completion::TYPE_THROW,
-                          EsContextStack::instance().top()->get_pending_exception());
+    RETHROW_IF(!expand_ref_get(expr_res.value(), expr_val));
 
     op_ex_set(EsContextStack::instance().top(), expr_val);
 
@@ -1729,13 +1495,10 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
         Completion c = b;
         if (b.type() == Completion::TYPE_THROW)
         {
-            if (!op_ctx_enter_catch(EsContextStack::instance().top(),
+            RETHROW_IF(!op_ctx_enter_catch(EsContextStack::instance().top(),
                     EsPropertyKey::from_str(
-                            EsString::create(stmt->catch_identifier())).as_raw()))
-            {
-                return Completion(Completion::TYPE_THROW,
-                                  EsContextStack::instance().top()->get_pending_exception());
-            }
+                            EsString::create(
+                                    stmt->catch_identifier())).as_raw()));
 
             c = parse(stmt->catch_block());
             op_ctx_leave();
@@ -1753,12 +1516,9 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
         if (try_res.type() != Completion::TYPE_THROW)
             return try_res;
 
-        if (!op_ctx_enter_catch(EsContextStack::instance().top(),
-                EsPropertyKey::from_str(EsString::create(stmt->catch_identifier())).as_raw()))
-        {
-            return Completion(Completion::TYPE_THROW,
-                              EsContextStack::instance().top()->get_pending_exception());
-        }
+        RETHROW_IF(!op_ctx_enter_catch(EsContextStack::instance().top(),
+                EsPropertyKey::from_str(
+                        EsString::create(stmt->catch_identifier())).as_raw()));
 
         Completion catch_res = parse(stmt->catch_block());
         op_ctx_leave();

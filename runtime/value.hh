@@ -353,7 +353,7 @@ public:
      * @param [out] value Current value as a primitive value.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool to_primitive(EsTypeHint hint, EsValue &value) const;
+    bool to_primitiveT(EsTypeHint hint, EsValue &value) const;
 
     /**
      * Converts the current primitive value into a number value.
@@ -402,21 +402,21 @@ public:
      * @param [out] result Current value converted to a number value.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool to_number(double &result) const;
+    bool to_numberT(double &result) const;
 
     /**
      * Converts the current value into an integer value.
      * @param [out] result Current value converted into an integer value.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool to_integer(int64_t &result) const;
+    bool to_integerT(int64_t &result) const;
 
     /**
      * Converts the current value into a 32-bit signed integer value.
      * @param [out] result Current value converted into a 32-bit signed integer value.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool to_int32(int32_t &result) const;
+    bool to_int32T(int32_t &result) const;
 
     /**
      * Converts the current value into a 32-bit unsigned integer value.
@@ -424,7 +424,7 @@ public:
      *                     integer value.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool to_uint32(uint32_t &result) const;
+    bool to_uint32T(uint32_t &result) const;
 
     /**
      * Converts the current value into a string.

@@ -34,22 +34,22 @@
 
 namespace algorithm
 {
-    bool abstr_rel_comp(const EsValue &x, const EsValue &y, bool left_first,
-                        Maybe<bool> &result)
+    bool abstr_rel_compT(const EsValue &x, const EsValue &y, bool left_first,
+                         Maybe<bool> &result)
     {
         EsValue px, py;
         if (left_first)
         {
-            if (!x.to_primitive(ES_HINT_NUMBER, px))
+            if (!x.to_primitiveT(ES_HINT_NUMBER, px))
                 return false;
-            if (!y.to_primitive(ES_HINT_NUMBER, py))
+            if (!y.to_primitiveT(ES_HINT_NUMBER, py))
                 return false;
         }
         else
         {
-            if (!y.to_primitive(ES_HINT_NUMBER, py))
+            if (!y.to_primitiveT(ES_HINT_NUMBER, py))
                 return false;
-            if (!x.to_primitive(ES_HINT_NUMBER, px))
+            if (!x.to_primitiveT(ES_HINT_NUMBER, px))
                 return false;
         }
 
@@ -91,7 +91,7 @@ namespace algorithm
         }
     }
     
-    bool abstr_eq_comp(const EsValue &x, const EsValue &y, bool &result)
+    bool abstr_eq_compT(const EsValue &x, const EsValue &y, bool &result)
     {
         if (x.type() == y.type())
         {
@@ -137,26 +137,26 @@ namespace algorithm
             return true;
         }
         if (x.is_number() && y.is_string())
-            return abstr_eq_comp(x, EsValue::from_num(y.primitive_to_number()), result);
+            return abstr_eq_compT(x, EsValue::from_num(y.primitive_to_number()), result);
         if (x.is_string() && y.is_number())
-            return abstr_eq_comp(EsValue::from_num(x.primitive_to_number()), y, result);
+            return abstr_eq_compT(EsValue::from_num(x.primitive_to_number()), y, result);
         if (x.is_boolean())
-            return abstr_eq_comp(EsValue::from_num(x.primitive_to_number()), y, result);
+            return abstr_eq_compT(EsValue::from_num(x.primitive_to_number()), y, result);
         if (y.is_boolean())
-            return abstr_eq_comp(x, EsValue::from_num(y.primitive_to_number()), result);
+            return abstr_eq_compT(x, EsValue::from_num(y.primitive_to_number()), result);
         if ((x.is_string() || x.is_number()) && y.is_object())
         {
             EsValue v;
-            if (!y.to_primitive(ES_HINT_NONE, v))
+            if (!y.to_primitiveT(ES_HINT_NONE, v))
                 return false;
-            return abstr_eq_comp(x, v, result);
+            return abstr_eq_compT(x, v, result);
         }
         if ((y.is_string() || y.is_number()) && x.is_object())
         {
             EsValue v;
-            if (!x.to_primitive(ES_HINT_NONE, v))
+            if (!x.to_primitiveT(ES_HINT_NONE, v))
                 return false;
-            return abstr_eq_comp(v, y, result);
+            return abstr_eq_compT(v, y, result);
         }
         result = false;
         return true;
@@ -269,8 +269,8 @@ namespace algorithm
         return res;
     }
 
-    bool sort_compare(EsObject *obj, uint32_t j, uint32_t k,
-                      EsFunction *comparefn, double &result)
+    bool sort_compareT(EsObject *obj, uint32_t j, uint32_t k,
+                       EsFunction *comparefn, double &result)
     {
         bool has_j = obj->has_property(EsPropertyKey::from_u32(j));
         bool has_k = obj->has_property(EsPropertyKey::from_u32(k));
@@ -328,7 +328,7 @@ namespace algorithm
 
             if (!comparefn->callT(frame))
                 return false;
-            if (!frame.result().to_number(result))
+            if (!frame.result().to_numberT(result))
                 return false;
 
             return true;
@@ -351,7 +351,7 @@ namespace algorithm
         return true;
     }
 
-    bool json_walk(const EsString *name, EsObject *holder, EsFunction *reviver, EsValue &result)
+    bool json_walkT(const EsString *name, EsObject *holder, EsFunction *reviver, EsValue &result)
     {
         EsValue val;
         if (!holder->getT(EsPropertyKey::from_str(name), val))
@@ -369,7 +369,7 @@ namespace algorithm
                 for (uint32_t i = 0; i < len.primitive_to_uint32(); i++)
                 {
                     EsValue new_elem;
-                    if (!json_walk(EsString::create_from_utf8(
+                    if (!json_walkT(EsString::create_from_utf8(
                             lexical_cast<const char *>(i)), val_obj, reviver, new_elem))
                         return false;
 
@@ -397,7 +397,7 @@ namespace algorithm
                         continue;
 
                     EsValue new_elem;
-                    if (!json_walk(key.to_string(), val_obj, reviver, new_elem))
+                    if (!json_walkT(key.to_string(), val_obj, reviver, new_elem))
                         return false;
 
                     if (new_elem.is_undefined())
@@ -425,7 +425,7 @@ namespace algorithm
         return true;
     }
 
-    bool json_str(const EsString *key, EsObject *holder, JsonState &state,
+    bool json_strT(const EsString *key, EsObject *holder, JsonState &state,
                   EsValue &result)
     {
         EsValue val;
@@ -475,7 +475,7 @@ namespace algorithm
             if (val_obj->class_name() == _USTR("Number"))
             {
                 double num = 0.0;
-                if (!val.to_number(num))
+                if (!val.to_numberT(num))
                     return false;
 
                 result = EsValue::from_str(std::isfinite(num)
@@ -534,9 +534,9 @@ namespace algorithm
             if (!val.is_callable())
             {
                 if (val_obj->class_name() == _USTR("Array"))
-                    return json_ja(val_obj, state, result);
+                    return json_jaT(val_obj, state, result);
                 else
-                    return json_jo(val_obj, state, result);
+                    return json_joT(val_obj, state, result);
             }
         }
 
@@ -601,7 +601,7 @@ namespace algorithm
         return product.string();
     }
 
-    bool json_ja(EsObject *val, JsonState &state, EsValue &result)
+    bool json_jaT(EsObject *val, JsonState &state, EsValue &result)
     {
         // FIXME: Why doesn't the following work?
         /*if (std::find(stack.begin(), stack.end(), val) != stack.end())
@@ -637,7 +637,7 @@ namespace algorithm
         for (uint32_t i = 0; i < len.primitive_to_uint32(); i++)
         {
             EsValue str_p;
-            if (!json_str(EsString::create_from_utf8(
+            if (!json_strT(EsString::create_from_utf8(
                     lexical_cast<const char *>(i)), val, state, str_p))
                 return false;
 
@@ -693,7 +693,7 @@ namespace algorithm
         return true;
     }
 
-    bool json_jo(EsObject *val, JsonState &state, EsValue &result)
+    bool json_joT(EsObject *val, JsonState &state, EsValue &result)
     {
         // FIXME: Why doesn't the following work?
         /*if (std::find(stack.begin(), stack.end(), val) != stack.end())
@@ -748,7 +748,7 @@ namespace algorithm
             const EsString *p = *it;
 
             EsValue str_p;
-            if (!json_str(p, val, state, str_p))
+            if (!json_strT(p, val, state, str_p))
                 return false;
 
             if (!str_p.is_undefined())

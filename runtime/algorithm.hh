@@ -70,8 +70,8 @@ namespace algorithm
      *                     undefined (as in the case with NaN comparisons).
      * @return true on normal return, false if an exception was thrown.
      */
-    bool abstr_rel_comp(const EsValue &x, const EsValue &y, bool left_first,
-                        Maybe<bool> &result);
+    bool abstr_rel_compT(const EsValue &x, const EsValue &y, bool left_first,
+                         Maybe<bool> &result);
     
     /**
      * Implements the abstract equality comparison algorithm according to
@@ -81,7 +81,7 @@ namespace algorithm
      * @param [out] result true if x equals y and false otherwise.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool abstr_eq_comp(const EsValue &x, const EsValue &y, bool &result);
+    bool abstr_eq_compT(const EsValue &x, const EsValue &y, bool &result);
     
     /**
      * Implements the strict equality comparison algorithm according to
@@ -131,8 +131,8 @@ namespace algorithm
      *                     elements are considered equal.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool sort_compare(EsObject *obj, uint32_t j, uint32_t k,
-                      EsFunction *comparefn, double &result);
+    bool sort_compareT(EsObject *obj, uint32_t j, uint32_t k,
+                       EsFunction *comparefn, double &result);
 
     /**
      * Implements the JSON walk algorithm according to 15.12.2.
@@ -142,8 +142,8 @@ namespace algorithm
      * @param [out] result Result of calling reviver with walk data.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool json_walk(const EsString *name, EsObject *holder, EsFunction *reviver,
-                   EsValue &result);
+    bool json_walkT(const EsString *name, EsObject *holder, EsFunction *reviver,
+                    EsValue &result);
 
     /**
      * Implements the JSON string conversion algorithm according to 15.12.3.
@@ -154,8 +154,8 @@ namespace algorithm
      * @param [out] result JSON expression in string format.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool json_str(const EsString *key, EsObject *holder, JsonState &state,
-                  EsValue &result);
+    bool json_strT(const EsString *key, EsObject *holder, JsonState &state,
+                   EsValue &result);
 
     /**
      * Implements the JSON string quote wrapping algorithm according to
@@ -172,7 +172,7 @@ namespace algorithm
      * @param [out] result val serialized to a string.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool json_ja(EsObject *val, JsonState &state, EsValue &result);
+    bool json_jaT(EsObject *val, JsonState &state, EsValue &result);
 
     /**
      * Implements the JSON object serialization algorithm according to 15.12.3.
@@ -181,5 +181,5 @@ namespace algorithm
      * @param [out] result val serialized to a string.
      * @return true on normal return, false if an exception was thrown.
      */
-    bool json_jo(EsObject *val, JsonState &state, EsValue &result);
+    bool json_joT(EsObject *val, JsonState &state, EsValue &result);
 }

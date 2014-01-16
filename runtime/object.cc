@@ -1093,7 +1093,7 @@ bool EsArray::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor &
             return EsObject::define_own_propertyT(p, desc, throws, defined);
 
         EsValue len;
-        if (!(*desc.value()).to_primitive(ES_HINT_NUMBER, len))
+        if (!(*desc.value()).to_primitiveT(ES_HINT_NUMBER, len))
             return false;
 
         uint32_t new_len = 0;
@@ -1243,7 +1243,7 @@ bool EsArray::update_own_propertyT(EsPropertyKey p, EsPropertyReference &current
     if (current == old_len_prop)
     {
         EsValue len;
-        if (!v.to_primitive(ES_HINT_NUMBER, len))
+        if (!v.to_primitiveT(ES_HINT_NUMBER, len))
             return false;
 
         uint32_t new_len = 0;
@@ -1457,7 +1457,7 @@ bool EsDate::create_inst(const EsValue &value, EsValue &result)
     
     // 15.9.3.2
     EsValue v;
-    if (!value.to_primitive(ES_HINT_NONE, v))
+    if (!value.to_primitiveT(ES_HINT_NONE, v))
         return false;
 
     double num = 0.0;
@@ -1482,26 +1482,26 @@ bool EsDate::create_inst(const EsValue &year, const EsValue &month,
 
     // 15.9.3.1
     double n_year = 0.0;
-    if (!year.to_number(n_year))
+    if (!year.to_numberT(n_year))
         return false;
     double n_month = 0.0;
-    if (!month.to_number(n_month))
+    if (!month.to_numberT(n_month))
         return false;
 
     double n_date = 1.0;
-    if (date && !date->to_number(n_date))
+    if (date && !date->to_numberT(n_date))
         return false;
     double n_hours = 0.0;
-    if (hours && !hours->to_number(n_hours))
+    if (hours && !hours->to_numberT(n_hours))
         return false;
     double n_min = 0.0;
-    if (min && !min->to_number(n_min))
+    if (min && !min->to_numberT(n_min))
         return false;
     double n_sec = 0.0;
-    if (sec && !sec->to_number(n_sec))
+    if (sec && !sec->to_numberT(n_sec))
         return false;
     double n_ms = 0.0;
-    if (ms && !ms->to_number(n_ms))
+    if (ms && !ms->to_numberT(n_ms))
         return false;
 
     double yr = n_year;
@@ -2640,7 +2640,7 @@ EsFunction *EsNumberConstructor::create_inst()
 bool EsNumberConstructor::constructT(EsCallFrame &frame)
 {
     double value = 0.0;
-    if (frame.argc() > 0 && !frame.fp()[0].to_number(value))
+    if (frame.argc() > 0 && !frame.fp()[0].to_numberT(value))
         return false;
     
     frame.set_result(EsValue::from_obj(EsNumberObject::create_inst(value)));

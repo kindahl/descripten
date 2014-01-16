@@ -92,7 +92,7 @@ bool esa_val_to_bool(EsValueData val_data)
 
 bool esa_val_to_num(EsValueData val_data, double *num)
 {
-    return static_cast<EsValue &>(val_data).to_number(*num);
+    return static_cast<EsValue &>(val_data).to_numberT(*num);
 }
 
 const EsString *esa_val_to_str(EsValueData val_data)
@@ -1354,7 +1354,7 @@ bool esa_u_bit_not(EsValueData expr_data, EsValueData *result_data)
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     int32_t old_value = 0;
-    if (!expr.to_int32(old_value))
+    if (!expr.to_int32T(old_value))
         return false;
 
     result = EsValue::from_i32(~old_value);
@@ -1367,7 +1367,7 @@ bool esa_u_add(EsValueData expr_data, EsValueData *result_data)
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     double num = 0.0;
-    if (!expr.to_number(num))
+    if (!expr.to_numberT(num))
         return false;
 
     result = EsValue::from_num(num);
@@ -1380,7 +1380,7 @@ bool esa_u_sub(EsValueData expr_data, EsValueData *result_data)
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     double old_num = 0.0;
-    if (!expr.to_number(old_num))
+    if (!expr.to_numberT(old_num))
         return false;
 
     if (old_num != old_num) // According to IEEE this is only true for NaN.
@@ -1399,11 +1399,11 @@ bool esa_b_or(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     int32_t lnum = 0;
-    if (!lval.to_int32(lnum))
+    if (!lval.to_int32T(lnum))
         return false;
 
     int32_t rnum = 0;
-    if (!rval.to_int32(rnum))
+    if (!rval.to_int32T(rnum))
         return false;
     
     result = EsValue::from_i32(lnum | rnum);
@@ -1418,11 +1418,11 @@ bool esa_b_xor(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     int32_t lnum = 0;
-    if (!lval.to_int32(lnum))
+    if (!lval.to_int32T(lnum))
         return false;
 
     int32_t rnum = 0;
-    if (!rval.to_int32(rnum))
+    if (!rval.to_int32T(rnum))
         return false;
     
     result = EsValue::from_i32(lnum ^ rnum);
@@ -1437,11 +1437,11 @@ bool esa_b_and(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     int32_t lnum = 0;
-    if (!lval.to_int32(lnum))
+    if (!lval.to_int32T(lnum))
         return false;
 
     int32_t rnum = 0;
-    if (!rval.to_int32(rnum))
+    if (!rval.to_int32T(rnum))
         return false;
     
     result = EsValue::from_i32(lnum & rnum);
@@ -1456,11 +1456,11 @@ bool esa_b_shl(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     int32_t lnum = 0;
-    if (!lval.to_int32(lnum))
+    if (!lval.to_int32T(lnum))
         return false;
 
     uint32_t rnum = 0;
-    if (!rval.to_uint32(rnum))
+    if (!rval.to_uint32T(rnum))
         return false;
     
     result = EsValue::from_i32(lnum << (rnum & 0x1f));
@@ -1475,11 +1475,11 @@ bool esa_b_sar(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     int32_t lnum = 0;
-    if (!lval.to_int32(lnum))
+    if (!lval.to_int32T(lnum))
         return false;
     
     uint32_t rnum = 0;
-    if (!rval.to_uint32(rnum))
+    if (!rval.to_uint32T(rnum))
         return false;
 
     result = EsValue::from_i32(lnum >> (rnum & 0x1f));
@@ -1494,11 +1494,11 @@ bool esa_b_shr(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     uint32_t lnum = 0;
-    if (!lval.to_uint32(lnum))
+    if (!lval.to_uint32T(lnum))
         return false;
 
     uint32_t rnum = 0;
-    if (!rval.to_uint32(rnum))
+    if (!rval.to_uint32T(rnum))
         return false;
     
     result = EsValue::from_u32(lnum >> (rnum & 0x1f));
@@ -1513,11 +1513,11 @@ bool esa_b_add(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     EsValue lprim;
-    if (!lval.to_primitive(ES_HINT_NONE, lprim))
+    if (!lval.to_primitiveT(ES_HINT_NONE, lprim))
         return false;
 
     EsValue rprim;
-    if (!rval.to_primitive(ES_HINT_NONE, rprim))
+    if (!rval.to_primitiveT(ES_HINT_NONE, rprim))
         return false;
     
     // If either of the objects is a string, the resulting type will be
@@ -1545,10 +1545,10 @@ bool esa_b_sub(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     double lnum = 0.0;
-    if (!lval.to_number(lnum))
+    if (!lval.to_numberT(lnum))
         return false;
     double rnum = 0.0;
-    if (!rval.to_number(rnum))
+    if (!rval.to_numberT(rnum))
         return false;
     
     // Subtraction is always performed as numbers.
@@ -1566,10 +1566,10 @@ bool esa_b_mul(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     double lnum = 0.0;
-    if (!lval.to_number(lnum))
+    if (!lval.to_numberT(lnum))
         return false;
     double rnum = 0.0;
-    if (!rval.to_number(rnum))
+    if (!rval.to_numberT(rnum))
         return false;
     
     // Multiplication is always performed as numbers.
@@ -1585,10 +1585,10 @@ bool esa_b_div(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     double lnum = 0.0;
-    if (!lval.to_number(lnum))
+    if (!lval.to_numberT(lnum))
         return false;
     double rnum = 0.0;
-    if (!rval.to_number(rnum))
+    if (!rval.to_numberT(rnum))
         return false;
 
     // Division is always performed as numbers.
@@ -1604,10 +1604,10 @@ bool esa_b_mod(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     double lnum = 0.0;
-    if (!lval.to_number(lnum))
+    if (!lval.to_numberT(lnum))
         return false;
     double rnum = 0.0;
-    if (!rval.to_number(rnum))
+    if (!rval.to_numberT(rnum))
         return false;
     
     // Modulo is always performed as numbers.
@@ -1694,7 +1694,7 @@ bool esa_c_eq(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     bool test = false;
-    if (!algorithm::abstr_eq_comp(lval, rval, test))
+    if (!algorithm::abstr_eq_compT(lval, rval, test))
         return false;
 
     result = EsValue::from_bool(test);
@@ -1709,7 +1709,7 @@ bool esa_c_neq(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     bool test = false;;
-    if (!algorithm::abstr_eq_comp(lval, rval, test))
+    if (!algorithm::abstr_eq_compT(lval, rval, test))
         return false;
 
     result = EsValue::from_bool(!test);
@@ -1724,7 +1724,7 @@ bool esa_c_lt(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     Maybe<bool> test;
-    if (!algorithm::abstr_rel_comp(lval, rval, true, test))
+    if (!algorithm::abstr_rel_compT(lval, rval, true, test))
         return false;
 
     result = EsValue::from_bool(test && *test);
@@ -1739,7 +1739,7 @@ bool esa_c_gt(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     Maybe<bool> test;
-    if (!algorithm::abstr_rel_comp(rval, lval, false, test))
+    if (!algorithm::abstr_rel_compT(rval, lval, false, test))
         return false;
 
     result = EsValue::from_bool(test && *test);
@@ -1754,7 +1754,7 @@ bool esa_c_lte(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     Maybe<bool> test;
-    if (!algorithm::abstr_rel_comp(rval, lval, false, test))
+    if (!algorithm::abstr_rel_compT(rval, lval, false, test))
         return false;
 
     result = EsValue::from_bool(test && !*test);
@@ -1769,7 +1769,7 @@ bool esa_c_gte(EsValueData lval_data, EsValueData rval_data,
     EsValue &result = static_cast<EsValue &>(*result_data);
 
     Maybe<bool> test;
-    if (!algorithm::abstr_rel_comp(lval, rval, true, test))
+    if (!algorithm::abstr_rel_compT(lval, rval, true, test))
         return false;
 
     result = EsValue::from_bool(test && !*test);

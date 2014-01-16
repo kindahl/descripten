@@ -154,10 +154,10 @@ ES_API_FUN(es_std_compare_array)
         return false;
 
     uint32_t a1_len = 0;
-    if (!a1_len_val.to_uint32(a1_len))
+    if (!a1_len_val.to_uint32T(a1_len))
         return false;
     uint32_t a2_len = 0;
-    if (!a2_len_val.to_uint32(a2_len))
+    if (!a2_len_val.to_uint32T(a2_len))
         return false;
 
     if (a1_len != a2_len)
@@ -248,10 +248,10 @@ ES_API_FUN(es_std_array_contains)
         return false;
 
     uint32_t arr_len = 0;
-    if (!arr_len_val.to_uint32(arr_len))
+    if (!arr_len_val.to_uint32T(arr_len))
         return false;
     uint32_t exp_len = 0;
-    if (!exp_len_val.to_uint32(exp_len))
+    if (!exp_len_val.to_uint32T(exp_len))
         return false;
 
     for (uint32_t i = 0; i < exp_len; i++)
@@ -378,7 +378,7 @@ ES_API_FUN(es_std_is_nan)
     ES_API_PARAMETER(0, number);
     
     double num = 0.0;
-    if (!number.to_number(num))
+    if (!number.to_numberT(num))
         return false;
 
     frame.set_result(EsValue::from_bool(!!std::isnan(num)));
@@ -392,7 +392,7 @@ ES_API_FUN(es_std_is_finite)
     ES_API_PARAMETER(0, number);
     
     double num = 0.0;
-    if (!number.to_number(num))
+    if (!number.to_numberT(num))
         return false;
 
     frame.set_result(EsValue::from_bool(!!std::isfinite(num)));
@@ -456,7 +456,7 @@ ES_API_FUN(es_std_parse_int)
     bool strip_prefix = true;
 
     int32_t r = 0;
-    if (!radix.to_int32(r))
+    if (!radix.to_int32T(r))
         return false;
 
     if (r != 0)
@@ -565,7 +565,7 @@ ES_API_FUN(es_std_arr_proto_to_locale_str)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (len == 0)
@@ -668,7 +668,7 @@ static bool es_std_arr_proto_concat_value(EsArray *a, const EsValue &v, uint32_t
             return false;
 
         uint32_t len = 0;
-        if (!len_val.to_uint32(len))
+        if (!len_val.to_uint32T(len))
             return false;
 
         for (uint32_t k = 0; k < len; k++, n++)
@@ -738,7 +738,7 @@ ES_API_FUN(es_std_arr_proto_join)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     const EsString *sep = NULL;
@@ -807,7 +807,7 @@ ES_API_FUN(es_std_arr_proto_pop)
         return false;
 
     uint32_t len = 0;
-        if (!len_val.to_uint32(len))
+        if (!len_val.to_uint32T(len))
             return false;
 
     if (len == 0)
@@ -840,7 +840,7 @@ ES_API_FUN(es_std_arr_proto_push)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     uint64_t n = len;   // Use uint64_t since we will add new items below, see S15.4.4.7_A4_T2.js.
@@ -880,7 +880,7 @@ ES_API_FUN(es_std_arr_proto_reverse)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     uint32_t lower = 0, middle = len / 2;
@@ -941,7 +941,7 @@ ES_API_FUN(es_std_arr_proto_shift)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (len == 0)
@@ -995,11 +995,11 @@ ES_API_FUN(es_std_arr_proto_slice)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     int64_t rel_start = 0;
-    if (!start.to_integer(rel_start))
+    if (!start.to_integerT(rel_start))
         return false;
 
     uint32_t k = rel_start < 0 ?
@@ -1007,7 +1007,7 @@ ES_API_FUN(es_std_arr_proto_slice)
         std::min(rel_start, static_cast<int64_t>(len));
 
     int64_t rel_end = len;
-    if (!end.is_undefined() && !end.to_integer(rel_end))
+    if (!end.is_undefined() && !end.to_integerT(rel_end))
         return false;
 
     uint32_t final = rel_end < 0 ?
@@ -1047,7 +1047,7 @@ struct ArraySortComparator
     bool operator() (uint32_t j, uint32_t k)
     {
         double result = 0.0;
-        if (!algorithm::sort_compare(obj_, j, k, compare_fun_, result))
+        if (!algorithm::sort_compareT(obj_, j, k, compare_fun_, result))
             throw static_cast<int>(0);
 
         return result < 0.0;
@@ -1069,7 +1069,7 @@ ES_API_FUN(es_std_arr_proto_sort)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     EsFunction *compare_fun = NULL;
@@ -1148,11 +1148,11 @@ ES_API_FUN(es_std_arr_proto_splice)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     int64_t rel_start = 0;
-    if (!start.to_integer(rel_start))
+    if (!start.to_integerT(rel_start))
         return false;
 
     uint32_t act_start = rel_start < 0
@@ -1160,7 +1160,7 @@ ES_API_FUN(es_std_arr_proto_splice)
         : std::min(rel_start, static_cast<int64_t>(len));
 
     int64_t del_count_int = 0;
-    if (!del_count.to_integer(del_count_int))
+    if (!del_count.to_integerT(del_count_int))
         return false;
 
     uint32_t act_del_count = std::min(std::max(del_count_int,
@@ -1260,7 +1260,7 @@ ES_API_FUN(es_std_arr_proto_unshift)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     uint32_t arg_count = static_cast<uint32_t>(argc);
@@ -1311,7 +1311,7 @@ ES_API_FUN(es_std_arr_proto_index_of)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (len == 0)
@@ -1321,7 +1321,7 @@ ES_API_FUN(es_std_arr_proto_index_of)
     }
 
     int64_t n = 0;
-    if (argc > 1 && !frame.arg(1).to_integer(n))
+    if (argc > 1 && !frame.arg(1).to_integerT(n))
         return false;
 
     if (n >= len)
@@ -1371,7 +1371,7 @@ ES_API_FUN(es_std_arr_proto_last_index_of)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (len == 0)
@@ -1381,7 +1381,7 @@ ES_API_FUN(es_std_arr_proto_last_index_of)
     }
 
     int64_t n = len - 1;
-    if (argc > 1 && !frame.arg(1).to_integer(n))
+    if (argc > 1 && !frame.arg(1).to_integerT(n))
         return false;
 
     int64_t k = n >= 0 ?
@@ -1424,7 +1424,7 @@ ES_API_FUN(es_std_arr_proto_every)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (!comparefn.is_callable())
@@ -1479,7 +1479,7 @@ ES_API_FUN(es_std_arr_proto_some)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (!comparefn.is_callable())
@@ -1534,7 +1534,7 @@ ES_API_FUN(es_std_arr_proto_for_each)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (!callbackfn.is_callable())
@@ -1582,7 +1582,7 @@ ES_API_FUN(es_std_arr_proto_map)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (!callbackfn.is_callable())
@@ -1637,7 +1637,7 @@ ES_API_FUN(es_std_arr_proto_filter)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (!callbackfn.is_callable())
@@ -1693,7 +1693,7 @@ ES_API_FUN(es_std_arr_proto_reduce)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (!callbackfn.is_callable())
@@ -1776,7 +1776,7 @@ ES_API_FUN(es_std_arr_proto_reduce_right)
         return false;
 
     uint32_t len = 0;
-    if (!len_val.to_uint32(len))
+    if (!len_val.to_uint32T(len))
         return false;
 
     if (!callbackfn.is_callable())
@@ -2640,8 +2640,8 @@ ES_API_FUN(es_std_json_parse)
             return false;
 
         EsValue result;
-        if (!algorithm::json_walk(EsString::create(), root,
-                                  reviver.as_function(), result))
+        if (!algorithm::json_walkT(EsString::create(), root,
+                                   reviver.as_function(), result))
             return false;
 
         frame.set_result(result);
@@ -2720,7 +2720,7 @@ ES_API_FUN(es_std_json_stringify)
     if (es_as_number(space, space_num))
     {
         int64_t space_int = 0;
-        if (!space.to_integer(space_int))
+        if (!space.to_integerT(space_int))
             return false;
 
         EsStringBuilder sb;
@@ -2740,7 +2740,7 @@ ES_API_FUN(es_std_json_stringify)
         return false;
 
     EsValue result;
-    if (!algorithm::json_str(EsString::create(), wrapper, state, result))
+    if (!algorithm::json_strT(EsString::create(), wrapper, state, result))
         return false;
 
     frame.set_result(result);
@@ -2754,7 +2754,7 @@ ES_API_FUN(es_std_math_abs)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(fabs(x_num)));
@@ -2768,7 +2768,7 @@ ES_API_FUN(es_std_math_acos)
     ES_API_PARAMETER(0, x);
 
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(acos(x_num)));
@@ -2782,7 +2782,7 @@ ES_API_FUN(es_std_math_asin)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(asin(x_num)));
@@ -2796,7 +2796,7 @@ ES_API_FUN(es_std_math_atan)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(atan(x_num)));
@@ -2811,11 +2811,11 @@ ES_API_FUN(es_std_math_atan2)
     ES_API_PARAMETER(1, y);
 
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     double y_num = 0.0;
-    if (!y.to_number(y_num))
+    if (!y.to_numberT(y_num))
         return false;
 
     frame.set_result(EsValue::from_num(atan2(x_num, y_num)));
@@ -2829,7 +2829,7 @@ ES_API_FUN(es_std_math_ceil)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(ceil(x_num)));
@@ -2843,7 +2843,7 @@ ES_API_FUN(es_std_math_cos)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(cos(x_num)));
@@ -2857,7 +2857,7 @@ ES_API_FUN(es_std_math_log)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(log(x_num)));
@@ -2881,7 +2881,7 @@ ES_API_FUN(es_std_math_max)
     EsValue *arg = args.begin();
 
     double max = 0.0;
-    if (!arg->to_number(max))
+    if (!arg->to_numberT(max))
         return false;
 
     for (++arg ; arg != args.end(); arg++)
@@ -2889,7 +2889,7 @@ ES_API_FUN(es_std_math_max)
         // CUSTOM: CK 2012-02-11
         // Should use algorithm in 11.8.5.
         double v = 0.0;
-        if (!arg->to_number(v))
+        if (!arg->to_numberT(v))
             return false;
 
         if (std::isnan(v))
@@ -2925,7 +2925,7 @@ ES_API_FUN(es_std_math_min)
         // CUSTOM: CK 2012-02-11
         // Should use algorithm in 11.8.5.
         double v = 0.0;
-        if (!arg.to_number(v))
+        if (!arg.to_numberT(v))
             return false;
 
         if (std::isnan(v))
@@ -2949,7 +2949,7 @@ ES_API_FUN(es_std_math_exp)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(exp(x_num)));
@@ -2963,7 +2963,7 @@ ES_API_FUN(es_std_math_floor)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(floor(x_num)));
@@ -2978,11 +2978,11 @@ ES_API_FUN(es_std_math_pow)
     ES_API_PARAMETER(1, y);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     double y_num = 0.0;
-    if (!y.to_number(y_num))
+    if (!y.to_numberT(y_num))
         return false;
 
     // FIXME: Try optimize by using a lookup table.
@@ -3142,7 +3142,7 @@ ES_API_FUN(es_std_math_round)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     if (x_num <= 0.0 && x_num > 0.5)
@@ -3166,7 +3166,7 @@ ES_API_FUN(es_std_math_sin)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(sin(x_num)));
@@ -3180,7 +3180,7 @@ ES_API_FUN(es_std_math_sqrt)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(sqrt(x_num)));
@@ -3194,7 +3194,7 @@ ES_API_FUN(es_std_math_tan)
     ES_API_PARAMETER(0, x);
     
     double x_num = 0.0;
-    if (!x.to_number(x_num))
+    if (!x.to_numberT(x_num))
         return false;
 
     frame.set_result(EsValue::from_num(tan(x_num)));
@@ -3244,7 +3244,7 @@ ES_API_FUN(es_std_num_proto_to_str)
     int32_t radix = 10;
     if (argc >= 1 &&
         !frame.arg(0).is_undefined() &&
-        !frame.arg(0).to_int32(radix))
+        !frame.arg(0).to_int32T(radix))
     {
         return false;
     }
@@ -3309,7 +3309,7 @@ ES_API_FUN(es_std_num_proto_to_fixed)
     ES_API_PARAMETER(0, fraction_digits);
 
     int64_t f = 0;
-    if (!fraction_digits.is_undefined() && !fraction_digits.to_integer(f))
+    if (!fraction_digits.is_undefined() && !fraction_digits.to_integerT(f))
         return false;
 
     if (f < 0 || f > 20)
@@ -3379,7 +3379,7 @@ ES_API_FUN(es_std_num_proto_to_prec)
     }
 
     int64_t p = 0;
-    if (!precision.to_integer(p))
+    if (!precision.to_integerT(p))
         return false;
 
     if (p < 1 || p > 21)
@@ -3406,7 +3406,7 @@ ES_API_FUN(es_std_num)
     else
     {
         double num = 0.0;
-        if (!value.to_number(num))
+        if (!value.to_numberT(num))
             return false;
 
         frame.set_result(EsValue::from_num(num));
@@ -4020,7 +4020,7 @@ ES_API_FUN(es_std_str_proto_char_at)
         return false;
 
     int64_t position = 0;
-    if (!pos.to_integer(position))
+    if (!pos.to_integerT(position))
         return false;
 
     size_t size = s->length();
@@ -4047,7 +4047,7 @@ ES_API_FUN(es_std_str_proto_char_code_at)
         return false;
 
     int64_t pos_int = 0;
-    if (!pos.to_integer(pos_int))
+    if (!pos.to_integerT(pos_int))
         return false;
     
     if (pos_int < 0 || pos_int >= static_cast<int64_t>(s->length()))
@@ -4102,7 +4102,7 @@ ES_API_FUN(es_std_str_proto_index_of)
         return false;
 
     int64_t pos = 0;
-    if (!position.is_undefined() && !position.to_integer(pos))
+    if (!position.is_undefined() && !position.to_integerT(pos))
         return false;
 
     int64_t len = static_cast<int64_t>(s->length());
@@ -4131,7 +4131,7 @@ ES_API_FUN(es_std_str_proto_last_index_of)
         return false;
 
     int64_t pos = 0;
-    if (!position.to_integer(pos))  // 0xffffffff is not really positive infinity.
+    if (!position.to_integerT(pos)) // 0xffffffff is not really positive infinity.
         return false;
 
     int64_t len = static_cast<int64_t>(s->length());
@@ -4243,7 +4243,7 @@ ES_API_FUN(es_std_str_proto_match)
                 return false;
 
             int64_t this_index = 0;
-            if (!this_index_val.to_integer(this_index)) // CUSTOM to_integer(): CK 2012-07-18
+            if (!this_index_val.to_integerT(this_index))    // CUSTOM to_integer(): CK 2012-07-18
                 return false;
 
             if (this_index == prev_last_index)
@@ -4587,10 +4587,10 @@ ES_API_FUN(es_std_str_proto_slice)
     int64_t len = s->length();
 
     int64_t int_start = 0;
-    if (!start.to_integer(int_start))
+    if (!start.to_integerT(int_start))
         return false;
     int64_t int_end = len;
-    if (!end.is_undefined() && !end.to_integer(int_end))
+    if (!end.is_undefined() && !end.to_integerT(int_end))
         return false;
 
     int64_t from = int_start < 0
@@ -4622,7 +4622,7 @@ ES_API_FUN(es_std_str_proto_split)
 
     EsArray *a = EsArray::create_inst();
     uint32_t lim = 0xffffffff;
-    if (!limit.is_undefined() && !limit.to_uint32(lim))
+    if (!limit.is_undefined() && !limit.to_uint32T(lim))
         return false;
 
     EsRegExp *r_reg = es_as_reg_exp(separator);
@@ -4740,11 +4740,11 @@ ES_API_FUN(es_std_str_proto_substr)
     int64_t s_len = static_cast<int64_t>(s->length());
 
     int64_t length_int = 0;
-    if (!length.to_integer(length_int))
+    if (!length.to_integerT(length_int))
         return false;
 
     int64_t int_start = 0;
-    if (!start.to_integer(int_start))
+    if (!start.to_integerT(int_start))
         return false;
 
     int64_t int_length = length.is_undefined()
@@ -4779,11 +4779,11 @@ ES_API_FUN(es_std_str_proto_substring)
     int64_t len = static_cast<int64_t>(s->length());
 
     int64_t int_start = 0;
-    if (!start.to_integer(int_start))
+    if (!start.to_integerT(int_start))
         return false;
 
     int64_t int_end = len;
-    if (!end.is_undefined() && !end.to_integer(int_end))
+    if (!end.is_undefined() && !end.to_integerT(int_end))
         return false;
 
     int64_t final_start = std::min(std::max(int_start, static_cast<int64_t>(0)), len);
@@ -4905,7 +4905,7 @@ ES_API_FUN(es_std_str_from_char_code)
         const EsValue &arg = frame.arg(i);
         
         double arg_num = 0.0;
-        if (!arg.to_number(arg_num))
+        if (!arg.to_numberT(arg_num))
             return false;
 
         uint16_t num = es_to_uint16(arg_num);
@@ -4946,7 +4946,7 @@ ES_API_FUN(es_std_reg_exp_proto_exec)
         return false;
 
     int64_t i = 0;
-    if (!last_index_val.to_integer(i))
+    if (!last_index_val.to_integerT(i))
         return false;
 
     EsValue global_val;
@@ -5039,7 +5039,7 @@ ES_API_FUN(es_std_reg_exp_proto_test)
         return false;
 
     int64_t i = 0;
-    if (!last_index_val.to_integer(i))
+    if (!last_index_val.to_integerT(i))
         return false;
 
     EsValue global_val;

@@ -31,7 +31,7 @@ const EsValue EsValue::undefined(TYPE_UNDEFINED);
 
 const EsValue EsValue::nothing(TYPE_NOTHING);
 
-bool EsValue::to_primitive(EsTypeHint hint, EsValue &value) const
+bool EsValue::to_primitiveT(EsTypeHint hint, EsValue &value) const
 {
     if (is_object())
         return as_object()->default_valueT(hint, value);
@@ -132,7 +132,7 @@ bool EsValue::to_boolean() const
     return false;
 }
 
-bool EsValue::to_number(double &result) const
+bool EsValue::to_numberT(double &result) const
 {
     switch (type())
     {
@@ -154,7 +154,7 @@ bool EsValue::to_number(double &result) const
         case TYPE_OBJECT:
         {
             EsValue v;
-            if (!to_primitive(ES_HINT_NUMBER, v))
+            if (!to_primitiveT(ES_HINT_NUMBER, v))
                 return false;
 
             result = v.primitive_to_number();
@@ -170,10 +170,10 @@ bool EsValue::to_number(double &result) const
     return true;
 }
 
-bool EsValue::to_integer(int64_t &result) const
+bool EsValue::to_integerT(int64_t &result) const
 {
     double num = 0.0;
-    if (!to_number(num))
+    if (!to_numberT(num))
         return false;
 
     if (std::isnan(num))
@@ -186,20 +186,20 @@ bool EsValue::to_integer(int64_t &result) const
     return true;
 }
 
-bool EsValue::to_int32(int32_t &result) const
+bool EsValue::to_int32T(int32_t &result) const
 {
     double num = 0.0;
-    if (!to_number(num))
+    if (!to_numberT(num))
         return false;
 
     result = es_to_int32(num);
     return true;
 }
 
-bool EsValue::to_uint32(uint32_t &result) const
+bool EsValue::to_uint32T(uint32_t &result) const
 {
     double num = 0.0;
-    if (!to_number(num))
+    if (!to_numberT(num))
         return false;
 
     result = es_to_uint32(num);
@@ -223,7 +223,7 @@ const EsString *EsValue::to_stringT() const
         case TYPE_OBJECT:
         {
             EsValue v;
-            if (!to_primitive(ES_HINT_STRING, v))
+            if (!to_primitiveT(ES_HINT_STRING, v))
                 return NULL;
 
             return v.to_stringT();

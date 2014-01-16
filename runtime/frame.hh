@@ -61,7 +61,7 @@ class EsFunction;
  * formal parameters.
  *
  * In short this means that the number of arguments accessible on the stack is
- * greater than or equal to the number of format parameters of the called
+ * greater than or equal to the number of formal parameters of the called
  * function. Padded arguments will be initialized to undefined as per
  * specification.
  */

@@ -910,10 +910,10 @@ bool esa_prp_get(EsValueData src_data, uint64_t raw_key,
         }
     }
 
+cache_miss:
 #ifdef PROFILE
     profiler::stats.prp_cache_misses_++;
 #endif  // PROFILE
-cache_miss:
 #endif  // FEATURE_PROPERTY_CACHE
 
     EsPropertyReference prop;

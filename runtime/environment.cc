@@ -28,7 +28,6 @@
 
 EsDeclarativeEnvironmentRecord::EsDeclarativeEnvironmentRecord()
     : storage_(NULL)
-    , storage_len_(0)
 {
 }
 

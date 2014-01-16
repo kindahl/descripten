@@ -70,17 +70,15 @@ private:
                      gc_allocator<std::pair<EsPropertyKey, Value> > > VariableMap;  // FIXME: unordered_map?
 
     EsValue *storage_;      ///< Memory for storing values.
-    uint32_t storage_len_;
     VariableMap variables_;
 
 public:
     EsDeclarativeEnvironmentRecord();
     virtual ~EsDeclarativeEnvironmentRecord() {}
 
-    void set_storage(EsValue *storage, uint32_t storage_len)
+    void set_storage(EsValue *storage)
     {
         storage_ = storage;
-        storage_len_ = storage_len;
     }
 
     EsValue *storage()

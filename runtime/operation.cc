@@ -205,7 +205,7 @@ EsValueData *esa_bnd_extra_init(EsContext *ctx, uint32_t num_extra)
         static_cast<EsDeclarativeEnvironmentRecord *>(
             ctx->var_env()->env_rec());
 
-    env->set_storage(extra, num_extra);
+    env->set_storage(extra);
     return extra;
 }
 

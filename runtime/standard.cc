@@ -107,40 +107,16 @@ ES_API_FUN(es_std_fn_exists)
 {
     EsCallFrame frame = EsCallFrame::wrap(argc, fp, vp);
 
-    ES_API_PARAMETER(0, name_arg);
-
-    const EsString *name = name_arg.to_stringT();
-    if (!name)
-        return false;
-
-    for (auto lex = ctx->lex_env(); lex; lex = lex->outer())
+    for (uint32_t i = 0; i < frame.argc(); i++)
     {
-        EsPropertyKey key = EsPropertyKey::from_str(name);
-
-        EsEnvironmentRecord *env_rec = lex->env_rec();
-        if (env_rec->is_obj_env())
+        if (!frame.arg(i).is_callable())
         {
-            EsObject *obj = safe_cast<EsObjectEnvironmentRecord *>(env_rec)->binding_object();
-            if (obj->has_property(key))
-            {
-                frame.set_result(EsValue::from_bool(true));
-                return true;
-            }
-        }
-        else
-        {
-            EsDeclarativeEnvironmentRecord *env =
-                safe_cast<EsDeclarativeEnvironmentRecord *>(env_rec);
-
-            if (env->has_binding(key))
-            {
-                frame.set_result(EsValue::from_bool(true));
-                return true;
-            }
+            frame.set_result(EsValue::from_bool(false));
+            return true;
         }
     }
 
-    frame.set_result(EsValue::from_bool(false));
+    frame.set_result(EsValue::from_bool(true));
     return true;
 }
 

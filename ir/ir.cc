@@ -86,26 +86,6 @@ Function::Function(const std::string &name, bool is_global)
     blocks_.push_back(new (GC)Block());
 }
 
-bool Function::is_global() const
-{
-    return is_global_;
-}
-
-const std::string &Function::name() const
-{
-    return name_;
-}
-
-BlockList &Function::mutable_blocks()
-{
-    return blocks_;
-}
-
-const BlockList &Function::blocks() const
-{
-    return blocks_;
-}
-
 void Function::push_block(Block *block)
 {
 #ifdef DEBUG
@@ -123,15 +103,6 @@ void Function::push_block(Block *block)
     blocks_.push_back(block);
 }
 
-Block::Block()
-{
-}
-
-Block::Block(const std::string &label)
-    : label_(label)
-{
-}
-
 void Block::add_referrer(Instruction *instr)
 {
     referrers_.insert(instr);
@@ -142,25 +113,10 @@ void Block::remove_referrer(Instruction *instr)
     referrers_.erase(instr);
 }
 
-const InstructionSet &Block::referrers() const
-{
-    return referrers_;
-}
-
 Block *Function::last_block() const
 {
     assert(!blocks_.empty());
     return &blocks_.back();
-}
-
-const std::string &Block::label() const
-{
-    return label_;
-}
-
-const InstructionVector &Block::instructions() const
-{
-    return instrs_;
 }
 
 Instruction *Block::last_instr() const
@@ -955,56 +911,6 @@ Value *Block::push_es_unary_log_not(Value *op1, Value *res)
     return instr;
 }
 
-Value::Value()
-    : persistent_(false)
-{
-}
-
-Instruction::Instruction()
-{
-}
-
-Instruction::~Instruction()
-{
-}
-
-ArgumentsObjectInitInstruction::ArgumentsObjectInitInstruction()
-{
-}
-
-const Type *ArgumentsObjectInitInstruction::type() const
-{
-    return Type::value();
-}
-
-ArgumentsObjectLinkInstruction::ArgumentsObjectLinkInstruction(
-    Value *args, uint32_t index, Value *val)
-    : args_(args)
-    , index_(index)
-    , val_(val)
-{
-}
-
-Value *ArgumentsObjectLinkInstruction::arguments() const
-{
-    return args_;
-}
-
-uint32_t ArgumentsObjectLinkInstruction::index() const
-{
-    return index_;
-}
-
-Value *ArgumentsObjectLinkInstruction::value() const
-{
-    return val_;
-}
-
-const Type *ArgumentsObjectLinkInstruction::type() const
-{
-    return Type::_void();
-}
-
 ArrayInstruction::ArrayInstruction(Operation op, size_t index, Value *arr,
                                    Value *val)
     : op_(op)
@@ -1024,23 +930,9 @@ ArrayInstruction::ArrayInstruction(Operation op, size_t index, Value *arr)
     assert(op == GET);
 }
 
-ArrayInstruction::Operation ArrayInstruction::operation() const
-{
-    return op_;
-}
-
-size_t ArrayInstruction::index() const
-{
-    return index_;
-}
-
-Value *ArrayInstruction::array() const
-{
-    return arr_;
-}
-
 Value *ArrayInstruction::value() const
 {
+    assert(op_ == PUT);
     return val_;
 }
 
@@ -1057,41 +949,9 @@ const Type *ArrayInstruction::type() const
         : static_cast<const PointerType *>(arr_->type())->type();
 }
 
-BinaryInstruction::BinaryInstruction(Operation op, Value *lval, Value *rval)
-    : op_(op)
-    , lval_(lval)
-    , rval_(rval)
-{
-}
-
-BinaryInstruction::Operation BinaryInstruction::operation() const
-{
-    return op_;
-}
-
-Value *BinaryInstruction::left() const
-{
-    return lval_;
-}
-
-Value *BinaryInstruction::right() const
-{
-    return rval_;
-}
-
 const Type *BinaryInstruction::type() const
 {
     return op_ == EQ ? Type::boolean() : lval_->type();
-}
-
-BindExtraInitInstruction::BindExtraInitInstruction(uint32_t num_extra)
-    : num_extra_(num_extra)
-{
-}
-
-uint32_t BindExtraInitInstruction::num_extra() const
-{
-    return num_extra_;
 }
 
 const Type *BindExtraInitInstruction::type() const
@@ -1099,165 +959,10 @@ const Type *BindExtraInitInstruction::type() const
     return new (GC)PointerType(Type::value());
 }
 
-BindExtraPtrInstruction::BindExtraPtrInstruction(uint32_t hops)
-    : hops_(hops)
-{
-}
-
-uint32_t BindExtraPtrInstruction::hops() const
-{
-    return hops_;
-}
-
 const Type *BindExtraPtrInstruction::type() const
 {
     return new (GC)PointerType(Type::value());
 }
-
-CallInstruction::CallInstruction(Operation op, Value *fun, uint32_t argc,
-                                 Value *res)
-    : op_(op)
-    , fun_(fun)
-    , argc_(argc)
-    , res_(res)
-{
-}
-
-CallInstruction::Operation CallInstruction::operation() const
-{
-    return op_;
-}
-
-Value *CallInstruction::function() const
-{
-    return fun_;
-}
-
-uint32_t CallInstruction::argc() const
-{
-    return argc_;
-}
-
-Value *CallInstruction::result() const
-{
-    return res_;
-}
-
-const Type *CallInstruction::type() const
-{
-    return Type::boolean();
-}
-
-CallKeyedInstruction::CallKeyedInstruction(Value *obj, uint64_t key,
-                                           uint32_t argc, Value *res)
-    : obj_(obj)
-    , key_(key)
-    , argc_(argc)
-    , res_(res)
-{
-}
-
-Value *CallKeyedInstruction::object() const
-{
-    return obj_;
-}
-
-uint64_t CallKeyedInstruction::key() const
-{
-    return key_;
-}
-
-uint32_t CallKeyedInstruction::argc() const
-{
-    return argc_;
-}
-
-Value *CallKeyedInstruction::result() const
-{
-    return res_;
-}
-
-const Type *CallKeyedInstruction::type() const
-{
-    return Type::boolean();
-}
-
-CallKeyedSlowInstruction::CallKeyedSlowInstruction(Value *obj, Value *key,
-                                                   uint32_t argc, Value *res)
-    : obj_(obj)
-    , key_(key)
-    , argc_(argc)
-    , res_(res)
-{
-}
-
-Value *CallKeyedSlowInstruction::object() const
-{
-    return obj_;
-}
-
-Value *CallKeyedSlowInstruction::key() const
-{
-    return key_;
-}
-
-uint32_t CallKeyedSlowInstruction::argc() const
-{
-    return argc_;
-}
-
-Value *CallKeyedSlowInstruction::result() const
-{
-    return res_;
-}
-
-const Type *CallKeyedSlowInstruction::type() const
-{
-    return Type::boolean();
-}
-
-CallNamedInstruction::CallNamedInstruction(uint64_t key, uint32_t argc,
-                                           Value *res)
-    : key_(key)
-    , argc_(argc)
-    , res_(res)
-{
-}
-
-uint64_t CallNamedInstruction::key() const
-{
-    return key_;
-}
-
-uint32_t CallNamedInstruction::argc() const
-{
-    return argc_;
-}
-
-Value *CallNamedInstruction::result() const
-{
-    return res_;
-}
-
-const Type *CallNamedInstruction::type() const
-{
-    return Type::boolean();
-}
-
-#ifdef UNUSED
-PhiInstruction::PhiInstruction(const ArgumentVector &args)
-    : args_(args)
-{
-    // FIXME: Verify that all items have the same type.
-    // FIXME: Verify that we have at least one argument.
-}
-
-Type PhiInstruction::type() const
-{
-    assert(!args_.empty());
-    return args_.front()->value()->type();
-}
-#endif
 
 ValueInstruction::ValueInstruction(Operation op, Value *val, Value *res)
     : op_(op)
@@ -1290,16 +995,6 @@ ValueInstruction::ValueInstruction(Operation op, Value *val)
     if (op == IS_UNDEFINED) { assert(val->type()->is_value()); }
     if (op == TEST_COERCIBILITY) { assert(val->type()->is_value()); }
 #endif
-}
-
-ValueInstruction::Operation ValueInstruction::operation() const
-{
-    return op_;
-}
-
-Value *ValueInstruction::value() const
-{
-    return val_;
 }
 
 Value *ValueInstruction::result() const
@@ -1342,97 +1037,12 @@ BranchInstruction::BranchInstruction(Block *host, Value *cond,
     assert(cond_->type()->is_boolean());
 }
 
-Value *BranchInstruction::condition() const
-{
-    return cond_;
-}
-
-Block *BranchInstruction::true_block() const
-{
-    return true_block_;
-}
-
-Block *BranchInstruction::false_block() const
-{
-    return false_block_;
-}
-
-const Type *BranchInstruction::type() const
-{
-    return Type::_void();
-}
-
-JumpInstruction::JumpInstruction(Block *host, Block *block)
-    : TerminateInstruction(host)
-    , block_(block)
-{
-}
-
-Block *JumpInstruction::block() const
-{
-    return block_;
-}
-
-const Type *JumpInstruction::type() const
-{
-    return Type::_void();
-}
-
-ReturnInstruction::ReturnInstruction(Block *host, Value *val)
-    : TerminateInstruction(host)
-    , val_(val)
-{
-}
-
-Value *ReturnInstruction::value() const
-{
-    return val_;
-}
-
-const Type *ReturnInstruction::type() const
-{
-    return Type::_void();
-}
-
-MemoryStoreInstruction::MemoryStoreInstruction(Value *dst, Value *src)
-    : dst_(dst)
-    , src_(src)
-{
-    //assert(dst->type()->is_pointer());
-    //assert(static_cast<const PointerType *>(dst->type())->type() == src->type());
-}
-
-Value *MemoryStoreInstruction::destination() const
-{
-    return dst_;
-}
-
-Value *MemoryStoreInstruction::source() const
-{
-    return src_;
-}
-
-const Type *MemoryStoreInstruction::type() const
-{
-    return Type::_void();
-}
-
 MemoryElementPointerInstruction::MemoryElementPointerInstruction(Value *val, size_t index)
     : val_(val)
     , index_(index)
 {
     assert(val_->type()->is_array() ||
            val_->type()->is_pointer());
-}
-
-Value *MemoryElementPointerInstruction::value() const
-{
-    return val_;
-}
-
-size_t MemoryElementPointerInstruction::index() const
-{
-    return index_;
 }
 
 const Type *MemoryElementPointerInstruction::type() const
@@ -1442,192 +1052,10 @@ const Type *MemoryElementPointerInstruction::type() const
     return new (GC)PointerType(static_cast<const PointerType *>(val_->type())->type());
 }
 
-StackAllocInstruction::StackAllocInstruction(const Proxy<size_t> &count)
-    : count_(count)
-{
-}
-
-size_t StackAllocInstruction::count() const
-{
-    return count_;
-}
-
-const Type *StackAllocInstruction::type() const
-{
-    return Type::_void();
-}
-
-StackFreeInstruction::StackFreeInstruction(size_t count)
-    : count_(count)
-{
-}
-
-size_t StackFreeInstruction::count() const
-{
-    return count_;
-}
-
-const Type *StackFreeInstruction::type() const
-{
-    return Type::_void();
-}
-
 StackPushInstruction::StackPushInstruction(Value *val)
     : val_(val)
 {
     assert(val_->type()->is_value());
-}
-
-Value *StackPushInstruction::value() const
-{
-    return val_;
-}
-
-const Type *StackPushInstruction::type() const
-{
-    return Type::_void();
-}
-
-MetaContextLoadInstruction::MetaContextLoadInstruction(uint64_t key)
-    : key_(key)
-{
-}
-
-uint64_t MetaContextLoadInstruction::key() const
-{
-    return key_;
-}
-
-const Type *MetaContextLoadInstruction::type() const
-{
-    return new (GC)ReferenceType(String(""));   // FIXME:
-}
-
-MetaPropertyLoadInstruction::MetaPropertyLoadInstruction(Value *obj, Value *key)
-    : obj_(obj)
-    , key_(key)
-{
-}
-
-Value *MetaPropertyLoadInstruction::object() const
-{
-    return obj_;
-}
-
-Value *MetaPropertyLoadInstruction::key() const
-{
-    return key_;
-}
-
-const Type *MetaPropertyLoadInstruction::type() const
-{
-    return Type::reference();
-}
-
-ContextSetStrictInstruction::ContextSetStrictInstruction(bool strict)
-    : strict_(strict)
-{
-}
-
-bool ContextSetStrictInstruction::strict() const
-{
-    return strict_;
-}
-
-const Type *ContextSetStrictInstruction::type() const
-{
-    return Type::_void();
-}
-
-ContextEnterCatchInstruction::ContextEnterCatchInstruction(uint64_t key)
-    : key_(key)
-{
-}
-
-uint64_t ContextEnterCatchInstruction::key() const
-{
-    return key_;
-}
-
-const Type *ContextEnterCatchInstruction::type() const
-{
-    return Type::boolean();
-}
-
-ContextEnterWithInstruction::ContextEnterWithInstruction(Value *val)
-    : val_(val)
-{
-}
-
-Value *ContextEnterWithInstruction::value() const
-{
-    return val_;
-}
-
-const Type *ContextEnterWithInstruction::type() const
-{
-    return Type::boolean();
-}
-
-const Type *ContextLeaveInstruction::type() const
-{
-    return Type::_void();
-}
-
-ContextGetInstruction::ContextGetInstruction(uint64_t key, Value *res,
-                                             uint16_t cid)
-    : key_(key)
-    , res_(res)
-    , cid_(cid)
-{
-}
-
-uint64_t ContextGetInstruction::key() const
-{
-    return key_;
-}
-
-Value *ContextGetInstruction::result() const
-{
-    return res_;
-}
-
-uint16_t ContextGetInstruction::cache_id() const
-{
-    return cid_;
-}
-
-const Type *ContextGetInstruction::type() const
-{
-    return Type::boolean();
-}
-
-ContextPutInstruction::ContextPutInstruction(uint64_t key, Value *val,
-                                             uint16_t cid)
-    : key_(key)
-    , val_(val)
-    , cid_(cid)
-{
-}
-
-uint64_t ContextPutInstruction::key() const
-{
-    return key_;
-}
-
-Value *ContextPutInstruction::value() const
-{
-    return val_;
-}
-
-uint16_t ContextPutInstruction::cache_id() const
-{
-    return cid_;
-}
-
-const Type *ContextPutInstruction::type() const
-{
-    return Type::boolean();
 }
 
 ContextDeleteInstruction::ContextDeleteInstruction(uint64_t key, Value *res)
@@ -1637,50 +1065,10 @@ ContextDeleteInstruction::ContextDeleteInstruction(uint64_t key, Value *res)
     assert(res->type()->is_value());
 }
 
-uint64_t ContextDeleteInstruction::key() const
-{
-    return key_;
-}
-
-Value *ContextDeleteInstruction::result() const
-{
-    return res_;
-}
-
-const Type *ContextDeleteInstruction::type() const
-{
-    return Type::boolean();
-}
-
-ExceptionSaveStateInstruction::ExceptionSaveStateInstruction(Value *res)
-    : res_(res)
-{
-}
-
-Value *ExceptionSaveStateInstruction::result() const
-{
-    return res_;
-}
-
-const Type *ExceptionSaveStateInstruction::type() const
-{
-    return Type::_void();
-}
-
 ExceptionLoadStateInstruction::ExceptionLoadStateInstruction(Value *state)
     : state_(state)
 {
     assert(state->type()->is_value());
-}
-
-Value *ExceptionLoadStateInstruction::state() const
-{
-    return state_;
-}
-
-const Type *ExceptionLoadStateInstruction::type() const
-{
-    return Type::_void();
 }
 
 ExceptionSetInstruction::ExceptionSetInstruction(Value *val)
@@ -1688,92 +1076,6 @@ ExceptionSetInstruction::ExceptionSetInstruction(Value *val)
 {
     assert(val->type()->is_value() ||
            val->type()->is_reference());
-}
-
-Value *ExceptionSetInstruction::value() const
-{
-    return val_;
-}
-
-const Type *ExceptionSetInstruction::type() const
-{
-    return Type::_void();
-}
-
-ExceptionClearInstruction::ExceptionClearInstruction()
-{
-}
-
-const Type *ExceptionClearInstruction::type() const
-{
-    return Type::_void();
-}
-
-InitArgumentsInstruction::InitArgumentsInstruction(Value *dst, uint32_t prmc)
-    : dst_(dst)
-    , prmc_(prmc)
-{
-}
-
-Value *InitArgumentsInstruction::destination() const
-{
-    return dst_;
-}
-
-uint32_t InitArgumentsInstruction::parameter_count() const
-{
-    return prmc_;
-}
-
-const Type *InitArgumentsInstruction::type() const
-{
-    return Type::_void();
-}
-
-Declaration::Declaration(uint64_t key, bool is_strict)
-    : kind_(VARIABLE)
-    , key_(key)
-    , is_strict_(is_strict)
-    , val_(NULL)
-    , prm_index_(-1)
-    , prm_array_(NULL)
-{
-}
-
-Declaration::Declaration(uint64_t key, bool is_strict, Value *val)
-    : kind_(FUNCTION)
-    , key_(key)
-    , is_strict_(is_strict)
-    , val_(val)
-    , prm_index_(-1)
-    , prm_array_(NULL)
-{
-}
-
-Declaration::Declaration(uint64_t key, bool is_strict,
-                         size_t prm_index, Value *prm_array)
-    : kind_(PARAMETER)
-    , key_(key)
-    , is_strict_(is_strict)
-    , val_(NULL)
-    , prm_index_(prm_index)
-    , prm_array_(prm_array)
-{
-}
-
-Declaration::Kind Declaration::kind() const
-{
-    return kind_;
-}
-
-uint64_t Declaration::key() const
-{
-    return key_;
-}
-
-bool Declaration::is_strict() const
-{
-    return is_strict_;
 }
 
 Value *Declaration::value() const
@@ -1794,250 +1096,9 @@ Value *Declaration::parameter_array() const
     return prm_array_;
 }
 
-const Type *Declaration::type() const
-{
-    return Type::boolean();
-}
-
-Link::Link(Kind kind, uint64_t key, bool is_strict, Value *val)
-    : kind_(kind)
-    , key_(key)
-    , is_strict_(is_strict)
-    , val_(val)
-{
-    assert(val->type()->is_pointer());
-    assert(static_cast<const PointerType *>(val->type())->type()->is_value());
-}
-
-Link::Kind Link::kind() const
-{
-    return kind_;
-}
-
-uint64_t Link::key() const
-{
-    return key_;
-}
-
-bool Link::is_strict() const
-{
-    return is_strict_;
-}
-
-Value *Link::value() const
-{
-    return val_;
-}
-
-const Type *Link::type() const
-{
-    return Type::_void();
-}
-
-PropertyDefineDataInstruction::PropertyDefineDataInstruction(Value *obj, Value *key, Value *val)
-    : obj_(obj)
-    , key_(key)
-    , val_(val)
-{
-}
-
-Value *PropertyDefineDataInstruction::object() const
-{
-    return obj_;
-}
-
-Value *PropertyDefineDataInstruction::key() const
-{
-    return key_;
-}
-
-Value *PropertyDefineDataInstruction::value() const
-{
-    return val_;
-}
-
-const Type *PropertyDefineDataInstruction::type() const
-{
-    return Type::boolean();
-}
-
-PropertyDefineAccessorInstruction::PropertyDefineAccessorInstruction(Value *obj, uint64_t key,
-                                                                     Value *fun, bool is_setter)
-    : obj_(obj)
-    , key_(key)
-    , fun_(fun)
-    , is_setter_(is_setter)
-{
-}
-
-Value *PropertyDefineAccessorInstruction::object() const
-{
-    return obj_;
-}
-
-uint64_t PropertyDefineAccessorInstruction::key() const
-{
-    return key_;
-}
-
-Value *PropertyDefineAccessorInstruction::function() const
-{
-    return fun_;
-}
-
-bool PropertyDefineAccessorInstruction::is_setter() const
-{
-    return is_setter_;
-}
-
-const Type *PropertyDefineAccessorInstruction::type() const
-{
-    return Type::boolean();
-}
-
-PropertyIteratorNewInstruction::PropertyIteratorNewInstruction(Value *obj)
-    : obj_(obj)
-{
-}
-
-Value *PropertyIteratorNewInstruction::object() const
-{
-    return obj_;
-}
-
 const Type *PropertyIteratorNewInstruction::type() const
 {
     return new (GC)OpaqueType("EsPropertyIterator");
-}
-
-PropertyIteratorNextInstruction::PropertyIteratorNextInstruction(Value *it,
-                                                                 Value *val)
-    : it_(it)
-    , val_(val)
-{
-}
-
-Value *PropertyIteratorNextInstruction::iterator() const
-{
-    return it_;
-}
-
-Value *PropertyIteratorNextInstruction::value() const
-{
-    return val_;
-}
-
-const Type *PropertyIteratorNextInstruction::type() const
-{
-    return Type::boolean();
-}
-
-PropertyGetInstruction::PropertyGetInstruction(Value *obj, uint64_t key, Value *res)
-    : obj_(obj)
-    , key_(key)
-    , res_(res)
-{
-}
-
-Value *PropertyGetInstruction::object() const
-{
-    return obj_;
-}
-
-uint64_t PropertyGetInstruction::key() const
-{
-    return key_;
-}
-
-Value *PropertyGetInstruction::result() const
-{
-    return res_;
-}
-
-const Type *PropertyGetInstruction::type() const
-{
-    return Type::boolean();
-}
-
-PropertyGetSlowInstruction::PropertyGetSlowInstruction(Value *obj, Value *key, Value *res)
-    : obj_(obj)
-    , key_(key)
-    , res_(res)
-{
-}
-
-Value *PropertyGetSlowInstruction::object() const
-{
-    return obj_;
-}
-
-Value *PropertyGetSlowInstruction::key() const
-{
-    return key_;
-}
-
-Value *PropertyGetSlowInstruction::result() const
-{
-    return res_;
-}
-
-const Type *PropertyGetSlowInstruction::type() const
-{
-    return Type::boolean();
-}
-
-PropertyPutInstruction::PropertyPutInstruction(Value *obj, uint64_t key, Value *val)
-    : obj_(obj)
-    , key_(key)
-    , val_(val)
-{
-}
-
-Value *PropertyPutInstruction::object() const
-{
-    return obj_;
-}
-
-uint64_t PropertyPutInstruction::key() const
-{
-    return key_;
-}
-
-Value *PropertyPutInstruction::value() const
-{
-    return val_;
-}
-
-const Type *PropertyPutInstruction::type() const
-{
-    return Type::boolean();
-}
-
-PropertyPutSlowInstruction::PropertyPutSlowInstruction(Value *obj, Value *key, Value *val)
-    : obj_(obj)
-    , key_(key)
-    , val_(val)
-{
-}
-
-Value *PropertyPutSlowInstruction::object() const
-{
-    return obj_;
-}
-
-Value *PropertyPutSlowInstruction::key() const
-{
-    return key_;
-}
-
-Value *PropertyPutSlowInstruction::value() const
-{
-    return val_;
-}
-
-const Type *PropertyPutSlowInstruction::type() const
-{
-    return Type::boolean();
 }
 
 PropertyDeleteInstruction::PropertyDeleteInstruction(Value *obj, uint64_t key, Value *res)
@@ -2051,26 +1112,6 @@ PropertyDeleteInstruction::PropertyDeleteInstruction(Value *obj, uint64_t key, V
     assert(res->type()->is_value());
 }
 
-Value *PropertyDeleteInstruction::object() const
-{
-    return obj_;
-}
-
-uint64_t PropertyDeleteInstruction::key() const
-{
-    return key_;
-}
-
-Value *PropertyDeleteInstruction::result() const
-{
-    return res_;
-}
-
-const Type *PropertyDeleteInstruction::type() const
-{
-    return Type::boolean();
-}
-
 PropertyDeleteSlowInstruction::PropertyDeleteSlowInstruction(Value *obj, Value *key, Value *res)
     : obj_(obj)
     , key_(key)
@@ -2081,226 +1122,6 @@ PropertyDeleteSlowInstruction::PropertyDeleteSlowInstruction(Value *obj, Value *
 #endif
     assert(key->type()->is_value());
     assert(res->type()->is_value());
-}
-
-Value *PropertyDeleteSlowInstruction::object() const
-{
-    return obj_;
-}
-
-Value *PropertyDeleteSlowInstruction::key() const
-{
-    return key_;
-}
-
-Value *PropertyDeleteSlowInstruction::result() const
-{
-    return res_;
-}
-
-const Type *PropertyDeleteSlowInstruction::type() const
-{
-    return Type::boolean();
-}
-
-EsNewArrayInstruction::EsNewArrayInstruction(size_t length, Value *vals,
-                                             Value *res)
-    : length_(length)
-    , vals_(vals)
-    , res_(res)
-{
-}
-
-size_t EsNewArrayInstruction::length() const
-{
-    return length_;
-}
-
-Value *EsNewArrayInstruction::values() const
-{
-    return vals_;
-}
-
-Value *EsNewArrayInstruction::result() const
-{
-    return res_;
-}
-
-const Type *EsNewArrayInstruction::type() const
-{
-    return Type::_void();
-}
-
-EsNewFunctionDeclarationInstruction::EsNewFunctionDeclarationInstruction(
-    Function *fun, uint32_t param_count, bool is_strict, Value *res)
-    : fun_(fun)
-    , param_count_(param_count)
-    , is_strict_(is_strict)
-    , res_(res)
-{
-}
-
-Function *EsNewFunctionDeclarationInstruction::function() const
-{
-    return fun_;
-}
-
-uint32_t EsNewFunctionDeclarationInstruction::parameter_count() const
-{
-    return param_count_;
-}
-
-bool EsNewFunctionDeclarationInstruction::is_strict() const
-{
-    return is_strict_;
-}
-
-Value *EsNewFunctionDeclarationInstruction::result() const
-{
-    return res_;
-}
-
-const Type *EsNewFunctionDeclarationInstruction::type() const
-{
-    return Type::_void();
-}
-
-EsNewFunctionExpressionInstruction::EsNewFunctionExpressionInstruction(
-    Function *fun, uint32_t param_count, bool is_strict, Value *res)
-    : fun_(fun)
-    , param_count_(param_count)
-    , is_strict_(is_strict)
-    , res_(res)
-{
-}
-
-Function *EsNewFunctionExpressionInstruction::function() const
-{
-    return fun_;
-}
-
-uint32_t EsNewFunctionExpressionInstruction::parameter_count() const
-{
-    return param_count_;
-}
-
-bool EsNewFunctionExpressionInstruction::is_strict() const
-{
-    return is_strict_;
-}
-
-Value *EsNewFunctionExpressionInstruction::result() const
-{
-    return res_;
-}
-
-const Type *EsNewFunctionExpressionInstruction::type() const
-{
-    return Type::_void();
-}
-
-EsNewObjectInstruction::EsNewObjectInstruction(Value *res)
-    : res_(res)
-{
-}
-
-Value *EsNewObjectInstruction::result() const
-{
-    return res_;
-}
-
-const Type *EsNewObjectInstruction::type() const
-{
-    return Type::_void();
-}
-
-EsNewRegexInstruction::EsNewRegexInstruction(const String &pattern,
-                                             const String &flags,
-                                             Value *res)
-    : pattern_(pattern)
-    , flags_(flags)
-    , res_(res)
-{
-}
-
-const String &EsNewRegexInstruction::pattern() const
-{
-    return pattern_;
-}
-
-const String &EsNewRegexInstruction::flags() const
-{
-    return flags_;
-}
-
-Value *EsNewRegexInstruction::result() const
-{
-    return res_;
-}
-
-const Type *EsNewRegexInstruction::type() const
-{
-    return Type::_void();
-}
-
-EsBinaryInstruction::EsBinaryInstruction(Operation op, Value *lval, Value *rval, Value *res)
-    : op_(op)
-    , lval_(lval)
-    , rval_(rval)
-    , res_(res)
-{
-}
-
-EsBinaryInstruction::Operation EsBinaryInstruction::operation() const
-{
-    return op_;
-}
-
-Value *EsBinaryInstruction::left() const
-{
-    return lval_;
-}
-
-Value *EsBinaryInstruction::right() const
-{
-    return rval_;
-}
-
-Value *EsBinaryInstruction::result() const
-{
-    return res_;
-}
-
-const Type *EsBinaryInstruction::type() const
-{
-    return Type::boolean();
-}
-
-EsUnaryInstruction::EsUnaryInstruction(Operation op, Value *val, Value *res)
-    : op_(op)
-    , val_(val)
-    , res_(res)
-{
-}
-
-EsUnaryInstruction::Operation EsUnaryInstruction::operation() const
-{
-    return op_;
-}
-
-Value *EsUnaryInstruction::value() const
-{
-    return val_;
-}
-
-Value *EsUnaryInstruction::result() const
-{
-    return res_;
-}
-
-const Type *EsUnaryInstruction::type() const
-{
-    return Type::boolean();
 }
 
 }

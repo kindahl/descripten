@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include <cassert>
 #include <memory>
 
 template <typename T>

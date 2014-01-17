@@ -168,7 +168,7 @@ void Allocator::visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *in
 
 void Allocator::visit_instr_args_obj_link(ir::ArgumentsObjectLinkInstruction *instr)
 {
-    touch(instr->arguments());
+    touch(instr->arguments_object());
     touch(instr->value());
     touch(instr);
 

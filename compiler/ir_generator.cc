@@ -230,8 +230,8 @@ void IrGenerator::visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *
 
 void IrGenerator::visit_instr_args_obj_link(ir::ArgumentsObjectLinkInstruction *instr)
 {
-    out() << "args.obj.link" << value(instr->arguments()) << " "
-          << instr->index() << " " << value(instr->value()) << "\n";
+    out() << "args.obj.link" << value(instr->arguments_object()) << " "
+          << instr->argument_index() << " " << value(instr->value()) << "\n";
 }
 
 void IrGenerator::visit_instr_arr(ir::ArrayInstruction *instr)

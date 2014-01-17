@@ -715,27 +715,14 @@ public:
      * @return true if the program represents the program root, false if it
      *         does not.
      */
-    bool is_global() const;
+    bool is_global() const { return is_global_; }
 
-    /**
-     * @return Function name.
-     */
-    const std::string &name() const;
+    const std::string &name() const { return name_; }
 
-    /**
-     * @return Blocks contained in function.
-     */
-    BlockList &mutable_blocks();
+    BlockList &mutable_blocks() { return blocks_; }
 
-    /**
-     * @return Blocks contained in function.
-     */
-    const BlockList &blocks() const;
+    const BlockList &blocks() const { return blocks_; }
 
-    /**
-     * Adds a block to the function.
-     * @param [in] block Block to add.
-     */
     void push_block(Block *block);
 
     /**
@@ -770,13 +757,11 @@ private:
     void push_instr(Instruction *instr);
 
 public:
-    Block();
-    Block(const std::string &label);
+    Block() {}
+    Block(const std::string &label)
+        : label_(label) {}
 
-    bool empty() const
-    {
-        return instrs_.empty();
-    }
+    bool empty() const { return instrs_.empty(); }
 
     /**
      * Adds a referrer to the block. A referrer is a terminating instruction
@@ -796,17 +781,17 @@ public:
     /**
      * @return List of instructions referencing this block.
      */
-    const InstructionSet &referrers() const;
+    const InstructionSet &referrers() const { return referrers_; }
 
     /**
      * @return Block label.
      */
-    const std::string &label() const;
+    const std::string &label() const { return label_; }
 
     /**
      * @return Instructions contained within block.
      */
-    const InstructionVector &instructions() const;
+    const InstructionVector &instructions() const { return instrs_; }
 
     /**
      * @return Last instruction in block.
@@ -930,14 +915,14 @@ public:
 /**
  * @brief Value.
  */
-// FIXME: Maybe Value shouldn't be able to be of type EsValue?
 class Value
 {
 private:
     bool persistent_;   ///< true if the value will live through the entire function lifetime.
 
 public:
-    Value();
+    Value()
+        : persistent_(false) {}
     virtual ~Value() {}
 
     /**
@@ -1034,8 +1019,8 @@ public:
     };
 
 protected:
-    Instruction();
-    virtual ~Instruction();
+    Instruction() {}
+    virtual ~Instruction() {}
 
 public:
     /**
@@ -1056,16 +1041,9 @@ public:
 class ArgumentsObjectInitInstruction : public Instruction
 {
 public:
-    ArgumentsObjectInitInstruction();
+    ArgumentsObjectInitInstruction() {}
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE {  return Type::value(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_args_obj_init(this);
@@ -1083,31 +1061,16 @@ private:
     Value *val_;
 
 public:
-    ArgumentsObjectLinkInstruction(Value *args, uint32_t index, Value *val);
+    ArgumentsObjectLinkInstruction(Value *args, uint32_t index, Value *val)
+        : args_(args)
+        , index_(index)
+        , val_(val) {}
 
-    /**
-     * @return Arguments object.
-     */
-    Value *arguments() const;
+    Value *arguments_object() const { return args_; }
+    uint32_t argument_index() const { return index_; }
+    Value *value() const { return val_; }
 
-    /**
-     * @return Argument index.
-     */
-    uint32_t index() const;
-
-    /**
-     * @return Value.
-     */
-    Value *value() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_args_obj_link(this);
@@ -1116,10 +1079,6 @@ public:
 
 /**
  * @brief Array instruction.
- *
- * Example:
- * array put %arr 0 %val
- * array get %arr 0
  */
 class ArrayInstruction : public Instruction
 {
@@ -1140,20 +1099,9 @@ public:
     ArrayInstruction(Operation op, size_t index, Value *arr);
     ArrayInstruction(Operation op, size_t index, Value *arr, Value *val);
 
-    /**
-     * @return Array operation.
-     */
-    Operation operation() const;
-
-    /**
-     * @return Array index.
-     */
-    size_t index() const;
-
-    /**
-     * @return Array operand.
-     */
-    Value *array() const;
+    Operation operation() const { return op_; }
+    size_t index() const { return index_; }
+    Value *array() const { return arr_; }
 
     /**
      * @return Value operand.
@@ -1161,14 +1109,7 @@ public:
      */
     Value *value() const;
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_arr(this);
@@ -1197,31 +1138,16 @@ private:
     Value *rval_;
 
 public:
-    BinaryInstruction(Operation op, Value *lval, Value *rval);
+    BinaryInstruction(Operation op, Value *lval, Value *rval)
+        : op_(op)
+        , lval_(lval)
+        , rval_(rval) {}
 
-    /**
-     * @return Binary operation.
-     */
-    Operation operation() const;
+    Operation operation() const { return op_; }
+    Value *left() const { return lval_; }
+    Value *right() const { return rval_; }
 
-    /**
-     * @return Left-hand-side value.
-     */
-    Value *left() const;
-
-    /**
-     * @return Right-hand-side value.
-     */
-    Value *right() const;
-
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_bin(this);
@@ -1237,18 +1163,12 @@ private:
     uint32_t num_extra_;
 
 public:
-    BindExtraInitInstruction(uint32_t num_extra);
+    BindExtraInitInstruction(uint32_t num_extra)
+        : num_extra_(num_extra) {}
 
-    uint32_t num_extra() const;
+    uint32_t num_extra() const { return num_extra_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_bnd_extra_init(this);
@@ -1264,18 +1184,12 @@ private:
     uint32_t hops_;
 
 public:
-    BindExtraPtrInstruction(uint32_t hops);
+    BindExtraPtrInstruction(uint32_t hops)
+        : hops_(hops) {}
 
-    uint32_t hops() const;
+    uint32_t hops() const { return hops_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_bnd_extra_ptr(this);
@@ -1301,36 +1215,18 @@ private:
     Value *res_;
 
 public:
-    CallInstruction(Operation op, Value *fun, uint32_t argc, Value *res);
+    CallInstruction(Operation op, Value *fun, uint32_t argc, Value *res)
+        : op_(op)
+        , fun_(fun)
+        , argc_(argc)
+        , res_(res) {}
 
-    /**
-     * @return Type of call.
-     */
-    Operation operation() const;
+    Operation operation() const { return op_; }
+    Value *function() const { return fun_; }
+    uint32_t argc() const { return argc_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Function to call.
-     */
-    Value *function() const;
-
-    /**
-     * @return Number of arguments.
-     */
-    uint32_t argc() const;
-
-    /**
-     * @return Function result.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_call(this);
@@ -1350,36 +1246,18 @@ private:
 
 public:
     CallKeyedInstruction(Value *obj, uint64_t key, uint32_t argc,
-                         Value *res);
+                         Value *res)
+        : obj_(obj)
+        , key_(key)
+        , argc_(argc)
+        , res_(res) {}
 
-    /**
-     * @return Object.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    uint64_t key() const { return key_; }
+    uint32_t argc() const { return argc_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Key.
-     */
-    uint64_t key() const;
-
-    /**
-     * @return Number of arguments.
-     */
-    uint32_t argc() const;
-
-    /**
-     * @return Function result.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_call_keyed(this);
@@ -1399,36 +1277,18 @@ private:
 
 public:
     CallKeyedSlowInstruction(Value *obj, Value *key, uint32_t argc,
-                             Value *res);
+                             Value *res)
+        : obj_(obj)
+        , key_(key)
+        , argc_(argc)
+        , res_(res) {}
 
-    /**
-     * @return Object.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    Value *key() const { return key_; }
+    uint32_t argc() const { return argc_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Key.
-     */
-    Value *key() const;
-
-    /**
-     * @return Number of arguments.
-     */
-    uint32_t argc() const;
-
-    /**
-     * @return Function result.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_call_keyed_slow(this);
@@ -1446,76 +1306,21 @@ private:
     Value *res_;
 
 public:
-    CallNamedInstruction(uint64_t key, uint32_t argc, Value *res);
+    CallNamedInstruction(uint64_t key, uint32_t argc, Value *res)
+        : key_(key)
+        , argc_(argc)
+        , res_(res) {}
 
-    /**
-     * @return Function to call.
-     */
-    uint64_t key() const;
+    uint64_t key() const { return key_; }
+    uint32_t argc() const { return argc_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Number of arguments.
-     */
-    uint32_t argc() const;
-
-    /**
-     * @return Function result.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_call_named(this);
     }
 };
-
-#ifdef UNUSED
-/**
- * @brief FIXME:
- */
-class PhiInstruction : public Instruction
-{
-public:
-    /**
-     * @brief Phi instruction argument.
-     */
-    class Argument
-    {
-    private:
-        Block *block_;
-        Value *value_;
-
-    public:
-        Argument(Block *block, Value *value)
-            : block_(block)
-            , value_(value) {}
-
-        Block *block() const { return block_; }
-        Value *value() const { return value_; }
-    };
-
-    typedef std::vector<Argument *, gc_allocator<Argument *> > ArgumentVector;
-
-private:
-    ArgumentVector args_;
-
-public:
-    PhiInstruction(const ArgumentVector &args);
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-};
-#endif
 
 /**
  * @brief Value instruction.
@@ -1550,15 +1355,8 @@ public:
     ValueInstruction(Operation op, Value *val, Value *res);
     ValueInstruction(Operation op, Value *val);
 
-    /**
-     * @return Value operation.
-     */
-    Operation operation() const;
-
-    /**
-     * @return Value operand.
-     */
-    Value *value() const;
+    Operation operation() const { return op_; }
+    Value *value() const { return val_; }
 
     /**
      * @return Result operation.
@@ -1566,14 +1364,7 @@ public:
      */
     Value *result() const;
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_val(this);
@@ -1622,29 +1413,11 @@ public:
     BranchInstruction(Block *host, Value *cond,
                       Block *true_block, Block *false_block);
 
-    /**
-     * @return Condition operand.
-     */
-    Value *condition() const;
+    Value *condition() const { return cond_; }
+    Block *true_block() const { return true_block_; }
+    Block *false_block() const { return false_block_; }
 
-    /**
-     * @return Block to execute when condition evaluates to true.
-     */
-    Block *true_block() const;
-
-    /**
-     * @return Block to execute when condition evaluates to false.
-     */
-    Block *false_block() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_br(this);
@@ -1660,21 +1433,13 @@ private:
     Block *block_;
 
 public:
-    JumpInstruction(Block *host, Block *block);
+    JumpInstruction(Block *host, Block *block)
+        : TerminateInstruction(host)
+        , block_(block) {}
 
-    /**
-     * @return Destination block.
-     */
-    Block *block() const;
+    Block *block() const { return block_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_jmp(this);
@@ -1690,21 +1455,13 @@ private:
     Value *val_;
 
 public:
-    ReturnInstruction(Block *host, Value *val);
+    ReturnInstruction(Block *host, Value *val)
+        : TerminateInstruction(host)
+        , val_(val) {}
 
-    /**
-     * @return Return value.
-     */
-    Value *value() const;
+    Value *value() const { return val_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ret(this);
@@ -1721,26 +1478,14 @@ private:
     Value *src_;
 
 public:
-    MemoryStoreInstruction(Value *dst, Value *src);
+    MemoryStoreInstruction(Value *dst, Value *src)
+        : dst_(dst)
+        , src_(src) {}
 
-    /**
-     * @return Destination value.
-     */
-    Value *destination() const;
+    Value *destination() const { return dst_; }
+    Value *source() const { return src_; }
 
-    /**
-     * @return Source value.
-     */
-    Value *source() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_mem_store(this);
@@ -1759,24 +1504,10 @@ private:
 public:
     MemoryElementPointerInstruction(Value *val, size_t index);
 
-    /**
-     * @return Value.
-     */
-    Value *value() const;
+    Value *value() const { return val_; }
+    size_t index() const { return index_; }
 
-    /**
-     * @return Element index.
-     */
-    size_t index() const;
-
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_mem_elm_ptr(this);
@@ -1792,21 +1523,15 @@ private:
     Proxy<size_t> count_;
 
 public:
-    StackAllocInstruction(const Proxy<size_t> &count);
+    StackAllocInstruction(const Proxy<size_t> &count)
+        : count_(count) {}
 
     /**
      * @return Number of values to allocate.
      */
-    size_t count() const;
+    size_t count() const { return count_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_stk_alloc(this);
@@ -1822,21 +1547,15 @@ private:
     size_t count_;
 
 public:
-    StackFreeInstruction(size_t count);
+    StackFreeInstruction(size_t count)
+        : count_(count) {}
 
     /**
      * @return Number of values to free.
      */
-    size_t count() const;
+    size_t count() const { return count_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_stk_free(this);
@@ -1854,19 +1573,9 @@ private:
 public:
     StackPushInstruction(Value *val);
 
-    /**
-     * @return Value.
-     */
-    Value *value() const;
+    Value *value() const { return val_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_stk_push(this);
@@ -1901,17 +1610,12 @@ private:
     uint64_t key_;
 
 public:
-    MetaContextLoadInstruction(uint64_t key);
+    MetaContextLoadInstruction(uint64_t key)
+        : key_(key) {}
 
-    /**
-     * @return Property key to load.
-     */
-    uint64_t key() const;
+    uint64_t key() const { return key_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
+    virtual const Type *type() const OVERRIDE { return Type::reference(); }
 };
 
 /**
@@ -1924,22 +1628,14 @@ private:
     Value *key_;
 
 public:
-    MetaPropertyLoadInstruction(Value *obj, Value *key);
+    MetaPropertyLoadInstruction(Value *obj, Value *key)
+        : obj_(obj)
+        , key_(key) {}
 
-    /**
-     * @return Object value.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    Value *key() const { return key_; }
 
-    /**
-     * @return Key value.
-     */
-    Value *key() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
+    virtual const Type *type() const OVERRIDE { return Type::reference(); }
 };
 
 /**
@@ -1951,21 +1647,12 @@ private:
     bool strict_;
 
 public:
-    ContextSetStrictInstruction(bool strict);
+    ContextSetStrictInstruction(bool strict)
+        : strict_(strict) {}
 
-    /**
-     * @return true if strict, false otherwise.
-     */
-    bool strict() const;
+    bool strict() const { return strict_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_set_strict(this);
@@ -1981,21 +1668,12 @@ private:
     uint64_t key_;
 
 public:
-    ContextEnterCatchInstruction(uint64_t key);
+    ContextEnterCatchInstruction(uint64_t key)
+        : key_(key) {}
 
-    /**
-     * @return Catched name.
-     */
-    uint64_t key() const;
+    uint64_t key() const { return key_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_enter_catch(this);
@@ -2011,21 +1689,12 @@ private:
     Value *val_;
 
 public:
-    ContextEnterWithInstruction(Value *val);
+    ContextEnterWithInstruction(Value *val)
+        : val_(val) {}
 
-    /**
-     * @return Value operand.
-     */
-    Value *value() const;
+    Value *value() const { return val_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_enter_with(this);
@@ -2038,14 +1707,7 @@ public:
 class ContextLeaveInstruction : public Instruction
 {
 public:
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_leave(this);
@@ -2063,31 +1725,16 @@ private:
     uint16_t cid_;
 
 public:
-    ContextGetInstruction(uint64_t key, Value *res, uint16_t cid);
+    ContextGetInstruction(uint64_t key, Value *res, uint16_t cid)
+        : key_(key)
+        , res_(res)
+        , cid_(cid) {}
 
-    /**
-     * @return Key.
-     */
-    uint64_t key() const;
+    uint64_t key() const { return key_; }
+    Value *result() const { return res_; }
+    uint16_t cache_id() const { return cid_; }
 
-    /**
-     * @return Result operand.
-     */
-    Value *result() const;
-
-    /**
-     * @return Cache id.
-     */
-    uint16_t cache_id() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_get(this);
@@ -2105,31 +1752,16 @@ private:
     uint16_t cid_;
 
 public:
-    ContextPutInstruction(uint64_t key, Value *val, uint16_t cid);
+    ContextPutInstruction(uint64_t key, Value *val, uint16_t cid)
+        : key_(key)
+        , val_(val)
+        , cid_(cid) {}
 
-    /**
-     * @return Identifier.
-     */
-    uint64_t key() const;
+    uint64_t key() const { return key_; }
+    Value *value() const { return val_; }
+    uint16_t cache_id() const { return cid_; }
 
-    /**
-     * @return Value.
-     */
-    Value *value() const;
-
-    /**
-     * @return Cache identifier.
-     */
-    uint16_t cache_id() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_put(this);
@@ -2152,24 +1784,10 @@ private:
 public:
     ContextDeleteInstruction(uint64_t key, Value *res);
 
-    /**
-     * @return Key of property to delete.
-     */
-    uint64_t key() const;
+    uint64_t key() const { return key_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_del(this);
@@ -2185,21 +1803,12 @@ private:
     Value *res_;
 
 public:
-    ExceptionSaveStateInstruction(Value *res);
+    ExceptionSaveStateInstruction(Value *res)
+        : res_(res) {}
 
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
+    Value *result() const { return res_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ex_save_state(this);
@@ -2217,19 +1826,9 @@ private:
 public:
     ExceptionLoadStateInstruction(Value *state);
 
-    /**
-     * @return Exception state value.
-     */
-    Value *state() const;
+    Value *state() const { return state_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ex_load_state(this);
@@ -2250,16 +1849,9 @@ public:
     /**
     * @return Value to throw with exception.
     */
-    Value *value() const;
+    Value *value() const { return val_; }
 
-    /**
-    * @copydoc Value::type
-    */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-    * @copydoc Instruction::accept
-    */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ex_set(this);
@@ -2272,16 +1864,7 @@ public:
 class ExceptionClearInstruction : public Instruction
 {
 public:
-    ExceptionClearInstruction();
-
-    /**
-    * @copydoc Value::type
-    */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-    * @copydoc Instruction::accept
-    */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ex_clear(this);
@@ -2298,26 +1881,14 @@ private:
     uint32_t prmc_;
 
 public:
-    InitArgumentsInstruction(Value *dst, uint32_t prmc);
+    InitArgumentsInstruction(Value *dst, uint32_t prmc)
+        : dst_(dst)
+        , prmc_(prmc) {}
 
-    /**
-     * @return Destination value.
-     */
-    Value *destination() const;
+    Value *destination() const { return dst_; }
+    uint32_t parameter_count() const { return prmc_; }
 
-    /**
-     * @return Number of parameters that the function expects.
-     */
-    uint32_t parameter_count() const;
-
-    /**
-    * @copydoc Value::type
-    */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-    * @copydoc Instruction::accept
-    */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_init_args(this);
@@ -2350,25 +1921,32 @@ private:
     Value *prm_array_;  ///< Only valid for PARAMETER type.
 
 public:
-    Declaration(uint64_t id, bool is_strict);
-    Declaration(uint64_t id, bool is_strict, Value *val);
-    Declaration(uint64_t id, bool is_strict, size_t prm_index,
-                Value *prm_array);
+    Declaration(uint64_t key, bool is_strict)
+        : kind_(VARIABLE)
+        , key_(key)
+        , is_strict_(is_strict)
+        , val_(NULL)
+        , prm_index_(-1)
+        , prm_array_(NULL) {}
+    Declaration(uint64_t key, bool is_strict, Value *val)
+        : kind_(FUNCTION)
+        , key_(key)
+        , is_strict_(is_strict)
+        , val_(val)
+        , prm_index_(-1)
+        , prm_array_(NULL) {}
+    Declaration(uint64_t key, bool is_strict, size_t prm_index,
+                Value *prm_array)
+        : kind_(PARAMETER)
+        , key_(key)
+        , is_strict_(is_strict)
+        , val_(NULL)
+        , prm_index_(prm_index)
+        , prm_array_(prm_array) {}
 
-    /**
-     * @return Kind of operation.
-     */
-    Kind kind() const;
-
-    /**
-     * @return Declaration key.
-     */
-    uint64_t key() const;
-
-    /**
-     * @return true if strict mode, false otherwise.
-     */
-    bool is_strict() const;
+    Kind kind() const { return kind_; }
+    uint64_t key() const { return key_; }
+    bool is_strict() const { return is_strict_; }
 
     /**
      * @return Declared value.
@@ -2388,14 +1966,7 @@ public:
      */
     Value *parameter_array() const;
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_decl(this);
@@ -2426,36 +1997,18 @@ private:
     Value *val_;
 
 public:
-    Link(Kind kind, uint64_t key, bool is_strict, Value *val);
+    Link(Kind kind, uint64_t key, bool is_strict, Value *val)
+        : kind_(kind)
+        , key_(key)
+        , is_strict_(is_strict)
+        , val_(val) {}
 
-    /**
-     * @return Kind of operation.
-     */
-    Kind kind() const;
+    Kind kind() const { return kind_; }
+    uint64_t key() const { return key_; }
+    bool is_strict() const { return is_strict_; }
+    Value *value() const { return val_; }
 
-    /**
-     * @return Declaration key.
-     */
-    uint64_t key() const;
-
-    /**
-     * @return true if strict mode, false otherwise.
-     */
-    bool is_strict() const;
-
-    /**
-     * @return Declared value.
-     */
-    Value *value() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_link(this);
@@ -2473,31 +2026,16 @@ private:
     Value *val_;
 
 public:
-    PropertyDefineDataInstruction(Value *obj, Value *key, Value *val);
+    PropertyDefineDataInstruction(Value *obj, Value *key, Value *val)
+        : obj_(obj)
+        , key_(key)
+        , val_(val) {}
 
-    /**
-     * @return Object to add property to.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    Value *key() const { return key_; }
+    Value *value() const { return val_; }
 
-    /**
-     * @return Property key.
-     */
-    Value *key() const;
-
-    /**
-     * @return Property value.
-     */
-    Value *value() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_def_data(this);
@@ -2517,36 +2055,18 @@ private:
 
 public:
     PropertyDefineAccessorInstruction(Value *obj, uint64_t key,
-                                      Value *fun, bool is_setter);
+                                      Value *fun, bool is_setter)
+        : obj_(obj)
+        , key_(key)
+        , fun_(fun)
+        , is_setter_(is_setter) {}
 
-    /**
-     * @return Object to add property to.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    uint64_t key() const { return key_; }
+    Value *function() const { return fun_; }
+    bool is_setter() const { return is_setter_; }
 
-    /**
-     * @return Property key.
-     */
-    uint64_t key() const;
-
-    /**
-     * @return Accessor function.
-     */
-    Value *function() const;
-
-    /**
-     * @return if the accessor is a setter, false if it's not.
-     */
-    bool is_setter() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_def_accessor(this);
@@ -2562,21 +2082,12 @@ private:
     Value *obj_;
 
 public:
-    PropertyIteratorNewInstruction(Value *obj);
+    PropertyIteratorNewInstruction(Value *obj)
+        : obj_(obj) {}
 
-    /**
-     * @return Object to create iterator for.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_it_new(this);
@@ -2593,26 +2104,14 @@ private:
     Value *val_;
 
 public:
-    PropertyIteratorNextInstruction(Value *it, Value *val);
+    PropertyIteratorNextInstruction(Value *it, Value *val)
+        : it_(it)
+        , val_(val) {}
 
-    /**
-     * @return Iterator value.
-     */
-    Value *iterator() const;
+    Value *iterator() const { return it_; }
+    Value *value() const { return val_; }
 
-    /**
-     * @return Result value.
-     */
-    Value *value() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_it_next(this);
@@ -2630,31 +2129,16 @@ private:
     Value *res_;
 
 public:
-    PropertyGetInstruction(Value *obj, uint64_t key, Value *res);
+    PropertyGetInstruction(Value *obj, uint64_t key, Value *res)
+        : obj_(obj)
+        , key_(key)
+        , res_(res) {}
 
-    /**
-     * @return Object.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    uint64_t key() const { return key_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Key.
-     */
-    uint64_t key() const;
-
-    /**
-     * @return Result operand.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_get(this);
@@ -2672,31 +2156,16 @@ private:
     Value *res_;
 
 public:
-    PropertyGetSlowInstruction(Value *obj, Value *key, Value *res);
+    PropertyGetSlowInstruction(Value *obj, Value *key, Value *res)
+        : obj_(obj)
+        , key_(key)
+        , res_(res) {}
 
-    /**
-     * @return Object.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    Value *key() const { return key_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Key.
-     */
-    Value *key() const;
-
-    /**
-     * @return Result operand.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_get_slow(this);
@@ -2714,31 +2183,16 @@ private:
     Value *val_;
 
 public:
-    PropertyPutInstruction(Value *obj, uint64_t key, Value *val);
+    PropertyPutInstruction(Value *obj, uint64_t key, Value *val)
+        : obj_(obj)
+        , key_(key)
+        , val_(val) {}
 
-    /**
-     * @return Object.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    uint64_t key() const { return key_; }
+    Value *value() const { return val_; }
 
-    /**
-     * @return Key.
-     */
-    uint64_t key() const;
-
-    /**
-     * @return Value.
-     */
-    Value *value() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_put(this);
@@ -2756,31 +2210,16 @@ private:
     Value *val_;
 
 public:
-    PropertyPutSlowInstruction(Value *obj, Value *key, Value *val);
+    PropertyPutSlowInstruction(Value *obj, Value *key, Value *val)
+        : obj_(obj)
+        , key_(key)
+        , val_(val) {}
 
-    /**
-     * @return Object.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    Value *key() const { return key_; }
+    Value *value() const { return val_; }
 
-    /**
-     * @return Key.
-     */
-    Value *key() const;
-
-    /**
-     * @return Value.
-     */
-    Value *value() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_put_slow(this);
@@ -2804,29 +2243,11 @@ private:
 public:
     PropertyDeleteInstruction(Value *obj, uint64_t key, Value *res);
 
-    /**
-     * @return Object to delete property from.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    uint64_t key() const { return key_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Key of property to delete.
-     */
-    uint64_t key() const;
-
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_del(this);
@@ -2850,29 +2271,11 @@ private:
 public:
     PropertyDeleteSlowInstruction(Value *obj, Value *key, Value *res);
 
-    /**
-     * @return Object to delete property from.
-     */
-    Value *object() const;
+    Value *object() const { return obj_; }
+    Value *key() const { return key_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Property key to delete.
-     */
-    Value *key() const;
-
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_prp_del_slow(this);
@@ -2890,31 +2293,16 @@ private:
     Value *res_;
 
 public:
-    EsNewArrayInstruction(size_t length, Value *vals, Value *res);
+    EsNewArrayInstruction(size_t length, Value *vals, Value *res)
+        : length_(length)
+        , vals_(vals)
+        , res_(res) {}
 
-    /**
-     * @return Array length.
-     */
-    size_t length() const;
+    size_t length() const { return length_; }
+    Value *values() const { return vals_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Array values.
-     */
-    Value *values() const;
-
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_es_new_arr(this);
@@ -2934,36 +2322,18 @@ private:
 
 public:
     EsNewFunctionDeclarationInstruction(Function *fun, uint32_t param_count,
-                                        bool is_strict, Value *res);
+                                        bool is_strict, Value *res)
+        : fun_(fun)
+        , param_count_(param_count)
+        , is_strict_(is_strict)
+        , res_(res) {}
 
-    /**
-     * @return Function value.
-     */
-    Function *function() const;
+    Function *function() const { return fun_; }
+    uint32_t parameter_count() const { return param_count_; }
+    bool is_strict() const { return is_strict_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Number of parameters.
-     */
-    uint32_t parameter_count() const;
-
-    /**
-     * @return true if function is a strict function.
-     */
-    bool is_strict() const;
-
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_es_new_fun_decl(this);
@@ -2983,36 +2353,18 @@ private:
 
 public:
     EsNewFunctionExpressionInstruction(Function *fun, uint32_t param_count,
-                                       bool is_strict, Value *res);
+                                       bool is_strict, Value *res)
+        : fun_(fun)
+        , param_count_(param_count)
+        , is_strict_(is_strict)
+        , res_(res) {}
 
-    /**
-     * @return Function value.
-     */
-    Function *function() const;
+    Function *function() const { return fun_; }
+    uint32_t parameter_count() const { return param_count_; }
+    bool is_strict() const { return is_strict_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Number of parameters.
-     */
-    uint32_t parameter_count() const;
-
-    /**
-     * @return true if function is a strict function.
-     */
-    bool is_strict() const;
-
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_es_new_fun_expr(this);
@@ -3028,21 +2380,12 @@ private:
     Value *res_;
 
 public:
-    EsNewObjectInstruction(Value *res);
+    EsNewObjectInstruction(Value *res)
+        : res_(res) {}
 
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
+    Value *result() const { return res_; }
 
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_es_new_obj(this);
@@ -3061,31 +2404,16 @@ private:
 
 public:
     EsNewRegexInstruction(const String &pattern, const String &flags,
-                          Value *res);
+                          Value *res)
+        : pattern_(pattern)
+        , flags_(flags)
+        , res_(res) {}
 
-    /**
-     * @return Regular expression pattern.
-     */
-    const String &pattern() const;
+    const String &pattern() const { return pattern_; }
+    const String &flags() const { return flags_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Regular expression flags.
-     */
-    const String &flags() const;
-
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_es_new_rex(this);
@@ -3137,36 +2465,18 @@ private:
     Value *res_;
 
 public:
-    EsBinaryInstruction(Operation op, Value *lval, Value *rval, Value *res);
+    EsBinaryInstruction(Operation op, Value *lval, Value *rval, Value *res)
+        : op_(op)
+        , lval_(lval)
+        , rval_(rval)
+        , res_(res) {}
 
-    /**
-     * @return Assignment operation.
-     */
-    Operation operation() const;
+    Operation operation() const { return op_; }
+    Value *left() const { return lval_; }
+    Value *right() const { return rval_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Left-hand-side value.
-     */
-    Value *left() const;
-
-    /**
-     * @return Right-hand-side value.
-     */
-    Value *right() const;
-
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_es_bin(this);
@@ -3193,31 +2503,16 @@ private:
     Value *res_;
 
 public:
-    EsUnaryInstruction(Operation op, Value *val, Value *res);
+    EsUnaryInstruction(Operation op, Value *val, Value *res)
+        : op_(op)
+        , val_(val)
+        , res_(res) {}
 
-    /**
-     * @return Assignment operation.
-     */
-    Operation operation() const;
+    Operation operation() const { return op_; }
+    Value *value() const { return val_; }
+    Value *result() const { return res_; }
 
-    /**
-     * @return Value.
-     */
-    Value *value() const;
-
-    /**
-     * @return Result value.
-     */
-    Value *result() const;
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_es_unary(this);
@@ -3276,9 +2571,6 @@ private:
     int index_;     ///< Array index, may be negative.
 
 public:
-    /**
-     * FIXME:
-     */
     ArrayElementConstant(Value *array, int index)
         : array_(array)
         , index_(index)
@@ -3287,27 +2579,13 @@ public:
                array->type()->is_pointer());
     }
 
-    /**
-     * @return Array.
-     */
     Value *array() const { return array_; }
-
-    /**
-     * @return Array index.
-     */
     int index() const { return index_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE
     {
         return static_cast<const ArrayType *>(array_->type())->type();
     }
-
-    /**
-     * @copydoc Constant::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_arr_elm(this);
@@ -3317,14 +2595,10 @@ public:
 class FramePointer : public Constant
 {
 public:
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE { return new (GC)PointerType(Type::value()); }
-
-    /**
-     * @copydoc Constant::accept
-     */
+    virtual const Type *type() const OVERRIDE
+    {
+        return new (GC)PointerType(Type::value());
+    }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_fp(this);
@@ -3334,14 +2608,10 @@ public:
 class ValuePointer : public Constant
 {
 public:
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE { return new (GC)PointerType(Type::value()); }
-
-    /**
-     * @copydoc Constant::accept
-     */
+    virtual const Type *type() const OVERRIDE
+    {
+        return new (GC)PointerType(Type::value());
+    }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_vp(this);
@@ -3364,14 +2634,7 @@ public:
     NullConstant(const Type *type)
         : type_(type) {}
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE { return type_; }
-
-    /**
-     * @copydoc Constant::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_null(this);
@@ -3390,19 +2653,9 @@ public:
     BooleanConstant(bool val)
         : val_(val) {}
 
-    /**
-     * @return Boolean value.
-     */
     bool value() const { return val_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-
-    /**
-     * @copydoc Constant::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_bool(this);
@@ -3421,19 +2674,9 @@ public:
     DoubleConstant(double val)
         : val_(val) {}
 
-    /**
-     * @return Double value.
-     */
     double value() const { return val_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE { return Type::_double(); }
-
-    /**
-     * @copydoc Constant::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_double(this);
@@ -3457,14 +2700,7 @@ public:
      */
     const String &value() const { return val_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE { return Type::_double(); }
-
-    /**
-     * @copydoc Constant::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_strdouble(this);
@@ -3483,19 +2719,9 @@ public:
     StringConstant(const String &val)
         : val_(val) {}
 
-    /**
-     * @return String value.
-     */
     const String &value() const { return val_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE { return Type::string(); }
-
-    /**
-     * @copydoc Constant::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_str(this);
@@ -3524,19 +2750,9 @@ public:
     ValueConstant(Value val)
         : val_(val) {}
 
-    /**
-     * @return Value.
-     */
     Value value() const { return val_; }
 
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE { return Type::value(); }
-
-    /**
-     * @copydoc Constant::accept
-     */
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_const_val(this);
@@ -3554,16 +2770,8 @@ private:
 public:
     Temporary(const Type *type)
         : type_(type) {}
-    virtual ~Temporary() {}
 
-    /**
-     * @copydoc Value::is_constant
-     */
     virtual bool is_constant() const OVERRIDE { return false; }
-
-    /**
-     * @copydoc Value::type
-     */
     virtual const Type *type() const OVERRIDE { return type_; }
 };
 

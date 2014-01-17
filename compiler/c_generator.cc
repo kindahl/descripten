@@ -322,8 +322,8 @@ void Cgenerator::visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *i
 
 void Cgenerator::visit_instr_args_obj_link(ir::ArgumentsObjectLinkInstruction *instr)
 {
-    out() << "esa_args_obj_link(" << value(instr->arguments()) << ", "
-          << instr->index() << ", " << value(instr->value()) << ")" << ";\n";
+    out() << "esa_args_obj_link(" << value(instr->arguments_object()) << ", "
+          << instr->argument_index() << ", " << value(instr->value()) << ")" << ";\n";
 }
 
 void Cgenerator::visit_instr_arr(ir::ArrayInstruction *instr)

@@ -126,10 +126,6 @@ void Optimizer::visit_instr_ret(ReturnInstruction *instr)
 {
 }
 
-void Optimizer::visit_instr_mem_alloc(MemoryAllocInstruction *instr)
-{
-}
-
 void Optimizer::visit_instr_mem_store(MemoryStoreInstruction *instr)
 {
 }

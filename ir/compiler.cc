@@ -1457,7 +1457,7 @@ ValueHandle Compiler::parse_unary_expr(parser::UnaryExpression *expr,
 
             e = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-            d = fun->last_block()->push_mem_alloc(Type::_double());
+            d = new (GC)Temporary(Type::_double());
             _ = fun->last_block()->push_val_to_double(e, d);
             _ = fun->last_block()->push_trm_br(_, blk0_block, expt_block);
 
@@ -2236,8 +2236,8 @@ ValueHandle Compiler::parse_array_lit(parser::ArrayLiteral *lit,
     Block *expt_block = new (GC)Block(NameGenerator::instance().next());
 
     // FIXME: Should use stack.
-    a = fun->last_block()->push_mem_alloc(
-        new (GC)ArrayType(Type::value(), lit->values().size()));
+    a = new (GC)Temporary(new (GC)ArrayType(Type::value(),
+                                            lit->values().size()));
 
     int i = 0;
     parser::ExpressionVector::const_iterator it;
@@ -2914,8 +2914,8 @@ ValueHandle Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
     R = parse(stmt->expression(), fun, &temporaries);
     e = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
-    b = fun->last_block()->push_mem_alloc(Type::boolean());    // true if case name is found.
-        fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));   // FIXME: Can this be removed?
+    b = new (GC)Temporary(Type::boolean());     // true if case name is found.
+        fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));
 
     parser::SwitchStatement::CaseClauseVector::const_iterator it;
     for (it = stmt->cases().begin(); it != stmt->cases().end(); ++it)
@@ -3071,7 +3071,7 @@ ValueHandle Compiler::parse_try_stmt(parser::TryStatement *stmt,
             this, stmt->finally_block(), prv_exception_action));
     }
 
-    b = fun->last_block()->push_mem_alloc(Type::boolean());    // Fail check.
+    b = new (GC)Temporary(Type::boolean());     // Fail check.
     fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(true));
     {
         ScopedVectorValue<TemplateBlock> action(

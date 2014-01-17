@@ -405,12 +405,6 @@ void IrGenerator::visit_instr_ret(ir::ReturnInstruction *instr)
     out() << "ret " << value(instr->value()) << "\n";
 }
 
-void IrGenerator::visit_instr_mem_alloc(ir::MemoryAllocInstruction *instr)
-{
-    // FIXME:
-    out() << value(instr) << " = ?\n";
-}
-
 void IrGenerator::visit_instr_mem_store(ir::MemoryStoreInstruction *instr)
 {
     out() << value(instr->destination()) << " = " << value(instr->source()) << "\n";

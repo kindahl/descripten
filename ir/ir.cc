@@ -306,13 +306,6 @@ Value *Block::push_call_new(Value *fun, uint32_t argc, Value *res)
     return instr;
 }
 
-Value *Block::push_mem_alloc(const Type *type)
-{
-    Instruction *instr = new (GC)MemoryAllocInstruction(type);
-    push_instr(instr);
-    return instr;
-}
-
 Value *Block::push_mem_store(Value *dst, Value *src)
 {
     assert(dst);
@@ -1399,16 +1392,6 @@ Value *ReturnInstruction::value() const
 const Type *ReturnInstruction::type() const
 {
     return Type::_void();
-}
-
-MemoryAllocInstruction::MemoryAllocInstruction(const Type *type)
-    : type_(/*new (GC)PointerType(type)*/type)
-{
-}
-
-const Type *MemoryAllocInstruction::type() const
-{
-    return type_;
 }
 
 MemoryStoreInstruction::MemoryStoreInstruction(Value *dst, Value *src)

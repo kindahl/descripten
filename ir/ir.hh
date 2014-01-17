@@ -831,7 +831,6 @@ public:
                                 Value *res);
     Value *push_call_named(uint64_t key, uint32_t argc, Value *res);
     Value *push_call_new(Value *fun, uint32_t argc, Value *res);
-    Value *push_mem_alloc(const Type *type);
     Value *push_mem_store(Value *dst, Value *src);
     Value *push_mem_elm_ptr(Value *val, size_t index);
     Value *push_stk_alloc(const Proxy<size_t> &count);
@@ -996,7 +995,6 @@ public:
         virtual void visit_instr_br(BranchInstruction *instr) = 0;
         virtual void visit_instr_jmp(JumpInstruction *instr) = 0;
         virtual void visit_instr_ret(ReturnInstruction *instr) = 0;
-        virtual void visit_instr_mem_alloc(MemoryAllocInstruction *instr) = 0;
         virtual void visit_instr_mem_store(MemoryStoreInstruction *instr) = 0;
         virtual void visit_instr_mem_elm_ptr(MemoryElementPointerInstruction *instr) = 0;
         virtual void visit_instr_stk_alloc(StackAllocInstruction *instr) = 0;
@@ -1710,31 +1708,6 @@ public:
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ret(this);
-    }
-};
-
-/**
- * @brief Memory allocation instruction.
- */
-class MemoryAllocInstruction : public Instruction
-{
-private:
-    const Type *type_;
-
-public:
-    MemoryAllocInstruction(const Type *type);
-
-    /**
-     * @copydoc Value::type
-     */
-    virtual const Type *type() const OVERRIDE;
-
-    /**
-     * @copydoc Instruction::accept
-     */
-    virtual void accept(Visitor *visitor) OVERRIDE
-    {
-        visitor->visit_instr_mem_alloc(this);
     }
 };
 
@@ -3568,6 +3541,30 @@ public:
     {
         visitor->visit_const_val(this);
     }
+};
+
+/**
+ * @brief Temporary value.
+ */
+class Temporary : public Value
+{
+private:
+    const Type *type_;
+
+public:
+    Temporary(const Type *type)
+        : type_(type) {}
+    virtual ~Temporary() {}
+
+    /**
+     * @copydoc Value::is_constant
+     */
+    virtual bool is_constant() const OVERRIDE { return false; }
+
+    /**
+     * @copydoc Value::type
+     */
+    virtual const Type *type() const OVERRIDE { return type_; }
 };
 
 }

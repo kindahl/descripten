@@ -530,11 +530,6 @@ void Cgenerator::visit_instr_ret(ir::ReturnInstruction *instr)
     out() << "return " << value(instr->value()) << ";\n";
 }
 
-void Cgenerator::visit_instr_mem_alloc(ir::MemoryAllocInstruction *instr)
-{
-    //out() << value(instr) << ";\n";
-}
-
 void Cgenerator::visit_instr_mem_store(ir::MemoryStoreInstruction *instr)
 {
     out() << value(instr->destination()) << " = " << value(instr->source()) << ";\n";

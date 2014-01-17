@@ -63,9 +63,12 @@ Allocator::Allocator()
 {
 }
 
-void Allocator::touch_r(ir::Value *val)
+void Allocator::touch(ir::Value *val)
 {
     assert(cur_fun_);
+
+    if (val->is_constant())
+        return;
 
     if (val->type()->is_void())
         return;
@@ -80,16 +83,6 @@ void Allocator::touch_r(ir::Value *val)
     Interval *interval = new (GC)Interval(val, cur_fun_->cur_pos_);
     interval_map_.insert(std::make_pair(val, interval));
     cur_fun_->interval_map_.insert(std::make_pair(val, interval));
-}
-
-void Allocator::touch_o(ir::Value *val)
-{
-    assert(cur_fun_);
-    assert(val->type()->identifier() != ir::Type::ID_VOID);
-
-    IntervalMap::iterator it_existing = interval_map_.find(val);
-    if (it_existing != interval_map_.end())
-        it_existing->second->grow_to(cur_fun_->cur_pos_);
 }
 
 void Allocator::visit_module(ir::Module *module)
@@ -167,7 +160,7 @@ void Allocator::visit_block(ir::Block *block)
 
 void Allocator::visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -175,9 +168,9 @@ void Allocator::visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *in
 
 void Allocator::visit_instr_args_obj_link(ir::ArgumentsObjectLinkInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->arguments());
-    touch_o(instr->value());
+    touch(instr->arguments());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -189,15 +182,15 @@ void Allocator::visit_instr_arr(ir::ArrayInstruction *instr)
     {
         case ir::ArrayInstruction::GET:
         {
-            touch_r(instr);
-            touch_o(instr->array());
+            touch(instr->array());
+            touch(instr);
             break;
         }
         case ir::ArrayInstruction::PUT:
         {
-            touch_r(instr);
-            touch_o(instr->array());
-            touch_o(instr->value());
+            touch(instr->array());
+            touch(instr->value());
+            touch(instr);
             break;
         }
         default:
@@ -211,9 +204,9 @@ void Allocator::visit_instr_arr(ir::ArrayInstruction *instr)
 
 void Allocator::visit_instr_bin(ir::BinaryInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->left());
-    touch_o(instr->right());
+    touch(instr->left());
+    touch(instr->right());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -221,7 +214,7 @@ void Allocator::visit_instr_bin(ir::BinaryInstruction *instr)
 
 void Allocator::visit_instr_bnd_extra_init(ir::BindExtraInitInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -229,7 +222,7 @@ void Allocator::visit_instr_bnd_extra_init(ir::BindExtraInitInstruction *instr)
 
 void Allocator::visit_instr_bnd_extra_ptr(ir::BindExtraPtrInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -237,9 +230,9 @@ void Allocator::visit_instr_bnd_extra_ptr(ir::BindExtraPtrInstruction *instr)
 
 void Allocator::visit_instr_call(ir::CallInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->function());
-    touch_o(instr->result());
+    touch(instr->function());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -247,9 +240,9 @@ void Allocator::visit_instr_call(ir::CallInstruction *instr)
 
 void Allocator::visit_instr_call_keyed(ir::CallKeyedInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->result());
+    touch(instr->object());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -257,10 +250,10 @@ void Allocator::visit_instr_call_keyed(ir::CallKeyedInstruction *instr)
 
 void Allocator::visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->key());
-    touch_o(instr->result());
+    touch(instr->object());
+    touch(instr->key());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -268,8 +261,8 @@ void Allocator::visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *instr)
 
 void Allocator::visit_instr_call_named(ir::CallNamedInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->result());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -280,28 +273,28 @@ void Allocator::visit_instr_val(ir::ValueInstruction *instr)
     switch (instr->operation())
     {
         case ir::ValueInstruction::TO_BOOLEAN:
-            touch_r(instr);
-            touch_o(instr->value());
+            touch(instr->value());
+            touch(instr);
             break;
         case ir::ValueInstruction::TO_DOUBLE:
-            touch_r(instr);
-            touch_o(instr->value());
-            touch_o(instr->result());
+            touch(instr->value());
+            touch(instr->result());
+            touch(instr);
             break;
 
         case ir::ValueInstruction::FROM_BOOLEAN:
         case ir::ValueInstruction::FROM_DOUBLE:
         case ir::ValueInstruction::FROM_STRING:
-            touch_r(instr);
-            touch_o(instr->value());
-            touch_o(instr->result());
+            touch(instr->value());
+            touch(instr->result());
+            touch(instr);
             break;
 
         case ir::ValueInstruction::IS_NULL:
         case ir::ValueInstruction::IS_UNDEFINED:
         case ir::ValueInstruction::TEST_COERCIBILITY:
-            touch_r(instr);
-            touch_o(instr->value());
+            touch(instr->value());
+            touch(instr);
             break;
 
         default:
@@ -315,8 +308,8 @@ void Allocator::visit_instr_val(ir::ValueInstruction *instr)
 
 void Allocator::visit_instr_br(ir::BranchInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->condition());
+    touch(instr->condition());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -324,7 +317,7 @@ void Allocator::visit_instr_br(ir::BranchInstruction *instr)
 
 void Allocator::visit_instr_jmp(ir::JumpInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -332,16 +325,8 @@ void Allocator::visit_instr_jmp(ir::JumpInstruction *instr)
 
 void Allocator::visit_instr_ret(ir::ReturnInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->value());
-
-    assert(cur_fun_);
-    cur_fun_->cur_pos_++;
-}
-
-void Allocator::visit_instr_mem_alloc(ir::MemoryAllocInstruction *instr)
-{
-    touch_r(instr);
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -349,9 +334,9 @@ void Allocator::visit_instr_mem_alloc(ir::MemoryAllocInstruction *instr)
 
 void Allocator::visit_instr_mem_store(ir::MemoryStoreInstruction *instr)
 {
-    touch_r(instr);
-    //touch_o(instr->destination());
-    touch_o(instr->source());
+    touch(instr->destination());
+    touch(instr->source());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -359,8 +344,8 @@ void Allocator::visit_instr_mem_store(ir::MemoryStoreInstruction *instr)
 
 void Allocator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->value());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -368,7 +353,7 @@ void Allocator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *ins
 
 void Allocator::visit_instr_stk_alloc(ir::StackAllocInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -376,7 +361,7 @@ void Allocator::visit_instr_stk_alloc(ir::StackAllocInstruction *instr)
 
 void Allocator::visit_instr_stk_free(ir::StackFreeInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -384,8 +369,8 @@ void Allocator::visit_instr_stk_free(ir::StackFreeInstruction *instr)
 
 void Allocator::visit_instr_stk_push(ir::StackPushInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->value());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -393,7 +378,7 @@ void Allocator::visit_instr_stk_push(ir::StackPushInstruction *instr)
 
 void Allocator::visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -401,7 +386,7 @@ void Allocator::visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *inst
 
 void Allocator::visit_instr_ctx_enter_catch(ir::ContextEnterCatchInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -409,8 +394,8 @@ void Allocator::visit_instr_ctx_enter_catch(ir::ContextEnterCatchInstruction *in
 
 void Allocator::visit_instr_ctx_enter_with(ir::ContextEnterWithInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->value());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -418,7 +403,7 @@ void Allocator::visit_instr_ctx_enter_with(ir::ContextEnterWithInstruction *inst
 
 void Allocator::visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -426,8 +411,8 @@ void Allocator::visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr)
 
 void Allocator::visit_instr_ctx_get(ir::ContextGetInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->result());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -435,8 +420,8 @@ void Allocator::visit_instr_ctx_get(ir::ContextGetInstruction *instr)
 
 void Allocator::visit_instr_ctx_put(ir::ContextPutInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->value());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -444,8 +429,8 @@ void Allocator::visit_instr_ctx_put(ir::ContextPutInstruction *instr)
 
 void Allocator::visit_instr_ctx_del(ir::ContextDeleteInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->result());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -453,8 +438,8 @@ void Allocator::visit_instr_ctx_del(ir::ContextDeleteInstruction *instr)
 
 void Allocator::visit_instr_ex_save_state(ir::ExceptionSaveStateInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->result());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -462,8 +447,8 @@ void Allocator::visit_instr_ex_save_state(ir::ExceptionSaveStateInstruction *ins
 
 void Allocator::visit_instr_ex_load_state(ir::ExceptionLoadStateInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->state());
+    touch(instr->state());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -471,8 +456,8 @@ void Allocator::visit_instr_ex_load_state(ir::ExceptionLoadStateInstruction *ins
 
 void Allocator::visit_instr_ex_set(ir::ExceptionSetInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->value());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -480,7 +465,7 @@ void Allocator::visit_instr_ex_set(ir::ExceptionSetInstruction *instr)
 
 void Allocator::visit_instr_ex_clear(ir::ExceptionClearInstruction *instr)
 {
-    touch_r(instr);
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -488,8 +473,8 @@ void Allocator::visit_instr_ex_clear(ir::ExceptionClearInstruction *instr)
 
 void Allocator::visit_instr_init_args(ir::InitArgumentsInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->destination());
+    touch(instr->destination());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -500,17 +485,17 @@ void Allocator::visit_instr_decl(ir::Declaration *instr)
     switch (instr->kind())
     {
         case ir::Declaration::FUNCTION:
-            touch_r(instr);
-            touch_o(instr->value());
+            touch(instr->value());
+            touch(instr);
             break;
 
         case ir::Declaration::VARIABLE:
-            touch_r(instr);
+            touch(instr);
             break;
 
         case ir::Declaration::PARAMETER:
-            touch_r(instr);
-            touch_o(instr->parameter_array());
+            touch(instr->parameter_array());
+            touch(instr);
             break;
 
         default:
@@ -524,8 +509,8 @@ void Allocator::visit_instr_decl(ir::Declaration *instr)
 
 void Allocator::visit_instr_link(ir::Link *instr)
 {
-    touch_r(instr);
-    touch_o(instr->value());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -533,10 +518,10 @@ void Allocator::visit_instr_link(ir::Link *instr)
 
 void Allocator::visit_instr_prp_def_data(ir::PropertyDefineDataInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->key());
-    touch_o(instr->value());
+    touch(instr->object());
+    touch(instr->key());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -544,9 +529,9 @@ void Allocator::visit_instr_prp_def_data(ir::PropertyDefineDataInstruction *inst
 
 void Allocator::visit_instr_prp_def_accessor(ir::PropertyDefineAccessorInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->function());
+    touch(instr->object());
+    touch(instr->function());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -554,8 +539,8 @@ void Allocator::visit_instr_prp_def_accessor(ir::PropertyDefineAccessorInstructi
 
 void Allocator::visit_instr_prp_it_new(ir::PropertyIteratorNewInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
+    touch(instr->object());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -563,9 +548,9 @@ void Allocator::visit_instr_prp_it_new(ir::PropertyIteratorNewInstruction *instr
 
 void Allocator::visit_instr_prp_it_next(ir::PropertyIteratorNextInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->iterator());
-    touch_o(instr->value());
+    touch(instr->iterator());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -573,9 +558,9 @@ void Allocator::visit_instr_prp_it_next(ir::PropertyIteratorNextInstruction *ins
 
 void Allocator::visit_instr_prp_get(ir::PropertyGetInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->result());
+    touch(instr->object());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -583,10 +568,10 @@ void Allocator::visit_instr_prp_get(ir::PropertyGetInstruction *instr)
 
 void Allocator::visit_instr_prp_get_slow(ir::PropertyGetSlowInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->key());
-    touch_o(instr->result());
+    touch(instr->object());
+    touch(instr->key());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -594,9 +579,9 @@ void Allocator::visit_instr_prp_get_slow(ir::PropertyGetSlowInstruction *instr)
 
 void Allocator::visit_instr_prp_put(ir::PropertyPutInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->value());
+    touch(instr->object());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -604,10 +589,10 @@ void Allocator::visit_instr_prp_put(ir::PropertyPutInstruction *instr)
 
 void Allocator::visit_instr_prp_put_slow(ir::PropertyPutSlowInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->key());
-    touch_o(instr->value());
+    touch(instr->object());
+    touch(instr->key());
+    touch(instr->value());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -615,9 +600,9 @@ void Allocator::visit_instr_prp_put_slow(ir::PropertyPutSlowInstruction *instr)
 
 void Allocator::visit_instr_prp_del(ir::PropertyDeleteInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->result());
+    touch(instr->object());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -625,10 +610,10 @@ void Allocator::visit_instr_prp_del(ir::PropertyDeleteInstruction *instr)
 
 void Allocator::visit_instr_prp_del_slow(ir::PropertyDeleteSlowInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->object());
-    touch_o(instr->key());
-    touch_o(instr->result());
+    touch(instr->object());
+    touch(instr->key());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -636,9 +621,9 @@ void Allocator::visit_instr_prp_del_slow(ir::PropertyDeleteSlowInstruction *inst
 
 void Allocator::visit_instr_es_new_arr(ir::EsNewArrayInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->values());
-    touch_o(instr->result());
+    touch(instr->values());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -646,8 +631,8 @@ void Allocator::visit_instr_es_new_arr(ir::EsNewArrayInstruction *instr)
 
 void Allocator::visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->result());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -655,8 +640,8 @@ void Allocator::visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstruct
 
 void Allocator::visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->result());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -664,8 +649,8 @@ void Allocator::visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstructi
 
 void Allocator::visit_instr_es_new_obj(ir::EsNewObjectInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->result());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -673,8 +658,8 @@ void Allocator::visit_instr_es_new_obj(ir::EsNewObjectInstruction *instr)
 
 void Allocator::visit_instr_es_new_rex(ir::EsNewRegexInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->result());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -682,10 +667,10 @@ void Allocator::visit_instr_es_new_rex(ir::EsNewRegexInstruction *instr)
 
 void Allocator::visit_instr_es_bin(ir::EsBinaryInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->left());
-    touch_o(instr->right());
-    touch_o(instr->result());
+    touch(instr->left());
+    touch(instr->right());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;
@@ -693,9 +678,9 @@ void Allocator::visit_instr_es_bin(ir::EsBinaryInstruction *instr)
 
 void Allocator::visit_instr_es_unary(ir::EsUnaryInstruction *instr)
 {
-    touch_r(instr);
-    touch_o(instr->value());
-    touch_o(instr->result());
+    touch(instr->value());
+    touch(instr->result());
+    touch(instr);
 
     assert(cur_fun_);
     cur_fun_->cur_pos_++;

@@ -374,7 +374,7 @@ ValueHandle Compiler::expand_ref_get_inplace(ValueHandle &ref,
 
     if (!ref->is_meta())
     {
-        fun->last_block()->push_mem_store(dst, ref);
+        fun->last_block()->push_store(dst, ref);
         return dst;
     }
 
@@ -469,7 +469,7 @@ ValueHandle Compiler::expand_ref_get(ValueHandle &ref,
 
     if (!ref->is_meta())
     {
-        fun->last_block()->push_mem_store(dst, ref);
+        fun->last_block()->push_store(dst, ref);
         fun->last_block()->push_trm_jmp(done_block);
         return dst;
     }
@@ -571,7 +571,7 @@ void Compiler::expand_ref_put_inplace(ValueHandle &ref,
     }
     else
     {
-        fun->last_block()->push_mem_store(ref, val);
+        fun->last_block()->push_store(ref, val);
     }
 }
 
@@ -603,7 +603,7 @@ void Compiler::expand_ref_put(ValueHandle &ref, ValueHandle &val,
     }
     else
     {
-        fun->last_block()->push_mem_store(ref, val);
+        fun->last_block()->push_store(ref, val);
         fun->last_block()->push_trm_jmp(done_block);
     }
 }
@@ -692,7 +692,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
 
                     if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                     {
-                        t = fun->last_block()->push_mem_elm_ptr(fp, var->parameter_index());
+                        t = fun->last_block()->push_get_elm_ptr(fp, var->parameter_index());
                         t = fun->last_block()->push_link_var(get_prp_key(var->name()), lit->is_strict_mode(), t);
                     }
                     break;
@@ -703,7 +703,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                     Value *v = new (GC)ArrayElementConstant(e, start_extras++);
                     scope->add_local(var->name(), v);
 
-                    t = fun->last_block()->push_mem_store(v, new (GC)ArrayElementConstant(fp, var->parameter_index()));
+                    t = fun->last_block()->push_store(v, new (GC)ArrayElementConstant(fp, var->parameter_index()));
                     break;
                 }
 
@@ -773,7 +773,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
             if (!var->is_allocated())
                 continue;
 
-            t = fun->last_block()->push_mem_elm_ptr(e, var->parameter_index());
+            t = fun->last_block()->push_get_elm_ptr(e, var->parameter_index());
             t = fun->last_block()->push_args_obj_link(a, var->parameter_index(), t);
 
             switch (var->storage())
@@ -785,7 +785,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
 
                     if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                     {
-                        t = fun->last_block()->push_mem_elm_ptr(e, var->parameter_index());
+                        t = fun->last_block()->push_get_elm_ptr(e, var->parameter_index());
                         t = fun->last_block()->push_link_prm(get_prp_key(var->name()), lit->is_strict_mode(), t);
                     }
                     break;
@@ -795,7 +795,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                 {
                     scope->add_local(var->name(), new (GC)ArrayElementConstant(e, var->parameter_index()));
 
-                    t = fun->last_block()->push_mem_elm_ptr(e, var->parameter_index());
+                    t = fun->last_block()->push_get_elm_ptr(e, var->parameter_index());
                     t = fun->last_block()->push_link_prm(get_prp_key(var->name()), lit->is_strict_mode(), t);
                     break;
                 }
@@ -830,7 +830,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
             case AnalyzedVariable::STORAGE_LOCAL_EXTRA:
             {
                 Value *v = new (GC)ArrayElementConstant(e, ep_index++);
-                t = fun->last_block()->push_mem_store(v, new (GC)ArrayElementConstant(vp, -3));
+                t = fun->last_block()->push_store(v, new (GC)ArrayElementConstant(vp, -3));
 
                 scope->add_local(var->name(), v);
                 break;
@@ -939,7 +939,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                 t = fun->last_block()->push_arr_put(vp_index, vp, f);
                 if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                 {
-                    t = fun->last_block()->push_mem_elm_ptr(vp, vp_index);
+                    t = fun->last_block()->push_get_elm_ptr(vp, vp_index);
                     t = fun->last_block()->push_link_fun(get_prp_key(var->name()), lit->is_strict_mode(), t);
                 }
 
@@ -952,7 +952,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
                 t = fun->last_block()->push_arr_put(ep_index, e, f);
                 if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                 {
-                    t = fun->last_block()->push_mem_elm_ptr(e, ep_index);
+                    t = fun->last_block()->push_get_elm_ptr(e, ep_index);
                     t = fun->last_block()->push_link_fun(get_prp_key(var->name()), lit->is_strict_mode(), t);
                 }
 
@@ -1001,7 +1001,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
             {
                 if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                 {
-                    t = fun->last_block()->push_mem_elm_ptr(vp, vp_index);
+                    t = fun->last_block()->push_get_elm_ptr(vp, vp_index);
                     t = fun->last_block()->push_link_var(get_prp_key(var->name()), lit->is_strict_mode(), t);
                 }
 
@@ -1013,7 +1013,7 @@ Function *Compiler::parse_fun(const parser::FunctionLiteral *lit,
             {
                 if (analyzed_fun->tainted_by_eval() || var->name() == _USTR("arguments"))
                 {
-                    t = fun->last_block()->push_mem_elm_ptr(e, ep_index);
+                    t = fun->last_block()->push_get_elm_ptr(e, ep_index);
                     t = fun->last_block()->push_link_var(get_prp_key(var->name()), lit->is_strict_mode(), t);
                 }
 
@@ -1124,7 +1124,7 @@ ValueHandle Compiler::parse_binary_expr(parser::BinaryExpression *expr,
             {
                 // Don't do anything, the comma expression only requires us to
                 // call GetValue which we already have done.
-                fun->last_block()->push_mem_store(X, r);
+                fun->last_block()->push_store(X, r);
                 fun->last_block()->push_trm_jmp(done_block);
                 break;
             }
@@ -1558,7 +1558,7 @@ ValueHandle Compiler::parse_unary_expr(parser::UnaryExpression *expr,
 
             fun->push_block(fail_block);
             fun->last_block()->push_ex_clear();
-            fun->last_block()->push_mem_store(e,
+            fun->last_block()->push_store(e,
                 new (GC)ValueConstant(ValueConstant::VALUE_UNDEFINED));
             fun->last_block()->push_trm_jmp(blk0_block);
 
@@ -2915,7 +2915,7 @@ ValueHandle Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
     e = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
 
     b = new (GC)Temporary(Type::boolean());     // true if case name is found.
-        fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));
+        fun->last_block()->push_store(b, new (GC)BooleanConstant(false));
 
     parser::SwitchStatement::CaseClauseVector::const_iterator it;
     for (it = stmt->cases().begin(); it != stmt->cases().end(); ++it)
@@ -2945,7 +2945,7 @@ ValueHandle Compiler::parse_switch_stmt(parser::SwitchStatement *stmt,
             fun->push_block(blk1_block);
             _ = fun->last_block()->push_val_to_bool(c);
             c.release();
-            fun->last_block()->push_mem_store(b, _);
+            fun->last_block()->push_store(b, _);
             fun->last_block()->push_trm_jmp(skip_block);    // FIXME:
 
             fun->push_block(skip_block);
@@ -3072,13 +3072,13 @@ ValueHandle Compiler::parse_try_stmt(parser::TryStatement *stmt,
     }
 
     b = new (GC)Temporary(Type::boolean());     // Fail check.
-    fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(true));
+    fun->last_block()->push_store(b, new (GC)BooleanConstant(true));
     {
         ScopedVectorValue<TemplateBlock> action(
             exception_actions_, new (GC)JumpTemplateBlock(fail_block));
 
         parse(stmt->try_block(), fun, rva);
-        fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));
+        fun->last_block()->push_store(b, new (GC)BooleanConstant(false));
 
         // If we have a finally block but no catch block there is no need to
         // jump, but we can fall directly through to the finally block.
@@ -3107,7 +3107,7 @@ ValueHandle Compiler::parse_try_stmt(parser::TryStatement *stmt,
         parse(stmt->catch_block(), fun, rva);
         fun->last_block()->push_ctx_leave();
 
-        fun->last_block()->push_mem_store(b, new (GC)BooleanConstant(false));
+        fun->last_block()->push_store(b, new (GC)BooleanConstant(false));
         fun->last_block()->push_trm_jmp(skip_block);
     }
     else

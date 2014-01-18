@@ -52,9 +52,8 @@ class ValueInstruction;
 class BranchInstruction;
 class JumpInstruction;
 class ReturnInstruction;
-class MemoryAllocInstruction;
-class MemoryStoreInstruction;
-class MemoryElementPointerInstruction;
+class StoreInstruction;
+class GetElementPointerInstruction;
 class StackAllocInstruction;
 class StackFreeInstruction;
 class StackPushInstruction;
@@ -772,8 +771,8 @@ public:
                                 Value *res);
     Value *push_call_named(uint64_t key, uint32_t argc, Value *res);
     Value *push_call_new(Value *fun, uint32_t argc, Value *res);
-    Value *push_mem_store(Value *dst, Value *src);
-    Value *push_mem_elm_ptr(Value *val, size_t index);
+    Value *push_store(Value *dst, Value *src);
+    Value *push_get_elm_ptr(Value *val, size_t index);
     Value *push_stk_alloc(const Proxy<size_t> &count);
     Value *push_stk_free(size_t count);
     Value *push_stk_push(Value *val);
@@ -943,8 +942,8 @@ public:
         virtual void visit_instr_br(BranchInstruction *instr) = 0;
         virtual void visit_instr_jmp(JumpInstruction *instr) = 0;
         virtual void visit_instr_ret(ReturnInstruction *instr) = 0;
-        virtual void visit_instr_mem_store(MemoryStoreInstruction *instr) = 0;
-        virtual void visit_instr_mem_elm_ptr(MemoryElementPointerInstruction *instr) = 0;
+        virtual void visit_instr_store(StoreInstruction *instr) = 0;
+        virtual void visit_instr_get_elm_ptr(GetElementPointerInstruction *instr) = 0;
         virtual void visit_instr_stk_alloc(StackAllocInstruction *instr) = 0;
         virtual void visit_instr_stk_free(StackFreeInstruction *instr) = 0;
         virtual void visit_instr_stk_push(StackPushInstruction *instr) = 0;
@@ -1432,16 +1431,16 @@ public:
 };
 
 /**
- * @brief Memory store instruction.
+ * @brief Instruciton for storing a value in memory.
  */
-class MemoryStoreInstruction : public Instruction
+class StoreInstruction : public Instruction
 {
 private:
     Value *dst_;
     Value *src_;
 
 public:
-    MemoryStoreInstruction(Value *dst, Value *src)
+    StoreInstruction(Value *dst, Value *src)
         : dst_(dst)
         , src_(src) {}
 
@@ -1451,21 +1450,21 @@ public:
     virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
-        visitor->visit_instr_mem_store(this);
+        visitor->visit_instr_store(this);
     }
 };
 
 /**
  * @brief Instruction for obtaining an element pointer.
  */
-class MemoryElementPointerInstruction : public Instruction
+class GetElementPointerInstruction : public Instruction
 {
 private:
     Value *val_;
     size_t index_;
 
 public:
-    MemoryElementPointerInstruction(Value *val, size_t index);
+    GetElementPointerInstruction(Value *val, size_t index);
 
     Value *value() const { return val_; }
     size_t index() const { return index_; }
@@ -1473,7 +1472,7 @@ public:
     virtual const Type *type() const OVERRIDE;
     virtual void accept(Visitor *visitor) OVERRIDE
     {
-        visitor->visit_instr_mem_elm_ptr(this);
+        visitor->visit_instr_get_elm_ptr(this);
     }
 };
 

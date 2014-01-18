@@ -42,8 +42,8 @@ namespace ir {
     class BranchInstruction;
     class JumpInstruction;
     class ReturnInstruction;
-    class MemoryStoreInstruction;
-    class MemoryElementPointerInstruction;
+    class StoreInstruction;
+    class GetElementPointerInstruction;
     class StackAllocInstruction;
     class StackFreeInstruction;
     class StackPushInstruction;
@@ -151,8 +151,8 @@ private:
     virtual void visit_instr_br(ir::BranchInstruction *instr) OVERRIDE;
     virtual void visit_instr_jmp(ir::JumpInstruction *instr) OVERRIDE;
     virtual void visit_instr_ret(ir::ReturnInstruction *instr) OVERRIDE;
-    virtual void visit_instr_mem_store(ir::MemoryStoreInstruction *instr) OVERRIDE;
-    virtual void visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *instr) OVERRIDE;
+    virtual void visit_instr_store(ir::StoreInstruction *instr) OVERRIDE;
+    virtual void visit_instr_get_elm_ptr(ir::GetElementPointerInstruction *instr) OVERRIDE;
     virtual void visit_instr_stk_alloc(ir::StackAllocInstruction *instr) OVERRIDE;
     virtual void visit_instr_stk_free(ir::StackFreeInstruction *instr) OVERRIDE;
     virtual void visit_instr_stk_push(ir::StackPushInstruction *instr) OVERRIDE;

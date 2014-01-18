@@ -333,7 +333,7 @@ void Allocator::visit_instr_ret(ir::ReturnInstruction *instr)
     cur_fun_->cur_pos_++;
 }
 
-void Allocator::visit_instr_mem_store(ir::MemoryStoreInstruction *instr)
+void Allocator::visit_instr_store(ir::StoreInstruction *instr)
 {
     touch(instr->destination());
     touch(instr->source());
@@ -343,7 +343,7 @@ void Allocator::visit_instr_mem_store(ir::MemoryStoreInstruction *instr)
     cur_fun_->cur_pos_++;
 }
 
-void Allocator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *instr)
+void Allocator::visit_instr_get_elm_ptr(ir::GetElementPointerInstruction *instr)
 {
     touch(instr->value());
     touch(instr);

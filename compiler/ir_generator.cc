@@ -405,12 +405,12 @@ void IrGenerator::visit_instr_ret(ir::ReturnInstruction *instr)
     out() << "ret " << value(instr->value()) << "\n";
 }
 
-void IrGenerator::visit_instr_mem_store(ir::MemoryStoreInstruction *instr)
+void IrGenerator::visit_instr_store(ir::StoreInstruction *instr)
 {
     out() << value(instr->destination()) << " = " << value(instr->source()) << "\n";
 }
 
-void IrGenerator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *instr)
+void IrGenerator::visit_instr_get_elm_ptr(ir::GetElementPointerInstruction *instr)
 {
     out() << value(instr) << " = element_ptr " << value(instr->value()) << " "
           << instr->index() << "\n";

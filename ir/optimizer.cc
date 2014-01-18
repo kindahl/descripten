@@ -126,11 +126,11 @@ void Optimizer::visit_instr_ret(ReturnInstruction *instr)
 {
 }
 
-void Optimizer::visit_instr_mem_store(MemoryStoreInstruction *instr)
+void Optimizer::visit_instr_store(StoreInstruction *instr)
 {
 }
 
-void Optimizer::visit_instr_mem_elm_ptr(MemoryElementPointerInstruction *instr)
+void Optimizer::visit_instr_get_elm_ptr(GetElementPointerInstruction *instr)
 {
 }
 

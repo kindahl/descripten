@@ -527,12 +527,12 @@ void Cgenerator::visit_instr_ret(ir::ReturnInstruction *instr)
     out() << "return " << value(instr->value()) << ";\n";
 }
 
-void Cgenerator::visit_instr_mem_store(ir::MemoryStoreInstruction *instr)
+void Cgenerator::visit_instr_store(ir::StoreInstruction *instr)
 {
     out() << value(instr->destination()) << " = " << value(instr->source()) << ";\n";
 }
 
-void Cgenerator::visit_instr_mem_elm_ptr(ir::MemoryElementPointerInstruction *instr)
+void Cgenerator::visit_instr_get_elm_ptr(ir::GetElementPointerInstruction *instr)
 {
     out() << value(instr) << " = &" << value(instr->value())
           << "[" << instr->index() << "];\n";

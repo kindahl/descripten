@@ -256,22 +256,22 @@ Value *Block::push_call_new(Value *fun, uint32_t argc, Value *res)
     return instr;
 }
 
-Value *Block::push_mem_store(Value *dst, Value *src)
+Value *Block::push_store(Value *dst, Value *src)
 {
     assert(dst);
 
-    Instruction *instr = new (GC)MemoryStoreInstruction(dst, src);
+    Instruction *instr = new (GC)StoreInstruction(dst, src);
     push_instr(instr);
     return instr;
 }
 
-Value *Block::push_mem_elm_ptr(Value *val, size_t index)
+Value *Block::push_get_elm_ptr(Value *val, size_t index)
 {
     // We will take the address of value. This means that we no longer can
     // perform life time analysis of it. It should be made persistent.
     val->make_persistent();
 
-    Instruction *instr = new (GC)MemoryElementPointerInstruction(val, index);
+    Instruction *instr = new (GC)GetElementPointerInstruction(val, index);
     push_instr(instr);
     return instr;
 }
@@ -1031,7 +1031,8 @@ BranchInstruction::BranchInstruction(Block *host, Value *cond,
     assert(cond_->type()->is_boolean());
 }
 
-MemoryElementPointerInstruction::MemoryElementPointerInstruction(Value *val, size_t index)
+GetElementPointerInstruction::GetElementPointerInstruction(
+        Value *val, size_t index)
     : val_(val)
     , index_(index)
 {
@@ -1039,11 +1040,12 @@ MemoryElementPointerInstruction::MemoryElementPointerInstruction(Value *val, siz
            val_->type()->is_pointer());
 }
 
-const Type *MemoryElementPointerInstruction::type() const
+const Type *GetElementPointerInstruction::type() const
 {
     assert(val_->type()->is_array() ||
            val_->type()->is_pointer());
-    return new (GC)PointerType(static_cast<const PointerType *>(val_->type())->type());
+    return new (GC)PointerType(
+            static_cast<const PointerType *>(val_->type())->type());
 }
 
 StackPushInstruction::StackPushInstruction(Value *val)

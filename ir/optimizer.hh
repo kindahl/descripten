@@ -43,8 +43,8 @@ private:
     virtual void visit_instr_br(BranchInstruction *instr) OVERRIDE;
     virtual void visit_instr_jmp(JumpInstruction *instr) OVERRIDE;
     virtual void visit_instr_ret(ReturnInstruction *instr) OVERRIDE;
-    virtual void visit_instr_mem_store(MemoryStoreInstruction *instr) OVERRIDE;
-    virtual void visit_instr_mem_elm_ptr(MemoryElementPointerInstruction *instr) OVERRIDE;
+    virtual void visit_instr_store(StoreInstruction *instr) OVERRIDE;
+    virtual void visit_instr_get_elm_ptr(GetElementPointerInstruction *instr) OVERRIDE;
     virtual void visit_instr_stk_alloc(StackAllocInstruction *instr) OVERRIDE;
     virtual void visit_instr_stk_free(StackFreeInstruction *instr) OVERRIDE;
     virtual void visit_instr_stk_push(StackPushInstruction *instr) OVERRIDE;

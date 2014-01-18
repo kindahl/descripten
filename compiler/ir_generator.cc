@@ -438,7 +438,7 @@ void IrGenerator::visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *in
 
 void IrGenerator::visit_instr_ctx_enter_catch(ir::ContextEnterCatchInstruction *instr)
 {
-    out() << value(instr) << " = " << "ctx.enter_catch "
+    out() << "ctx.enter_catch "
           << uint64(instr->key()) << "\n";
 }
 

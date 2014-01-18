@@ -48,7 +48,6 @@ const struct EsString *esa_val_to_str(EsValueData val_data);
 struct EsObject *esa_val_to_obj(EsValueData val_data);
 bool esa_val_chk_coerc(EsValueData val_data);
 
-// FIXME: Rename to esa_frm_alloc instead? Since we're allocating in the call frame.
 void esa_stk_alloc(uint32_t count);
 void esa_stk_free(uint32_t count);
 void esa_stk_push(EsValueData val_data);
@@ -125,7 +124,7 @@ bool esa_ctx_del(struct EsContext *ctx, uint64_t raw_key,
                  EsValueData *result_data);
 void esa_ctx_set_strict(struct EsContext *ctx, bool strict);
 bool esa_ctx_enter_with(struct EsContext *ctx, EsValueData val_data);
-bool esa_ctx_enter_catch(struct EsContext *ctx, uint64_t raw_key);
+void esa_ctx_enter_catch(struct EsContext *ctx, uint64_t raw_key);
 void esa_ctx_leave();
 struct EsContext *esa_ctx_running();
 

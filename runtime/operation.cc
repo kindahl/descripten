@@ -545,7 +545,7 @@ bool esa_ctx_enter_with(EsContext *ctx, EsValueData val_data)
     return EsContextStack::instance().push_withT(val_data);
 }
 
-bool esa_ctx_enter_catch(EsContext *ctx, uint64_t raw_key)
+void esa_ctx_enter_catch(EsContext *ctx, uint64_t raw_key)
 {
     assert(ctx->has_pending_exception());
 
@@ -553,7 +553,6 @@ bool esa_ctx_enter_catch(EsContext *ctx, uint64_t raw_key)
                                           ctx->get_pending_exception());
 
     ctx->clear_pending_exception();
-    return true;    // FIXME:
 }
 
 void esa_ctx_leave()
@@ -1224,7 +1223,6 @@ bool esa_call_new(EsValueData fun_data, uint32_t argc,
 
     EsCallStackGuard guard(argc);
 
-    // FIXME: Do we need this check?
     if (!fun.is_object())
     {
         ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_NO_OBJ));
@@ -1554,8 +1552,6 @@ bool esa_b_sub(EsValueData lval_data, EsValueData rval_data,
     // Subtraction is always performed as numbers.
     result = EsValue::from_num(lnum - rnum);
     return true;
-    
-    // FIXME: 11.6.3
 }
 
 bool esa_b_mul(EsValueData lval_data, EsValueData rval_data,

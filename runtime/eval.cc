@@ -1497,10 +1497,10 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
         Completion c = b;
         if (b.type() == Completion::TYPE_THROW)
         {
-            RETHROW_IF(!esa_ctx_enter_catch(EsContextStack::instance().top(),
+            esa_ctx_enter_catch(EsContextStack::instance().top(),
                     EsPropertyKey::from_str(
                             EsString::create(
-                                    stmt->catch_identifier())).as_raw()));
+                                    stmt->catch_identifier())).as_raw());
 
             c = parse(stmt->catch_block());
             esa_ctx_leave();
@@ -1518,9 +1518,9 @@ Completion Evaluator::parse_try_stmt(TryStatement *stmt)
         if (try_res.type() != Completion::TYPE_THROW)
             return try_res;
 
-        RETHROW_IF(!esa_ctx_enter_catch(EsContextStack::instance().top(),
+        esa_ctx_enter_catch(EsContextStack::instance().top(),
                 EsPropertyKey::from_str(
-                        EsString::create(stmt->catch_identifier())).as_raw()));
+                        EsString::create(stmt->catch_identifier())).as_raw());
 
         Completion catch_res = parse(stmt->catch_block());
         esa_ctx_leave();

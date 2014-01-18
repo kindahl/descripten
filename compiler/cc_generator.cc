@@ -566,7 +566,7 @@ void CcGenerator::visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *in
 
 void CcGenerator::visit_instr_ctx_enter_catch(ir::ContextEnterCatchInstruction *instr)
 {
-    out() << value(instr) << " = " << "esa_ctx_enter_catch(ctx, "
+    out() << "esa_ctx_enter_catch(ctx, "
           << uint64(instr->key()) << ");\n";
     out() << "ctx = esa_ctx_running();\n";
 }

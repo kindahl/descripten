@@ -1636,7 +1636,7 @@ public:
 
     uint64_t key() const { return key_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
+    virtual const Type *type() const OVERRIDE { return Type::_void(); }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
         visitor->visit_instr_ctx_enter_catch(this);

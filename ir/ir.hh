@@ -147,7 +147,6 @@ public:
     static const Type *_double();
     static const Type *string();
     static const Type *value();
-    static const Type *reference();
 
 public:
     struct equal_to : std::binary_function<const Type *, const Type *, bool>
@@ -177,7 +176,6 @@ public:
 
         // Complex types.
         ID_VALUE,
-        ID_REFERENCE,
 
         // Derived types.
         ID_ARRAY,
@@ -236,11 +234,6 @@ public:
      * @return true if this type is a value type.
      */
     bool is_value() const { return id_ == ID_VALUE; }
-
-    /**
-     * @return true if this type is a reference type.
-     */
-    bool is_reference() const { return id_ == ID_REFERENCE; }
 
     /**
      * @return true if this type is an array type.
@@ -313,8 +306,6 @@ public:
             // Complex types.
             case ID_VALUE:
                 return "value";
-            case ID_REFERENCE:
-                return "reference";
 
             // Derived types.
             case ID_ARRAY:
@@ -328,41 +319,6 @@ public:
                 assert(false);
                 return "<error>";
         }
-    }
-#endif
-};
-
-/**
- * @brief Reference type.
- */
-class ReferenceType : public Type
-{
-private:
-    const String name_;
-
-public:
-    /**
-     * Constructs a new reference type.
-     * @param [in] name Identifier of referred entity.
-     */
-    ReferenceType(const String &name)
-        : Type(ID_REFERENCE)
-        , name_(name) {}
-
-    /**
-     * @return Name of referred entity.
-     */
-    const String &name() const
-    {
-        return name_;
-    }
-
-#ifdef DEBUG
-    virtual std::string as_string() const
-    {
-        std::stringstream str;
-        str <<  "reference(" << name_.utf8() << ")";
-        return str.str();
     }
 #endif
 };
@@ -930,7 +886,7 @@ public:
      *         the value cannot be performed. It will live through the lifetime
      *         of its function.
      */
-    bool persistent() const { return persistent_; }
+    bool is_persistent() const { return persistent_; }
 
     /**
      * Makes the value persistent.
@@ -948,6 +904,13 @@ public:
      * @see Constant.
      */
     virtual bool is_constant() const { return false; }
+
+    /**
+     * @return tue if the value is a meta value, meaning that it's only used
+     *         temporarily by the compiler and will not produce any code
+     *         output.
+     */
+    virtual bool is_meta() const { return false; }
 };
 
 /**
@@ -1593,9 +1556,14 @@ class MetaInstruction : public Instruction
 public:
     virtual ~MetaInstruction() {}
 
-    /**
-     * @copydoc Instruction::accept
-     */
+    virtual bool is_meta() const OVERRIDE { return true; }
+
+    virtual const Type *type() const OVERRIDE
+    {
+        // We shouldn't perform type analysis in meta instructions.
+        assert(false);
+        return new (GC)OpaqueType("<Meta>");
+    }
     virtual void accept(Visitor *visitor) OVERRIDE
     {
     }
@@ -1614,8 +1582,6 @@ public:
         : key_(key) {}
 
     uint64_t key() const { return key_; }
-
-    virtual const Type *type() const OVERRIDE { return Type::reference(); }
 };
 
 /**
@@ -1634,8 +1600,6 @@ public:
 
     Value *object() const { return obj_; }
     Value *key() const { return key_; }
-
-    virtual const Type *type() const OVERRIDE { return Type::reference(); }
 };
 
 /**

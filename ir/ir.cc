@@ -52,12 +52,6 @@ const Type *Type::value()
     return type;
 }
 
-const Type *Type::reference()
-{
-    static Type *type = new (GC)ReferenceType(String());
-    return type;
-}
-
 const FunctionVector &Module::functions() const
 {
     return functions_;
@@ -1074,8 +1068,7 @@ ExceptionLoadStateInstruction::ExceptionLoadStateInstruction(Value *state)
 ExceptionSetInstruction::ExceptionSetInstruction(Value *val)
     : val_(val)
 {
-    assert(val->type()->is_value() ||
-           val->type()->is_reference());
+    assert(val->type()->is_value());
 }
 
 Value *Declaration::value() const

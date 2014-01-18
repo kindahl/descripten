@@ -41,7 +41,8 @@ Allocator::Register *Allocator::RegisterPool::get(const ir::Value *value)
     if (it == type_reg_map_.end() || it->second.empty())
     {
         Allocator::Register *reg =
-            new (GC)Allocator::Register(value->type(), next_reg_number_++, value->persistent());
+                new (GC)Allocator::Register(value->type(), next_reg_number_++,
+                                            value->is_persistent());
         registers_.push_back(reg);
         return reg;
     }

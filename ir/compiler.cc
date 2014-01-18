@@ -372,7 +372,7 @@ ValueHandle Compiler::expand_ref_get_inplace(ValueHandle &ref,
     if (ref == dst)
         return ref;
 
-    if (!ref->type()->is_reference())
+    if (!ref->is_meta())
     {
         fun->last_block()->push_mem_store(dst, ref);
         return dst;
@@ -415,7 +415,7 @@ ValueHandle Compiler::expand_ref_get_inplace_lazy(ValueHandle &ref,
 {
     assert(ref);
 
-    if (!ref->type()->is_reference())
+    if (!ref->is_meta())
         return ref;
 
     ValueHandle dst = ValueHandle::lazy(&allocator);
@@ -467,7 +467,7 @@ ValueHandle Compiler::expand_ref_get(ValueHandle &ref,
         return ref;
     }
 
-    if (!ref->type()->is_reference())
+    if (!ref->is_meta())
     {
         fun->last_block()->push_mem_store(dst, ref);
         fun->last_block()->push_trm_jmp(done_block);
@@ -508,7 +508,7 @@ ValueHandle Compiler::expand_ref_get_lazy(ValueHandle &ref, Function *fun,
         return ValueHandle();
     }
 
-    if (!ref->type()->is_reference())
+    if (!ref->is_meta())
     {
         fun->last_block()->push_trm_jmp(done_block);
         return ref;
@@ -1653,7 +1653,7 @@ ValueHandle Compiler::parse_assign_expr(parser::AssignmentExpression *expr,
         if (rva)
         {
             L = parse(expr->lhs(), fun, &temporaries);
-            if (L->type()->is_reference())
+            if (L->is_meta())
             {
                 R = parse(expr->rhs(), fun, rva);
                 l = expand_ref_get_inplace_lazy(R, fun, expt_block, *rva);
@@ -1676,7 +1676,7 @@ ValueHandle Compiler::parse_assign_expr(parser::AssignmentExpression *expr,
             SingleValueAllocator sva(temporaries);
 
             L = parse(expr->lhs(), fun, &temporaries);
-            if (L->type()->is_reference())
+            if (L->is_meta())
             {
                 R = parse(expr->rhs(), fun, &sva);
                 l = expand_ref_get_inplace_lazy(R, fun, expt_block, temporaries);
@@ -2021,7 +2021,7 @@ ValueHandle Compiler::parse_call_expr(parser::CallExpression *expr,
 
         f = parse(expr->expression(), fun, &temporaries);
 
-        assert(!f->type()->is_reference());
+        assert(!f->is_meta());
 
         _ = fun->last_block()->push_call(
                 f, static_cast<int>(expr->arguments().size()), X);

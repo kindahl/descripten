@@ -197,9 +197,6 @@ std::string CcGenerator::type(const ir::Type *type)
         case ir::Type::ID_VALUE:
             str << "EsValueData";
             break;
-        case ir::Type::ID_REFERENCE:
-            str << "EsReference";
-            break;
 
         // Derived types.
         case ir::Type::ID_ARRAY:

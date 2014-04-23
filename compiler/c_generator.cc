@@ -252,6 +252,8 @@ std::string Cgenerator::uint64(uint64_t val)
 
 void Cgenerator::visit_module(ir::Module *module)
 {
+    decl_out_->stream() << "void " RUNTIME_DATA_FUNCTION_NAME "();\n";
+
     main_out_->stream() << "void " RUNTIME_DATA_FUNCTION_NAME "()\n";
     main_out_->stream() << "{" << "\n";
     for (const ir::Resource *res : module->resources())
@@ -1008,7 +1010,25 @@ void Cgenerator::generate(ir::Module *module, const std::string &file_path)
 
     // Generate include conditions.
     decl_out_->stream() << "#include <stddef.h>" << "\n";
+    decl_out_->stream() << "#include <stdio.h>" << "\n";
     decl_out_->stream() << "#include \"runtime.h\"" << "\n";
+
+    main_out_->stream() << "int main(int argc, const char *argv[])\n"
+                           "{\n"
+                           "  if (!esr_init(" RUNTIME_DATA_FUNCTION_NAME "))\n"
+                           "  {\n"
+                           "    fprintf(stderr, \"%s\\n\", esr_error());\n"
+                           "    return 1;\n"
+                           "  }\n"
+                           "\n"
+                           "  if (!esr_run(" RUNTIME_MAIN_FUNCTION_NAME "))\n"
+                           "  {\n"
+                           "    fprintf(stderr, \"%s\\n\", esr_error());\n"
+                           "    return 1;\n"
+                           "  }\n"
+                           "\n"
+                           "  return 0;\n"
+                           "}" << "\n";
 
     // Write body.
     try

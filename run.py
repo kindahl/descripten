@@ -42,8 +42,7 @@ GCC_LINK=str.join(' ', [
     '-L' + os.path.join(os.getcwd(), './runtime/.libs/'),
     '-lcommon', '-lparser', '-lruntime',
     subprocess.check_output('pkg-config --libs bdw-gc libpcre',
-                            shell=True, universal_newlines=True).strip(),
-    'main.o'
+                            shell=True, universal_newlines=True).strip()
 ])
 
 # setup environment variables
@@ -121,10 +120,6 @@ def main():
             use_evaluator = True
         else:
             print('warning: unknown command line option ' + o)
-
-    if (subprocess.call(GCC_COMPILE + ' main.' + EXT + ' -o main.o', shell=True) != 0):
-        print('error: unable to compile main.' + EXT + '.')
-        exit(1)
 
     path = os.path.abspath(args[0])
     if (not os.path.exists(path)):

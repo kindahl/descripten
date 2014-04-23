@@ -48,8 +48,7 @@ GCC_LINK=str.join(' ', [
     '-L' + os.path.join(os.getcwd(), '../runtime/.libs/'),
     '-lcommon', '-lparser', '-lruntime',
     subprocess.check_output('pkg-config --libs bdw-gc libpcre',
-                            shell=True, universal_newlines=True).strip(),
-    'main.o'
+                            shell=True, universal_newlines=True).strip()
 ])
 
 # setup environment variables
@@ -148,10 +147,6 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], 'x', [])
     except getopt.GetoptError:
         print('error: invalid usage.')
-        exit(1)
-
-    if (subprocess.call(GCC_COMPILE + ' main.' + EXT + ' -o main.o', shell=True) != 0):
-        print('error: unable to compile main.' + EXT + '.')
         exit(1)
 
     # test if we should run all tests or a single one.

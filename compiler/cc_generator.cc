@@ -258,6 +258,8 @@ std::string CcGenerator::uint64(uint64_t val)
 
 void CcGenerator::visit_module(ir::Module *module)
 {
+    decl_out_->stream() << "void " RUNTIME_DATA_FUNCTION_NAME "();\n";
+
     main_out_->stream() << "void " RUNTIME_DATA_FUNCTION_NAME "()\n";
     main_out_->stream() << "{" << "\n";
     for (const ir::Resource *res : module->resources())
@@ -1014,7 +1016,25 @@ void CcGenerator::generate(ir::Module *module, const std::string &file_path)
 
     // Generate include conditions.
     decl_out_->stream() << "#include <cstddef>" << "\n";
+    decl_out_->stream() << "#include <iostream>" << "\n";
     decl_out_->stream() << "#include \"runtime.h\"" << "\n";
+
+    main_out_->stream() << "int main(int argc, const char *argv[])\n"
+                           "{\n"
+                           "    if (!esr_init(__es_data))\n"
+                           "    {\n"
+                           "        std::cerr << esr_error() << std::endl;\n"
+                           "        return 1;\n"
+                           "    }\n"
+                           "\n"
+                           "    if (!esr_run(__es_main))\n"
+                           "    {\n"
+                           "        std::cerr << esr_error() << std::endl;\n"
+                           "        return 1;\n"
+                           "    }\n"
+                           "\n"
+                           "    return 0;\n"
+                           "}" << "\n";
 
     // Write body.
     try

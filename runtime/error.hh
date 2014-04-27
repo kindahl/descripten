@@ -20,7 +20,6 @@
 #include <sstream>
 #include <string>
 #include <gc/gc_cpp.h>
-#include "common/core.hh"
 #include "common/exception.hh"
 #include "context.hh"
 #include "object.hh"
@@ -91,7 +90,7 @@ public:
      * Turns the object into an error prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
 };
 
 /**
@@ -124,7 +123,7 @@ public:
      * Turns the object into a native error prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
 };
 
 /**
@@ -220,5 +219,5 @@ public:
     /**
      * @copydoc EsFunction::construct
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };

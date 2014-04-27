@@ -18,7 +18,6 @@
 
 #pragma once
 #include <vector>
-#include "common/core.hh"
 #include "ir.hh"
 
 namespace ir {
@@ -59,7 +58,7 @@ public:
     /**
      * @copydoc TemplateBlock::inflate
      */
-    virtual void inflate(Block *block, Function *fun) const OVERRIDE;
+    virtual void inflate(Block *block, Function *fun) const override;
 };
 
 /**
@@ -71,7 +70,7 @@ public:
     /**
      * @copydoc TemplateBlock::inflate
      */
-    virtual void inflate(Block *block, Function *fun) const OVERRIDE;
+    virtual void inflate(Block *block, Function *fun) const override;
 };
 
 /**
@@ -92,7 +91,7 @@ public:
     /**
      * @copydoc TemplateBlock::inflate
      */
-    virtual void inflate(Block *block, Function *fun) const OVERRIDE;
+    virtual void inflate(Block *block, Function *fun) const override;
 };
 
 /**
@@ -104,7 +103,7 @@ public:
     /**
      * @copydoc TemplateBlock::inflate
      */
-    virtual void inflate(Block *block, Function *fun) const OVERRIDE;
+    virtual void inflate(Block *block, Function *fun) const override;
 };
 
 /**
@@ -131,7 +130,7 @@ public:
     /**
      * @copydoc TemplateBlock::inflate
      */
-    virtual void inflate(Block *block, Function *fun) const OVERRIDE;
+    virtual void inflate(Block *block, Function *fun) const override;
 };
 
 }

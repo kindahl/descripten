@@ -21,7 +21,6 @@
 #include <cassert>
 #include <vector>
 #include <gc/gc_allocator.h>
-#include "common/core.hh"
 #include "common/string.hh"
 #include "location.hh"
 
@@ -289,7 +288,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class UnaryExpression : public Expression
@@ -336,7 +335,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class AssignmentExpression : public Expression
@@ -391,7 +390,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ConditionalExpression : public Expression
@@ -426,7 +425,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class PropertyExpression : public Expression
@@ -462,7 +461,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class CallExpression : public Expression
@@ -490,7 +489,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class CallNewExpression : public Expression
@@ -518,7 +517,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class RegularExpression : public Expression
@@ -596,7 +595,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class FunctionExpression  : public Expression
@@ -617,7 +616,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ThisLiteral : public Expression
@@ -629,7 +628,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class IdentifierLiteral : public Expression
@@ -658,7 +657,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class NullLiteral : public Expression
@@ -670,7 +669,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class BoolLiteral : public Expression
@@ -691,7 +690,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class NumberLiteral : public Expression
@@ -712,7 +711,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class StringLiteral : public Expression
@@ -733,7 +732,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class FunctionLiteral : public Expression, public Declaration
@@ -849,7 +848,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class VariableLiteral : public Expression, public Declaration
@@ -871,7 +870,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ArrayLiteral : public Expression
@@ -892,7 +891,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ObjectLiteral : public Expression
@@ -1061,7 +1060,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class NothingLiteral : public Expression
@@ -1073,7 +1072,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class EmptyStatement : public Statement
@@ -1085,7 +1084,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ExpressionStatement : public Statement
@@ -1106,7 +1105,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class BlockStatement : public LabeledStatement
@@ -1142,7 +1141,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class IfStatement : public Statement
@@ -1182,7 +1181,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class DoWhileStatement : public LabeledStatement
@@ -1223,7 +1222,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class WhileStatement : public LabeledStatement
@@ -1259,7 +1258,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ForInStatement : public LabeledStatement
@@ -1306,7 +1305,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ForStatement : public LabeledStatement
@@ -1379,7 +1378,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ContinueStatement : public Statement
@@ -1405,7 +1404,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class BreakStatement : public Statement
@@ -1431,7 +1430,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ReturnStatement : public Statement
@@ -1457,7 +1456,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class WithStatement : public Statement
@@ -1485,7 +1484,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class SwitchStatement : public LabeledStatement
@@ -1551,7 +1550,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class ThrowStatement : public Statement
@@ -1572,7 +1571,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class TryStatement : public LabeledStatement
@@ -1640,7 +1639,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 class DebuggerStatement : public Statement
@@ -1652,7 +1651,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE;
+    virtual void accept(Visitor *visitor) override;
 };
 
 }

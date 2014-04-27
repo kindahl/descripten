@@ -17,7 +17,6 @@
  */
 
 #pragma once
-#include "common/core.hh"
 #include "object.hh"
 #include "value.hh"
 
@@ -86,12 +85,12 @@ public:
         return storage_;
     }
 
-    virtual bool is_decl_env() OVERRIDE
+    virtual bool is_decl_env() override
     {
         return true;
     }
 
-    virtual bool is_obj_env() OVERRIDE
+    virtual bool is_obj_env() override
     {
         return false;
     }
@@ -99,12 +98,12 @@ public:
     /**
      * @copydoc EsEnvironmentRecord::has_binding
      */
-    virtual bool has_binding(const EsPropertyKey &n) OVERRIDE;
+    virtual bool has_binding(const EsPropertyKey &n) override;
 
     /**
      * @copydoc EsEnvironmentRecord::implicit_this_value
      */
-    virtual EsValue implicit_this_value() const OVERRIDE;
+    virtual EsValue implicit_this_value() const override;
 
     /**
      * Creates a new mutable binding in an environment record, linked to a pre-
@@ -201,12 +200,12 @@ public:
     EsObjectEnvironmentRecord(EsObject *binding_object, bool provide_this);
     virtual ~EsObjectEnvironmentRecord() {}
 
-    virtual bool is_decl_env() OVERRIDE
+    virtual bool is_decl_env() override
     {
         return false;
     }
 
-    virtual bool is_obj_env() OVERRIDE
+    virtual bool is_obj_env() override
     {
         return true;
     }
@@ -219,12 +218,12 @@ public:
     /**
      * @copydoc EsEnvironmentRecord::has_binding
      */
-    virtual bool has_binding(const EsPropertyKey &n) OVERRIDE;
+    virtual bool has_binding(const EsPropertyKey &n) override;
 
     /**
      * @copydoc EsEnvironmentRecord::implicit_this_value
      */
-    virtual EsValue implicit_this_value() const OVERRIDE;
+    virtual EsValue implicit_this_value() const override;
 };
 
 /**

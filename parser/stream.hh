@@ -20,7 +20,6 @@
 #include <cassert>
 #include <string>
 #include <stddef.h>
-#include "common/core.hh"
 #include "common/string.hh"
 #include "types.hh"
 
@@ -88,7 +87,7 @@ protected:
     uni_char buf_[S];
     uni_char *push_limit_;
 
-    virtual bool internal_fetch() OVERRIDE
+    virtual bool internal_fetch() override
     {
         cur_ = buf_;
 
@@ -106,7 +105,7 @@ protected:
         return len > 0;
     }
 
-    virtual size_t internal_skip(size_t count) OVERRIDE
+    virtual size_t internal_skip(size_t count) override
     {
         push_limit_ = NULL;
         return buffer_skip(count);
@@ -123,7 +122,7 @@ public:
         end_ = buf_;
     }
 
-    virtual void push(uni_char c) OVERRIDE
+    virtual void push(uni_char c) override
     {
         // Since we allow reading past the buffer we must allow putting
         // non-existing items back.
@@ -168,8 +167,8 @@ private:
     const String data_;
 
 protected:
-    virtual size_t buffer_fill(size_t pos, size_t len) OVERRIDE;
-    virtual size_t buffer_skip(size_t count) OVERRIDE;
+    virtual size_t buffer_fill(size_t pos, size_t len) override;
+    virtual size_t buffer_skip(size_t count) override;
 
 public:
     StringStream(const String &data);
@@ -187,8 +186,8 @@ private:
     const byte *find_char_at_pos(size_t pos);
 
 protected:
-    virtual size_t buffer_fill(size_t pos, size_t len) OVERRIDE;
-    virtual size_t buffer_skip(size_t count) OVERRIDE;
+    virtual size_t buffer_fill(size_t pos, size_t len) override;
+    virtual size_t buffer_skip(size_t count) override;
 
 public:
     Utf8Stream(const std::string &data);
@@ -214,8 +213,8 @@ private:
     const byte *find_char_at_pos(size_t pos);
 
 protected:
-    virtual size_t buffer_fill(size_t pos, size_t len) OVERRIDE;
-    virtual size_t buffer_skip(size_t count) OVERRIDE;
+    virtual size_t buffer_fill(size_t pos, size_t len) override;
+    virtual size_t buffer_skip(size_t count) override;
 
 public:
     Utf16Stream(Endianness endianness, const std::string &data);

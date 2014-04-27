@@ -18,7 +18,6 @@
 
 #pragma once
 #include <cassert>
-#include "core.hh"
 
 template <typename T>
 class IntrusiveLinkedList;
@@ -123,7 +122,7 @@ struct IntrusiveLinkedListTraits
  * @brief Intrusive linked list.
  */
 template <typename T>
-class IntrusiveLinkedList FINAL
+class IntrusiveLinkedList final
 {
 public:
     /**

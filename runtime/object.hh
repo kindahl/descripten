@@ -23,7 +23,6 @@
 #include <gc/gc_allocator.h>    // NOTE: 3rd party.
 #define PCRE_STATIC
 #include <pcre.h>               // NOTE: 3rd party.
-#include "common/core.hh"
 #include "common/string.hh"
 #include "container.hh"
 #include "map.hh"
@@ -517,29 +516,29 @@ public:
     /**
      * @copydoc EsObject::get_own_property
      */
-    virtual EsPropertyReference get_own_property(EsPropertyKey p) OVERRIDE;
+    virtual EsPropertyReference get_own_property(EsPropertyKey p) override;
     
     /**
      * @copydoc EsObject::getL
      */
-    virtual bool getT(EsPropertyKey p, EsPropertyReference &prop) OVERRIDE;
+    virtual bool getT(EsPropertyKey p, EsPropertyReference &prop) override;
 
     /**
      * @copydoc EsObject::removeL
      */
-    virtual bool removeT(EsPropertyKey p, bool throws, bool &removed) OVERRIDE;
+    virtual bool removeT(EsPropertyKey p, bool throws, bool &removed) override;
     
     /**
      * @copydoc EsObject::define_own_propertyL
      */
     virtual bool define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor &desc,
-                                      bool throws, bool &defined) OVERRIDE;
+                                      bool throws, bool &defined) override;
 
     /**
      * @copydoc EsObject::update_own_propertyL
      */
     virtual bool update_own_propertyT(EsPropertyKey p, EsPropertyReference &current,
-                                      const EsValue &v, bool throws) OVERRIDE;
+                                      const EsValue &v, bool throws) override;
 };
 
 /**
@@ -565,7 +564,7 @@ public:
      * Turns the object into an array prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
     
     static EsArray *create_raw();
     static EsArray *create_inst(uint32_t len = 0);
@@ -580,13 +579,13 @@ public:
      * @copydoc EsObject::define_own_propertyL
      */
     virtual bool define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor &desc,
-                                      bool throws, bool &defined) OVERRIDE;
+                                      bool throws, bool &defined) override;
 
     /**
      * @copydoc EsObject::update_own_propertyL
      */
     virtual bool update_own_propertyT(EsPropertyKey p, EsPropertyReference &current,
-                                      const EsValue &v, bool throws) OVERRIDE;
+                                      const EsValue &v, bool throws) override;
 };
 
 /**
@@ -614,7 +613,7 @@ public:
      * Turns the object into a boolean prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
     
     static EsBooleanObject *create_raw();
     static EsBooleanObject *create_inst(bool primitive_value);
@@ -656,7 +655,7 @@ public:
      * Turns the object into a date prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
 
     static EsDate *create_raw();
     static bool create_inst(EsValue &result);
@@ -687,7 +686,7 @@ public:
     /**
      * @copydoc EsObject::default_valueL
      */
-    virtual bool default_valueT(EsTypeHint hint, EsValue &result) OVERRIDE;
+    virtual bool default_valueT(EsTypeHint hint, EsValue &result) override;
 };
 
 /**
@@ -716,7 +715,7 @@ public:
      * Turns the object into a number prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
 
     static EsNumberObject *create_raw();
     static EsNumberObject *create_inst(double primitive_value);
@@ -759,7 +758,7 @@ public:
      * Turns the object into a string prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
     
     static EsStringObject *create_raw();
     static EsStringObject *create_inst(const EsString *primitive_value);
@@ -778,7 +777,7 @@ public:
     /**
      * @copydoc EsObject::get_own_property
      */
-    virtual EsPropertyReference get_own_property(EsPropertyKey p) OVERRIDE;
+    virtual EsPropertyReference get_own_property(EsPropertyKey p) override;
 };
 
 /**
@@ -849,7 +848,7 @@ public:
      * Turns the object into a function prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
 
     static EsFunction *create_raw(bool strict = false);
     static EsFunction *create_inst(EsLexicalEnvironment *scope,
@@ -907,7 +906,7 @@ public:
     /**
      * @copydoc EsObject::getL
      */
-    virtual bool getT(EsPropertyKey p, EsPropertyReference &prop) OVERRIDE;
+    virtual bool getT(EsPropertyKey p, EsPropertyReference &prop) override;
 
     /**
      * Executes the function constructor.
@@ -945,12 +944,12 @@ public:
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) override;
 
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -969,7 +968,7 @@ public:
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) override;
 };
 
 /**
@@ -1067,7 +1066,7 @@ public:
      * Turns the object into a function prototype.
      * @pre Object has been created using create_raw().
      */
-    virtual void make_proto() OVERRIDE;
+    virtual void make_proto() override;
 
     static EsRegExp *create_raw();
     static EsRegExp *create_inst(const EsString *pattern, bool global,
@@ -1121,17 +1120,17 @@ public:
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) override;
     
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
     
     /**
      * @copydoc EsFunction::has_instanceL
      */
-    virtual bool has_instanceT(const EsValue &v, bool &result) OVERRIDE;
+    virtual bool has_instanceT(const EsValue &v, bool &result) override;
 };
 
 /**
@@ -1148,7 +1147,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -1165,7 +1164,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -1182,7 +1181,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -1199,7 +1198,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -1216,7 +1215,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -1233,7 +1232,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -1250,7 +1249,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -1267,7 +1266,7 @@ public:
     /**
      * @copydoc EsFunction::constructL
      */
-    virtual bool constructT(EsCallFrame &frame) OVERRIDE;
+    virtual bool constructT(EsCallFrame &frame) override;
 };
 
 /**
@@ -1286,7 +1285,7 @@ public:
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) override;
 };
 
 /**
@@ -1305,5 +1304,5 @@ public:
     /**
      * @copydoc EsFunction::callL
      */
-    virtual bool callT(EsCallFrame &frame, int flags = 0) OVERRIDE;
+    virtual bool callT(EsCallFrame &frame, int flags = 0) override;
 };

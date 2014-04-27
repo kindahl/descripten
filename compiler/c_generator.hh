@@ -17,7 +17,6 @@
  */
 
 #pragma once
-#include "common/core.hh"
 #include "allocator.hh"
 #include "generator.hh"
 #include "rope.hh"
@@ -132,61 +131,61 @@ public:
     std::string value(ir::Value *val);
 
 private:
-    virtual void visit_module(ir::Module *module) OVERRIDE;
-    virtual void visit_fun(ir::Function *fun) OVERRIDE;
-    virtual void visit_block(ir::Block *block) OVERRIDE;
-    virtual void visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *instr) OVERRIDE;
-    virtual void visit_instr_args_obj_link(ir::ArgumentsObjectLinkInstruction *instr) OVERRIDE;
-    virtual void visit_instr_arr(ir::ArrayInstruction *instr) OVERRIDE;
-    virtual void visit_instr_bin(ir::BinaryInstruction *instr) OVERRIDE;
-    virtual void visit_instr_bnd_extra_init(ir::BindExtraInitInstruction *instr) OVERRIDE;
-    virtual void visit_instr_bnd_extra_ptr(ir::BindExtraPtrInstruction *instr) OVERRIDE;
-    virtual void visit_instr_call(ir::CallInstruction *instr) OVERRIDE;
-    virtual void visit_instr_call_keyed(ir::CallKeyedInstruction *instr) OVERRIDE;
-    virtual void visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *instr) OVERRIDE;
-    virtual void visit_instr_call_named(ir::CallNamedInstruction *instr) OVERRIDE;
-    virtual void visit_instr_val(ir::ValueInstruction *instr) OVERRIDE;
-    virtual void visit_instr_br(ir::BranchInstruction *instr) OVERRIDE;
-    virtual void visit_instr_jmp(ir::JumpInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ret(ir::ReturnInstruction *instr) OVERRIDE;
-    virtual void visit_instr_store(ir::StoreInstruction *instr) OVERRIDE;
-    virtual void visit_instr_get_elm_ptr(ir::GetElementPointerInstruction *instr) OVERRIDE;
-    virtual void visit_instr_stk_alloc(ir::StackAllocInstruction *instr) OVERRIDE;
-    virtual void visit_instr_stk_free(ir::StackFreeInstruction *instr) OVERRIDE;
-    virtual void visit_instr_stk_push(ir::StackPushInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_enter_catch(ir::ContextEnterCatchInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_enter_with(ir::ContextEnterWithInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_get(ir::ContextGetInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_put(ir::ContextPutInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ctx_del(ir::ContextDeleteInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ex_save_state(ir::ExceptionSaveStateInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ex_load_state(ir::ExceptionLoadStateInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ex_set(ir::ExceptionSetInstruction *instr) OVERRIDE;
-    virtual void visit_instr_ex_clear(ir::ExceptionClearInstruction *instr) OVERRIDE;
-    virtual void visit_instr_init_args(ir::InitArgumentsInstruction *instr) OVERRIDE;
-    virtual void visit_instr_decl(ir::Declaration *instr) OVERRIDE;
-    virtual void visit_instr_link(ir::Link *instr) OVERRIDE;
-    virtual void visit_instr_prp_def_data(ir::PropertyDefineDataInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_def_accessor(ir::PropertyDefineAccessorInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_it_new(ir::PropertyIteratorNewInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_it_next(ir::PropertyIteratorNextInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_get(ir::PropertyGetInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_get_slow(ir::PropertyGetSlowInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_put(ir::PropertyPutInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_put_slow(ir::PropertyPutSlowInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_del(ir::PropertyDeleteInstruction *instr) OVERRIDE;
-    virtual void visit_instr_prp_del_slow(ir::PropertyDeleteSlowInstruction *instr) OVERRIDE;
-    virtual void visit_instr_es_new_arr(ir::EsNewArrayInstruction *instr) OVERRIDE;
-    virtual void visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstruction *instr) OVERRIDE;
-    virtual void visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruction *instr) OVERRIDE;
-    virtual void visit_instr_es_new_obj(ir::EsNewObjectInstruction *instr) OVERRIDE;
-    virtual void visit_instr_es_new_rex(ir::EsNewRegexInstruction *instr) OVERRIDE;
-    virtual void visit_instr_es_bin(ir::EsBinaryInstruction *instr) OVERRIDE;
-    virtual void visit_instr_es_unary(ir::EsUnaryInstruction *instr) OVERRIDE;
+    virtual void visit_module(ir::Module *module) override;
+    virtual void visit_fun(ir::Function *fun) override;
+    virtual void visit_block(ir::Block *block) override;
+    virtual void visit_instr_args_obj_init(ir::ArgumentsObjectInitInstruction *instr) override;
+    virtual void visit_instr_args_obj_link(ir::ArgumentsObjectLinkInstruction *instr) override;
+    virtual void visit_instr_arr(ir::ArrayInstruction *instr) override;
+    virtual void visit_instr_bin(ir::BinaryInstruction *instr) override;
+    virtual void visit_instr_bnd_extra_init(ir::BindExtraInitInstruction *instr) override;
+    virtual void visit_instr_bnd_extra_ptr(ir::BindExtraPtrInstruction *instr) override;
+    virtual void visit_instr_call(ir::CallInstruction *instr) override;
+    virtual void visit_instr_call_keyed(ir::CallKeyedInstruction *instr) override;
+    virtual void visit_instr_call_keyed_slow(ir::CallKeyedSlowInstruction *instr) override;
+    virtual void visit_instr_call_named(ir::CallNamedInstruction *instr) override;
+    virtual void visit_instr_val(ir::ValueInstruction *instr) override;
+    virtual void visit_instr_br(ir::BranchInstruction *instr) override;
+    virtual void visit_instr_jmp(ir::JumpInstruction *instr) override;
+    virtual void visit_instr_ret(ir::ReturnInstruction *instr) override;
+    virtual void visit_instr_store(ir::StoreInstruction *instr) override;
+    virtual void visit_instr_get_elm_ptr(ir::GetElementPointerInstruction *instr) override;
+    virtual void visit_instr_stk_alloc(ir::StackAllocInstruction *instr) override;
+    virtual void visit_instr_stk_free(ir::StackFreeInstruction *instr) override;
+    virtual void visit_instr_stk_push(ir::StackPushInstruction *instr) override;
+    virtual void visit_instr_ctx_set_strict(ir::ContextSetStrictInstruction *instr) override;
+    virtual void visit_instr_ctx_enter_catch(ir::ContextEnterCatchInstruction *instr) override;
+    virtual void visit_instr_ctx_enter_with(ir::ContextEnterWithInstruction *instr) override;
+    virtual void visit_instr_ctx_leave(ir::ContextLeaveInstruction *instr) override;
+    virtual void visit_instr_ctx_get(ir::ContextGetInstruction *instr) override;
+    virtual void visit_instr_ctx_put(ir::ContextPutInstruction *instr) override;
+    virtual void visit_instr_ctx_del(ir::ContextDeleteInstruction *instr) override;
+    virtual void visit_instr_ex_save_state(ir::ExceptionSaveStateInstruction *instr) override;
+    virtual void visit_instr_ex_load_state(ir::ExceptionLoadStateInstruction *instr) override;
+    virtual void visit_instr_ex_set(ir::ExceptionSetInstruction *instr) override;
+    virtual void visit_instr_ex_clear(ir::ExceptionClearInstruction *instr) override;
+    virtual void visit_instr_init_args(ir::InitArgumentsInstruction *instr) override;
+    virtual void visit_instr_decl(ir::Declaration *instr) override;
+    virtual void visit_instr_link(ir::Link *instr) override;
+    virtual void visit_instr_prp_def_data(ir::PropertyDefineDataInstruction *instr) override;
+    virtual void visit_instr_prp_def_accessor(ir::PropertyDefineAccessorInstruction *instr) override;
+    virtual void visit_instr_prp_it_new(ir::PropertyIteratorNewInstruction *instr) override;
+    virtual void visit_instr_prp_it_next(ir::PropertyIteratorNextInstruction *instr) override;
+    virtual void visit_instr_prp_get(ir::PropertyGetInstruction *instr) override;
+    virtual void visit_instr_prp_get_slow(ir::PropertyGetSlowInstruction *instr) override;
+    virtual void visit_instr_prp_put(ir::PropertyPutInstruction *instr) override;
+    virtual void visit_instr_prp_put_slow(ir::PropertyPutSlowInstruction *instr) override;
+    virtual void visit_instr_prp_del(ir::PropertyDeleteInstruction *instr) override;
+    virtual void visit_instr_prp_del_slow(ir::PropertyDeleteSlowInstruction *instr) override;
+    virtual void visit_instr_es_new_arr(ir::EsNewArrayInstruction *instr) override;
+    virtual void visit_instr_es_new_fun_decl(ir::EsNewFunctionDeclarationInstruction *instr) override;
+    virtual void visit_instr_es_new_fun_expr(ir::EsNewFunctionExpressionInstruction *instr) override;
+    virtual void visit_instr_es_new_obj(ir::EsNewObjectInstruction *instr) override;
+    virtual void visit_instr_es_new_rex(ir::EsNewRegexInstruction *instr) override;
+    virtual void visit_instr_es_bin(ir::EsBinaryInstruction *instr) override;
+    virtual void visit_instr_es_unary(ir::EsUnaryInstruction *instr) override;
 
-    virtual void visit_str_res(ir::StringResource *res) OVERRIDE;
+    virtual void visit_str_res(ir::StringResource *res) override;
 
 public:
     Cgenerator();

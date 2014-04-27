@@ -127,182 +127,182 @@ protected:
     virtual ~ValueVisitor() {}
 
 private:
-    virtual void visit_binary_expr(BinaryExpression *expr) OVERRIDE
+    virtual void visit_binary_expr(BinaryExpression *expr) override
     {
         value_ = parse_binary_expr(expr);
     }
 
-    virtual void visit_unary_expr(UnaryExpression *expr) OVERRIDE
+    virtual void visit_unary_expr(UnaryExpression *expr) override
     {
         value_ = parse_unary_expr(expr);
     }
 
-    virtual void visit_assign_expr(AssignmentExpression *expr) OVERRIDE
+    virtual void visit_assign_expr(AssignmentExpression *expr) override
     {
         value_ = parse_assign_expr(expr);
     }
 
-    virtual void visit_cond_expr(ConditionalExpression *expr) OVERRIDE
+    virtual void visit_cond_expr(ConditionalExpression *expr) override
     {
         value_ = parse_cond_expr(expr);
     }
 
-    virtual void visit_prop_expr(PropertyExpression *expr) OVERRIDE
+    virtual void visit_prop_expr(PropertyExpression *expr) override
     {
         value_ = parse_prop_expr(expr);
     }
 
-    virtual void visit_call_expr(CallExpression *expr) OVERRIDE
+    virtual void visit_call_expr(CallExpression *expr) override
     {
         value_ = parse_call_expr(expr);
     }
 
-    virtual void visit_call_new_expr(CallNewExpression *expr) OVERRIDE
+    virtual void visit_call_new_expr(CallNewExpression *expr) override
     {
         value_ = parse_call_new_expr(expr);
     }
 
-    virtual void visit_regular_expr(RegularExpression *expr) OVERRIDE
+    virtual void visit_regular_expr(RegularExpression *expr) override
     {
         value_ = parse_regular_expr(expr);
     }
 
-    virtual void visit_fun_expr(FunctionExpression *expr) OVERRIDE
+    virtual void visit_fun_expr(FunctionExpression *expr) override
     {
         value_ = parse_fun_expr(expr);
     }
 
-    virtual void visit_this_lit(ThisLiteral *lit) OVERRIDE
+    virtual void visit_this_lit(ThisLiteral *lit) override
     {
         value_ = parse_this_lit(lit);
     }
 
-    virtual void visit_ident_lit(IdentifierLiteral *lit) OVERRIDE
+    virtual void visit_ident_lit(IdentifierLiteral *lit) override
     {
         value_ = parse_ident_lit(lit);
     }
 
-    virtual void visit_null_lit(NullLiteral *lit) OVERRIDE
+    virtual void visit_null_lit(NullLiteral *lit) override
     {
         value_ = parse_null_lit(lit);
     }
 
-    virtual void visit_bool_lit(BoolLiteral *lit) OVERRIDE
+    virtual void visit_bool_lit(BoolLiteral *lit) override
     {
         value_ = parse_bool_lit(lit);
     }
 
-    virtual void visit_num_lit(NumberLiteral *lit) OVERRIDE
+    virtual void visit_num_lit(NumberLiteral *lit) override
     {
         value_ = parse_num_lit(lit);
     }
 
-    virtual void visit_str_lit(StringLiteral *lit) OVERRIDE
+    virtual void visit_str_lit(StringLiteral *lit) override
     {
         value_ = parse_str_lit(lit);
     }
 
-    virtual void visit_fun_lit(FunctionLiteral *lit) OVERRIDE
+    virtual void visit_fun_lit(FunctionLiteral *lit) override
     {
         value_ = parse_fun_lit(lit);
     }
 
-    virtual void visit_var_lit(VariableLiteral *lit) OVERRIDE
+    virtual void visit_var_lit(VariableLiteral *lit) override
     {
         value_ = parse_var_lit(lit);
     }
 
-    virtual void visit_array_lit(ArrayLiteral *lit) OVERRIDE
+    virtual void visit_array_lit(ArrayLiteral *lit) override
     {
         value_ = parse_array_lit(lit);
     }
 
-    virtual void visit_obj_lit(ObjectLiteral *lit) OVERRIDE
+    virtual void visit_obj_lit(ObjectLiteral *lit) override
     {
         value_ = parse_obj_lit(lit);
     }
 
-    virtual void visit_nothing_lit(NothingLiteral *lit) OVERRIDE
+    virtual void visit_nothing_lit(NothingLiteral *lit) override
     {
         value_ = parse_nothing_lit(lit);
     }
 
-    virtual void visit_empty_stmt(EmptyStatement *stmt) OVERRIDE
+    virtual void visit_empty_stmt(EmptyStatement *stmt) override
     {
         value_ = parse_empty_stmt(stmt);
     }
 
-    virtual void visit_expr_stmt(ExpressionStatement *stmt) OVERRIDE
+    virtual void visit_expr_stmt(ExpressionStatement *stmt) override
     {
         value_ = parse_expr_stmt(stmt);
     }
 
-    virtual void visit_block_stmt(BlockStatement *stmt) OVERRIDE
+    virtual void visit_block_stmt(BlockStatement *stmt) override
     {
         value_ = parse_block_stmt(stmt);
     }
 
-    virtual void visit_if_stmt(IfStatement *stmt) OVERRIDE
+    virtual void visit_if_stmt(IfStatement *stmt) override
     {
         value_ = parse_if_stmt(stmt);
     }
 
-    virtual void visit_do_while_stmt(DoWhileStatement *stmt) OVERRIDE
+    virtual void visit_do_while_stmt(DoWhileStatement *stmt) override
     {
         value_ = parse_do_while_stmt(stmt);
     }
 
-    virtual void visit_while_stmt(WhileStatement *stmt) OVERRIDE
+    virtual void visit_while_stmt(WhileStatement *stmt) override
     {
         value_ = parse_while_stmt(stmt);
     }
 
-    virtual void visit_for_in_stmt(ForInStatement *stmt) OVERRIDE
+    virtual void visit_for_in_stmt(ForInStatement *stmt) override
     {
         value_ = parse_for_in_stmt(stmt);
     }
 
-    virtual void visit_for_stmt(ForStatement *stmt) OVERRIDE
+    virtual void visit_for_stmt(ForStatement *stmt) override
     {
         value_ = parse_for_stmt(stmt);
     }
 
-    virtual void visit_cont_stmt(ContinueStatement *stmt) OVERRIDE
+    virtual void visit_cont_stmt(ContinueStatement *stmt) override
     {
         value_ = parse_cont_stmt(stmt);
     }
 
-    virtual void visit_break_stmt(BreakStatement *stmt) OVERRIDE
+    virtual void visit_break_stmt(BreakStatement *stmt) override
     {
         value_ = parse_break_stmt(stmt);
     }
 
-    virtual void visit_ret_stmt(ReturnStatement *stmt) OVERRIDE
+    virtual void visit_ret_stmt(ReturnStatement *stmt) override
     {
         value_ = parse_ret_stmt(stmt);
     }
 
-    virtual void visit_with_stmt(WithStatement *stmt) OVERRIDE
+    virtual void visit_with_stmt(WithStatement *stmt) override
     {
         value_ = parse_with_stmt(stmt);
     }
 
-    virtual void visit_switch_stmt(SwitchStatement *stmt) OVERRIDE
+    virtual void visit_switch_stmt(SwitchStatement *stmt) override
     {
         value_ = parse_switch_stmt(stmt);
     }
 
-    virtual void visit_throw_stmt(ThrowStatement *stmt) OVERRIDE
+    virtual void visit_throw_stmt(ThrowStatement *stmt) override
     {
         value_ = parse_throw_stmt(stmt);
     }
 
-    virtual void visit_try_stmt(TryStatement *stmt) OVERRIDE
+    virtual void visit_try_stmt(TryStatement *stmt) override
     {
         value_ = parse_try_stmt(stmt);
     }
 
-    virtual void visit_dbg_stmt(DebuggerStatement *stmt) OVERRIDE
+    virtual void visit_dbg_stmt(DebuggerStatement *stmt) override
     {
         value_ = parse_dbg_stmt(stmt);
     }
@@ -369,182 +369,182 @@ protected:
     virtual ~ValueVisitor1() {}
 
 private:
-    virtual void visit_binary_expr(BinaryExpression *expr) OVERRIDE
+    virtual void visit_binary_expr(BinaryExpression *expr) override
     {
         value_ = parse_binary_expr(expr, param_);
     }
 
-    virtual void visit_unary_expr(UnaryExpression *expr) OVERRIDE
+    virtual void visit_unary_expr(UnaryExpression *expr) override
     {
         value_ = parse_unary_expr(expr, param_);
     }
 
-    virtual void visit_assign_expr(AssignmentExpression *expr) OVERRIDE
+    virtual void visit_assign_expr(AssignmentExpression *expr) override
     {
         value_ = parse_assign_expr(expr, param_);
     }
 
-    virtual void visit_cond_expr(ConditionalExpression *expr) OVERRIDE
+    virtual void visit_cond_expr(ConditionalExpression *expr) override
     {
         value_ = parse_cond_expr(expr, param_);
     }
 
-    virtual void visit_prop_expr(PropertyExpression *expr) OVERRIDE
+    virtual void visit_prop_expr(PropertyExpression *expr) override
     {
         value_ = parse_prop_expr(expr, param_);
     }
 
-    virtual void visit_call_expr(CallExpression *expr) OVERRIDE
+    virtual void visit_call_expr(CallExpression *expr) override
     {
         value_ = parse_call_expr(expr, param_);
     }
 
-    virtual void visit_call_new_expr(CallNewExpression *expr) OVERRIDE
+    virtual void visit_call_new_expr(CallNewExpression *expr) override
     {
         value_ = parse_call_new_expr(expr, param_);
     }
 
-    virtual void visit_regular_expr(RegularExpression *expr) OVERRIDE
+    virtual void visit_regular_expr(RegularExpression *expr) override
     {
         value_ = parse_regular_expr(expr, param_);
     }
 
-    virtual void visit_fun_expr(FunctionExpression *expr) OVERRIDE
+    virtual void visit_fun_expr(FunctionExpression *expr) override
     {
         value_ = parse_fun_expr(expr, param_);
     }
 
-    virtual void visit_this_lit(ThisLiteral *lit) OVERRIDE
+    virtual void visit_this_lit(ThisLiteral *lit) override
     {
         value_ = parse_this_lit(lit, param_);
     }
 
-    virtual void visit_ident_lit(IdentifierLiteral *lit) OVERRIDE
+    virtual void visit_ident_lit(IdentifierLiteral *lit) override
     {
         value_ = parse_ident_lit(lit, param_);
     }
 
-    virtual void visit_null_lit(NullLiteral *lit) OVERRIDE
+    virtual void visit_null_lit(NullLiteral *lit) override
     {
         value_ = parse_null_lit(lit, param_);
     }
 
-    virtual void visit_bool_lit(BoolLiteral *lit) OVERRIDE
+    virtual void visit_bool_lit(BoolLiteral *lit) override
     {
         value_ = parse_bool_lit(lit, param_);
     }
 
-    virtual void visit_num_lit(NumberLiteral *lit) OVERRIDE
+    virtual void visit_num_lit(NumberLiteral *lit) override
     {
         value_ = parse_num_lit(lit, param_);
     }
 
-    virtual void visit_str_lit(StringLiteral *lit) OVERRIDE
+    virtual void visit_str_lit(StringLiteral *lit) override
     {
         value_ = parse_str_lit(lit, param_);
     }
 
-    virtual void visit_fun_lit(FunctionLiteral *lit) OVERRIDE
+    virtual void visit_fun_lit(FunctionLiteral *lit) override
     {
         value_ = parse_fun_lit(lit, param_);
     }
 
-    virtual void visit_var_lit(VariableLiteral *lit) OVERRIDE
+    virtual void visit_var_lit(VariableLiteral *lit) override
     {
         value_ = parse_var_lit(lit, param_);
     }
 
-    virtual void visit_array_lit(ArrayLiteral *lit) OVERRIDE
+    virtual void visit_array_lit(ArrayLiteral *lit) override
     {
         value_ = parse_array_lit(lit, param_);
     }
 
-    virtual void visit_obj_lit(ObjectLiteral *lit) OVERRIDE
+    virtual void visit_obj_lit(ObjectLiteral *lit) override
     {
         value_ = parse_obj_lit(lit, param_);
     }
 
-    virtual void visit_nothing_lit(NothingLiteral *lit) OVERRIDE
+    virtual void visit_nothing_lit(NothingLiteral *lit) override
     {
         value_ = parse_nothing_lit(lit, param_);
     }
 
-    virtual void visit_empty_stmt(EmptyStatement *stmt) OVERRIDE
+    virtual void visit_empty_stmt(EmptyStatement *stmt) override
     {
         value_ = parse_empty_stmt(stmt, param_);
     }
 
-    virtual void visit_expr_stmt(ExpressionStatement *stmt) OVERRIDE
+    virtual void visit_expr_stmt(ExpressionStatement *stmt) override
     {
         value_ = parse_expr_stmt(stmt, param_);
     }
 
-    virtual void visit_block_stmt(BlockStatement *stmt) OVERRIDE
+    virtual void visit_block_stmt(BlockStatement *stmt) override
     {
         value_ = parse_block_stmt(stmt, param_);
     }
 
-    virtual void visit_if_stmt(IfStatement *stmt) OVERRIDE
+    virtual void visit_if_stmt(IfStatement *stmt) override
     {
         value_ = parse_if_stmt(stmt, param_);
     }
 
-    virtual void visit_do_while_stmt(DoWhileStatement *stmt) OVERRIDE
+    virtual void visit_do_while_stmt(DoWhileStatement *stmt) override
     {
         value_ = parse_do_while_stmt(stmt, param_);
     }
 
-    virtual void visit_while_stmt(WhileStatement *stmt) OVERRIDE
+    virtual void visit_while_stmt(WhileStatement *stmt) override
     {
         value_ = parse_while_stmt(stmt, param_);
     }
 
-    virtual void visit_for_in_stmt(ForInStatement *stmt) OVERRIDE
+    virtual void visit_for_in_stmt(ForInStatement *stmt) override
     {
         value_ = parse_for_in_stmt(stmt, param_);
     }
 
-    virtual void visit_for_stmt(ForStatement *stmt) OVERRIDE
+    virtual void visit_for_stmt(ForStatement *stmt) override
     {
         value_ = parse_for_stmt(stmt, param_);
     }
 
-    virtual void visit_cont_stmt(ContinueStatement *stmt) OVERRIDE
+    virtual void visit_cont_stmt(ContinueStatement *stmt) override
     {
         value_ = parse_cont_stmt(stmt, param_);
     }
 
-    virtual void visit_break_stmt(BreakStatement *stmt) OVERRIDE
+    virtual void visit_break_stmt(BreakStatement *stmt) override
     {
         value_ = parse_break_stmt(stmt, param_);
     }
 
-    virtual void visit_ret_stmt(ReturnStatement *stmt) OVERRIDE
+    virtual void visit_ret_stmt(ReturnStatement *stmt) override
     {
         value_ = parse_ret_stmt(stmt, param_);
     }
 
-    virtual void visit_with_stmt(WithStatement *stmt) OVERRIDE
+    virtual void visit_with_stmt(WithStatement *stmt) override
     {
         value_ = parse_with_stmt(stmt, param_);
     }
 
-    virtual void visit_switch_stmt(SwitchStatement *stmt) OVERRIDE
+    virtual void visit_switch_stmt(SwitchStatement *stmt) override
     {
         value_ = parse_switch_stmt(stmt, param_);
     }
 
-    virtual void visit_throw_stmt(ThrowStatement *stmt) OVERRIDE
+    virtual void visit_throw_stmt(ThrowStatement *stmt) override
     {
         value_ = parse_throw_stmt(stmt, param_);
     }
 
-    virtual void visit_try_stmt(TryStatement *stmt) OVERRIDE
+    virtual void visit_try_stmt(TryStatement *stmt) override
     {
         value_ = parse_try_stmt(stmt, param_);
     }
 
-    virtual void visit_dbg_stmt(DebuggerStatement *stmt) OVERRIDE
+    virtual void visit_dbg_stmt(DebuggerStatement *stmt) override
     {
         value_ = parse_dbg_stmt(stmt, param_);
     }
@@ -613,182 +613,182 @@ protected:
     }
 
 private:
-    virtual void visit_binary_expr(BinaryExpression *expr) OVERRIDE
+    virtual void visit_binary_expr(BinaryExpression *expr) override
     {
         value_ = parse_binary_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_unary_expr(UnaryExpression *expr) OVERRIDE
+    virtual void visit_unary_expr(UnaryExpression *expr) override
     {
         value_ = parse_unary_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_assign_expr(AssignmentExpression *expr) OVERRIDE
+    virtual void visit_assign_expr(AssignmentExpression *expr) override
     {
         value_ = parse_assign_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_cond_expr(ConditionalExpression *expr) OVERRIDE
+    virtual void visit_cond_expr(ConditionalExpression *expr) override
     {
         value_ = parse_cond_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_prop_expr(PropertyExpression *expr) OVERRIDE
+    virtual void visit_prop_expr(PropertyExpression *expr) override
     {
         value_ = parse_prop_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_call_expr(CallExpression *expr) OVERRIDE
+    virtual void visit_call_expr(CallExpression *expr) override
     {
         value_ = parse_call_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_call_new_expr(CallNewExpression *expr) OVERRIDE
+    virtual void visit_call_new_expr(CallNewExpression *expr) override
     {
         value_ = parse_call_new_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_regular_expr(RegularExpression *expr) OVERRIDE
+    virtual void visit_regular_expr(RegularExpression *expr) override
     {
         value_ = parse_regular_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_fun_expr(FunctionExpression *expr) OVERRIDE
+    virtual void visit_fun_expr(FunctionExpression *expr) override
     {
         value_ = parse_fun_expr(expr, param1_, param2_);
     }
 
-    virtual void visit_this_lit(ThisLiteral *lit) OVERRIDE
+    virtual void visit_this_lit(ThisLiteral *lit) override
     {
         value_ = parse_this_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_ident_lit(IdentifierLiteral *lit) OVERRIDE
+    virtual void visit_ident_lit(IdentifierLiteral *lit) override
     {
         value_ = parse_ident_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_null_lit(NullLiteral *lit) OVERRIDE
+    virtual void visit_null_lit(NullLiteral *lit) override
     {
         value_ = parse_null_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_bool_lit(BoolLiteral *lit) OVERRIDE
+    virtual void visit_bool_lit(BoolLiteral *lit) override
     {
         value_ = parse_bool_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_num_lit(NumberLiteral *lit) OVERRIDE
+    virtual void visit_num_lit(NumberLiteral *lit) override
     {
         value_ = parse_num_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_str_lit(StringLiteral *lit) OVERRIDE
+    virtual void visit_str_lit(StringLiteral *lit) override
     {
         value_ = parse_str_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_fun_lit(FunctionLiteral *lit) OVERRIDE
+    virtual void visit_fun_lit(FunctionLiteral *lit) override
     {
         value_ = parse_fun_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_var_lit(VariableLiteral *lit) OVERRIDE
+    virtual void visit_var_lit(VariableLiteral *lit) override
     {
         value_ = parse_var_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_array_lit(ArrayLiteral *lit) OVERRIDE
+    virtual void visit_array_lit(ArrayLiteral *lit) override
     {
         value_ = parse_array_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_obj_lit(ObjectLiteral *lit) OVERRIDE
+    virtual void visit_obj_lit(ObjectLiteral *lit) override
     {
         value_ = parse_obj_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_nothing_lit(NothingLiteral *lit) OVERRIDE
+    virtual void visit_nothing_lit(NothingLiteral *lit) override
     {
         value_ = parse_nothing_lit(lit, param1_, param2_);
     }
 
-    virtual void visit_empty_stmt(EmptyStatement *stmt) OVERRIDE
+    virtual void visit_empty_stmt(EmptyStatement *stmt) override
     {
         value_ = parse_empty_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_expr_stmt(ExpressionStatement *stmt) OVERRIDE
+    virtual void visit_expr_stmt(ExpressionStatement *stmt) override
     {
         value_ = parse_expr_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_block_stmt(BlockStatement *stmt) OVERRIDE
+    virtual void visit_block_stmt(BlockStatement *stmt) override
     {
         value_ = parse_block_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_if_stmt(IfStatement *stmt) OVERRIDE
+    virtual void visit_if_stmt(IfStatement *stmt) override
     {
         value_ = parse_if_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_do_while_stmt(DoWhileStatement *stmt) OVERRIDE
+    virtual void visit_do_while_stmt(DoWhileStatement *stmt) override
     {
         value_ = parse_do_while_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_while_stmt(WhileStatement *stmt) OVERRIDE
+    virtual void visit_while_stmt(WhileStatement *stmt) override
     {
         value_ = parse_while_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_for_in_stmt(ForInStatement *stmt) OVERRIDE
+    virtual void visit_for_in_stmt(ForInStatement *stmt) override
     {
         value_ = parse_for_in_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_for_stmt(ForStatement *stmt) OVERRIDE
+    virtual void visit_for_stmt(ForStatement *stmt) override
     {
         value_ = parse_for_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_cont_stmt(ContinueStatement *stmt) OVERRIDE
+    virtual void visit_cont_stmt(ContinueStatement *stmt) override
     {
         value_ = parse_cont_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_break_stmt(BreakStatement *stmt) OVERRIDE
+    virtual void visit_break_stmt(BreakStatement *stmt) override
     {
         value_ = parse_break_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_ret_stmt(ReturnStatement *stmt) OVERRIDE
+    virtual void visit_ret_stmt(ReturnStatement *stmt) override
     {
         value_ = parse_ret_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_with_stmt(WithStatement *stmt) OVERRIDE
+    virtual void visit_with_stmt(WithStatement *stmt) override
     {
         value_ = parse_with_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_switch_stmt(SwitchStatement *stmt) OVERRIDE
+    virtual void visit_switch_stmt(SwitchStatement *stmt) override
     {
         value_ = parse_switch_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_throw_stmt(ThrowStatement *stmt) OVERRIDE
+    virtual void visit_throw_stmt(ThrowStatement *stmt) override
     {
         value_ = parse_throw_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_try_stmt(TryStatement *stmt) OVERRIDE
+    virtual void visit_try_stmt(TryStatement *stmt) override
     {
         value_ = parse_try_stmt(stmt, param1_, param2_);
     }
 
-    virtual void visit_dbg_stmt(DebuggerStatement *stmt) OVERRIDE
+    virtual void visit_dbg_stmt(DebuggerStatement *stmt) override
     {
         value_ = parse_dbg_stmt(stmt, param1_, param2_);
     }
@@ -859,182 +859,182 @@ protected:
     }
 
 private:
-    virtual void visit_binary_expr(BinaryExpression *expr) OVERRIDE
+    virtual void visit_binary_expr(BinaryExpression *expr) override
     {
         value_ = parse_binary_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_unary_expr(UnaryExpression *expr) OVERRIDE
+    virtual void visit_unary_expr(UnaryExpression *expr) override
     {
         value_ = parse_unary_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_assign_expr(AssignmentExpression *expr) OVERRIDE
+    virtual void visit_assign_expr(AssignmentExpression *expr) override
     {
         value_ = parse_assign_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_cond_expr(ConditionalExpression *expr) OVERRIDE
+    virtual void visit_cond_expr(ConditionalExpression *expr) override
     {
         value_ = parse_cond_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_prop_expr(PropertyExpression *expr) OVERRIDE
+    virtual void visit_prop_expr(PropertyExpression *expr) override
     {
         value_ = parse_prop_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_call_expr(CallExpression *expr) OVERRIDE
+    virtual void visit_call_expr(CallExpression *expr) override
     {
         value_ = parse_call_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_call_new_expr(CallNewExpression *expr) OVERRIDE
+    virtual void visit_call_new_expr(CallNewExpression *expr) override
     {
         value_ = parse_call_new_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_regular_expr(RegularExpression *expr) OVERRIDE
+    virtual void visit_regular_expr(RegularExpression *expr) override
     {
         value_ = parse_regular_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_fun_expr(FunctionExpression *expr) OVERRIDE
+    virtual void visit_fun_expr(FunctionExpression *expr) override
     {
         value_ = parse_fun_expr(expr, param1_, param2_, param3_);
     }
 
-    virtual void visit_this_lit(ThisLiteral *lit) OVERRIDE
+    virtual void visit_this_lit(ThisLiteral *lit) override
     {
         value_ = parse_this_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_ident_lit(IdentifierLiteral *lit) OVERRIDE
+    virtual void visit_ident_lit(IdentifierLiteral *lit) override
     {
         value_ = parse_ident_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_null_lit(NullLiteral *lit) OVERRIDE
+    virtual void visit_null_lit(NullLiteral *lit) override
     {
         value_ = parse_null_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_bool_lit(BoolLiteral *lit) OVERRIDE
+    virtual void visit_bool_lit(BoolLiteral *lit) override
     {
         value_ = parse_bool_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_num_lit(NumberLiteral *lit) OVERRIDE
+    virtual void visit_num_lit(NumberLiteral *lit) override
     {
         value_ = parse_num_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_str_lit(StringLiteral *lit) OVERRIDE
+    virtual void visit_str_lit(StringLiteral *lit) override
     {
         value_ = parse_str_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_fun_lit(FunctionLiteral *lit) OVERRIDE
+    virtual void visit_fun_lit(FunctionLiteral *lit) override
     {
         value_ = parse_fun_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_var_lit(VariableLiteral *lit) OVERRIDE
+    virtual void visit_var_lit(VariableLiteral *lit) override
     {
         value_ = parse_var_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_array_lit(ArrayLiteral *lit) OVERRIDE
+    virtual void visit_array_lit(ArrayLiteral *lit) override
     {
         value_ = parse_array_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_obj_lit(ObjectLiteral *lit) OVERRIDE
+    virtual void visit_obj_lit(ObjectLiteral *lit) override
     {
         value_ = parse_obj_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_nothing_lit(NothingLiteral *lit) OVERRIDE
+    virtual void visit_nothing_lit(NothingLiteral *lit) override
     {
         value_ = parse_nothing_lit(lit, param1_, param2_, param3_);
     }
 
-    virtual void visit_empty_stmt(EmptyStatement *stmt) OVERRIDE
+    virtual void visit_empty_stmt(EmptyStatement *stmt) override
     {
         value_ = parse_empty_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_expr_stmt(ExpressionStatement *stmt) OVERRIDE
+    virtual void visit_expr_stmt(ExpressionStatement *stmt) override
     {
         value_ = parse_expr_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_block_stmt(BlockStatement *stmt) OVERRIDE
+    virtual void visit_block_stmt(BlockStatement *stmt) override
     {
         value_ = parse_block_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_if_stmt(IfStatement *stmt) OVERRIDE
+    virtual void visit_if_stmt(IfStatement *stmt) override
     {
         value_ = parse_if_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_do_while_stmt(DoWhileStatement *stmt) OVERRIDE
+    virtual void visit_do_while_stmt(DoWhileStatement *stmt) override
     {
         value_ = parse_do_while_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_while_stmt(WhileStatement *stmt) OVERRIDE
+    virtual void visit_while_stmt(WhileStatement *stmt) override
     {
         value_ = parse_while_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_for_in_stmt(ForInStatement *stmt) OVERRIDE
+    virtual void visit_for_in_stmt(ForInStatement *stmt) override
     {
         value_ = parse_for_in_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_for_stmt(ForStatement *stmt) OVERRIDE
+    virtual void visit_for_stmt(ForStatement *stmt) override
     {
         value_ = parse_for_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_cont_stmt(ContinueStatement *stmt) OVERRIDE
+    virtual void visit_cont_stmt(ContinueStatement *stmt) override
     {
         value_ = parse_cont_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_break_stmt(BreakStatement *stmt) OVERRIDE
+    virtual void visit_break_stmt(BreakStatement *stmt) override
     {
         value_ = parse_break_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_ret_stmt(ReturnStatement *stmt) OVERRIDE
+    virtual void visit_ret_stmt(ReturnStatement *stmt) override
     {
         value_ = parse_ret_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_with_stmt(WithStatement *stmt) OVERRIDE
+    virtual void visit_with_stmt(WithStatement *stmt) override
     {
         value_ = parse_with_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_switch_stmt(SwitchStatement *stmt) OVERRIDE
+    virtual void visit_switch_stmt(SwitchStatement *stmt) override
     {
         value_ = parse_switch_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_throw_stmt(ThrowStatement *stmt) OVERRIDE
+    virtual void visit_throw_stmt(ThrowStatement *stmt) override
     {
         value_ = parse_throw_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_try_stmt(TryStatement *stmt) OVERRIDE
+    virtual void visit_try_stmt(TryStatement *stmt) override
     {
         value_ = parse_try_stmt(stmt, param1_, param2_, param3_);
     }
 
-    virtual void visit_dbg_stmt(DebuggerStatement *stmt) OVERRIDE
+    virtual void visit_dbg_stmt(DebuggerStatement *stmt) override
     {
         value_ = parse_dbg_stmt(stmt, param1_, param2_, param3_);
     }

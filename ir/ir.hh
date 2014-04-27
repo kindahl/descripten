@@ -21,7 +21,6 @@
 #include <vector>
 #include <gc_cpp.h>
 #include <gc/gc_allocator.h>
-#include "common/core.hh"
 #include "common/list.hh"
 #include "common/proxy.hh"
 #include "common/string.hh"
@@ -554,7 +553,7 @@ public:
     /**
      * @copydoc Resource::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_str_res(this);
     }
@@ -644,7 +643,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_module(this);
     }
@@ -689,7 +688,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_fun(this);
     }
@@ -861,7 +860,7 @@ public:
     /**
      * @copydoc Node::accept
      */
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_block(this);
     }
@@ -1005,8 +1004,8 @@ class ArgumentsObjectInitInstruction : public Instruction
 public:
     ArgumentsObjectInitInstruction() {}
 
-    virtual const Type *type() const OVERRIDE {  return Type::value(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override {  return Type::value(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_args_obj_init(this);
     }
@@ -1032,8 +1031,8 @@ public:
     uint32_t argument_index() const { return index_; }
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_args_obj_link(this);
     }
@@ -1071,8 +1070,8 @@ public:
      */
     Value *value() const;
 
-    virtual const Type *type() const OVERRIDE;
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override;
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_arr(this);
     }
@@ -1109,8 +1108,8 @@ public:
     Value *left() const { return lval_; }
     Value *right() const { return rval_; }
 
-    virtual const Type *type() const OVERRIDE;
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override;
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_bin(this);
     }
@@ -1130,8 +1129,8 @@ public:
 
     uint32_t num_extra() const { return num_extra_; }
 
-    virtual const Type *type() const OVERRIDE;
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override;
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_bnd_extra_init(this);
     }
@@ -1151,8 +1150,8 @@ public:
 
     uint32_t hops() const { return hops_; }
 
-    virtual const Type *type() const OVERRIDE;
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override;
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_bnd_extra_ptr(this);
     }
@@ -1188,8 +1187,8 @@ public:
     uint32_t argc() const { return argc_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_call(this);
     }
@@ -1219,8 +1218,8 @@ public:
     uint32_t argc() const { return argc_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_call_keyed(this);
     }
@@ -1250,8 +1249,8 @@ public:
     uint32_t argc() const { return argc_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_call_keyed_slow(this);
     }
@@ -1277,8 +1276,8 @@ public:
     uint32_t argc() const { return argc_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_call_named(this);
     }
@@ -1326,8 +1325,8 @@ public:
      */
     Value *result() const;
 
-    virtual const Type *type() const OVERRIDE;
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override;
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_val(this);
     }
@@ -1355,7 +1354,7 @@ public:
     /**
      * @copydoc Instruction::is_terminating
      */
-    virtual bool is_terminating() const OVERRIDE { return true; }
+    virtual bool is_terminating() const override { return true; }
 };
 
 /**
@@ -1379,8 +1378,8 @@ public:
     Block *true_block() const { return true_block_; }
     Block *false_block() const { return false_block_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_br(this);
     }
@@ -1401,8 +1400,8 @@ public:
 
     Block *block() const { return block_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_jmp(this);
     }
@@ -1423,8 +1422,8 @@ public:
 
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ret(this);
     }
@@ -1447,8 +1446,8 @@ public:
     Value *destination() const { return dst_; }
     Value *source() const { return src_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_store(this);
     }
@@ -1469,8 +1468,8 @@ public:
     Value *value() const { return val_; }
     size_t index() const { return index_; }
 
-    virtual const Type *type() const OVERRIDE;
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override;
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_get_elm_ptr(this);
     }
@@ -1493,8 +1492,8 @@ public:
      */
     size_t count() const { return count_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_stk_alloc(this);
     }
@@ -1517,8 +1516,8 @@ public:
      */
     size_t count() const { return count_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_stk_free(this);
     }
@@ -1537,8 +1536,8 @@ public:
 
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_stk_push(this);
     }
@@ -1555,15 +1554,15 @@ class MetaInstruction : public Instruction
 public:
     virtual ~MetaInstruction() {}
 
-    virtual bool is_meta() const OVERRIDE { return true; }
+    virtual bool is_meta() const override { return true; }
 
-    virtual const Type *type() const OVERRIDE
+    virtual const Type *type() const override
     {
         // We shouldn't perform type analysis in meta instructions.
         assert(false);
         return new (GC)OpaqueType("<Meta>");
     }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual void accept(Visitor *visitor) override
     {
     }
 };
@@ -1615,8 +1614,8 @@ public:
 
     bool strict() const { return strict_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ctx_set_strict(this);
     }
@@ -1636,8 +1635,8 @@ public:
 
     uint64_t key() const { return key_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ctx_enter_catch(this);
     }
@@ -1657,8 +1656,8 @@ public:
 
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ctx_enter_with(this);
     }
@@ -1670,8 +1669,8 @@ public:
 class ContextLeaveInstruction : public Instruction
 {
 public:
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ctx_leave(this);
     }
@@ -1697,8 +1696,8 @@ public:
     Value *result() const { return res_; }
     uint16_t cache_id() const { return cid_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ctx_get(this);
     }
@@ -1724,8 +1723,8 @@ public:
     Value *value() const { return val_; }
     uint16_t cache_id() const { return cid_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ctx_put(this);
     }
@@ -1750,8 +1749,8 @@ public:
     uint64_t key() const { return key_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ctx_del(this);
     }
@@ -1771,8 +1770,8 @@ public:
 
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ex_save_state(this);
     }
@@ -1791,8 +1790,8 @@ public:
 
     Value *state() const { return state_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ex_load_state(this);
     }
@@ -1814,8 +1813,8 @@ public:
     */
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ex_set(this);
     }
@@ -1827,8 +1826,8 @@ public:
 class ExceptionClearInstruction : public Instruction
 {
 public:
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_ex_clear(this);
     }
@@ -1851,8 +1850,8 @@ public:
     Value *destination() const { return dst_; }
     uint32_t parameter_count() const { return prmc_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_init_args(this);
     }
@@ -1929,8 +1928,8 @@ public:
      */
     Value *parameter_array() const;
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_decl(this);
     }
@@ -1971,8 +1970,8 @@ public:
     bool is_strict() const { return is_strict_; }
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_link(this);
     }
@@ -1998,8 +1997,8 @@ public:
     Value *key() const { return key_; }
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_def_data(this);
     }
@@ -2029,8 +2028,8 @@ public:
     Value *function() const { return fun_; }
     bool is_setter() const { return is_setter_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_def_accessor(this);
     }
@@ -2050,8 +2049,8 @@ public:
 
     Value *object() const { return obj_; }
 
-    virtual const Type *type() const OVERRIDE;
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override;
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_it_new(this);
     }
@@ -2074,8 +2073,8 @@ public:
     Value *iterator() const { return it_; }
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_it_next(this);
     }
@@ -2101,8 +2100,8 @@ public:
     uint64_t key() const { return key_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_get(this);
     }
@@ -2128,8 +2127,8 @@ public:
     Value *key() const { return key_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_get_slow(this);
     }
@@ -2155,8 +2154,8 @@ public:
     uint64_t key() const { return key_; }
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_put(this);
     }
@@ -2182,8 +2181,8 @@ public:
     Value *key() const { return key_; }
     Value *value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_put_slow(this);
     }
@@ -2210,8 +2209,8 @@ public:
     uint64_t key() const { return key_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_del(this);
     }
@@ -2238,8 +2237,8 @@ public:
     Value *key() const { return key_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_prp_del_slow(this);
     }
@@ -2265,8 +2264,8 @@ public:
     Value *values() const { return vals_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_es_new_arr(this);
     }
@@ -2296,8 +2295,8 @@ public:
     bool is_strict() const { return is_strict_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_es_new_fun_decl(this);
     }
@@ -2327,8 +2326,8 @@ public:
     bool is_strict() const { return is_strict_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_es_new_fun_expr(this);
     }
@@ -2348,8 +2347,8 @@ public:
 
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_es_new_obj(this);
     }
@@ -2376,8 +2375,8 @@ public:
     const String &flags() const { return flags_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_void(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_void(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_es_new_rex(this);
     }
@@ -2439,8 +2438,8 @@ public:
     Value *right() const { return rval_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_es_bin(this);
     }
@@ -2475,8 +2474,8 @@ public:
     Value *value() const { return val_; }
     Value *result() const { return res_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_instr_es_unary(this);
     }
@@ -2515,7 +2514,7 @@ public:
     /**
      * @copydoc Value::is_constant
      */
-    virtual bool is_constant() const OVERRIDE { return true; }
+    virtual bool is_constant() const override { return true; }
 
     /**
      * Accept node in visitor pattern.
@@ -2545,11 +2544,11 @@ public:
     Value *array() const { return array_; }
     int index() const { return index_; }
 
-    virtual const Type *type() const OVERRIDE
+    virtual const Type *type() const override
     {
         return static_cast<const ArrayType *>(array_->type())->type();
     }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_arr_elm(this);
     }
@@ -2558,11 +2557,11 @@ public:
 class FramePointer : public Constant
 {
 public:
-    virtual const Type *type() const OVERRIDE
+    virtual const Type *type() const override
     {
         return new (GC)PointerType(Type::value());
     }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_fp(this);
     }
@@ -2571,11 +2570,11 @@ public:
 class ValuePointer : public Constant
 {
 public:
-    virtual const Type *type() const OVERRIDE
+    virtual const Type *type() const override
     {
         return new (GC)PointerType(Type::value());
     }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_vp(this);
     }
@@ -2597,8 +2596,8 @@ public:
     NullConstant(const Type *type)
         : type_(type) {}
 
-    virtual const Type *type() const OVERRIDE { return type_; }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return type_; }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_null(this);
     }
@@ -2618,8 +2617,8 @@ public:
 
     bool value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::boolean(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::boolean(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_bool(this);
     }
@@ -2639,8 +2638,8 @@ public:
 
     double value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_double(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_double(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_double(this);
     }
@@ -2663,8 +2662,8 @@ public:
      */
     const String &value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::_double(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::_double(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_strdouble(this);
     }
@@ -2684,8 +2683,8 @@ public:
 
     const String &value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::string(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::string(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_str(this);
     }
@@ -2715,8 +2714,8 @@ public:
 
     Value value() const { return val_; }
 
-    virtual const Type *type() const OVERRIDE { return Type::value(); }
-    virtual void accept(Visitor *visitor) OVERRIDE
+    virtual const Type *type() const override { return Type::value(); }
+    virtual void accept(Visitor *visitor) override
     {
         visitor->visit_const_val(this);
     }
@@ -2734,8 +2733,8 @@ public:
     Temporary(const Type *type)
         : type_(type) {}
 
-    virtual bool is_constant() const OVERRIDE { return false; }
-    virtual const Type *type() const OVERRIDE { return type_; }
+    virtual bool is_constant() const override { return false; }
+    virtual const Type *type() const override { return type_; }
 };
 
 }

@@ -19,7 +19,6 @@
 #pragma once
 #include <map>
 #include <set>
-#include "common/core.hh"
 #include "common/string.hh"
 #include "parser/ast.hh"
 #include "parser/visitor.hh"
@@ -306,44 +305,44 @@ private:
 private:
     void visit_fun(parser::FunctionLiteral *lit);
 
-    virtual void visit_binary_expr(parser::BinaryExpression *expr) OVERRIDE;
-    virtual void visit_unary_expr(parser::UnaryExpression *expr) OVERRIDE;
-    virtual void visit_assign_expr(parser::AssignmentExpression *expr) OVERRIDE;
-    virtual void visit_cond_expr(parser::ConditionalExpression *expr) OVERRIDE;
-    virtual void visit_prop_expr(parser::PropertyExpression *expr) OVERRIDE;
-    virtual void visit_call_expr(parser::CallExpression *expr) OVERRIDE;
-    virtual void visit_call_new_expr(parser::CallNewExpression *expr) OVERRIDE;
-    virtual void visit_regular_expr(parser::RegularExpression *expr) OVERRIDE;
-    virtual void visit_fun_expr(parser::FunctionExpression *expr) OVERRIDE;
+    virtual void visit_binary_expr(parser::BinaryExpression *expr) override;
+    virtual void visit_unary_expr(parser::UnaryExpression *expr) override;
+    virtual void visit_assign_expr(parser::AssignmentExpression *expr) override;
+    virtual void visit_cond_expr(parser::ConditionalExpression *expr) override;
+    virtual void visit_prop_expr(parser::PropertyExpression *expr) override;
+    virtual void visit_call_expr(parser::CallExpression *expr) override;
+    virtual void visit_call_new_expr(parser::CallNewExpression *expr) override;
+    virtual void visit_regular_expr(parser::RegularExpression *expr) override;
+    virtual void visit_fun_expr(parser::FunctionExpression *expr) override;
 
-    virtual void visit_this_lit(parser::ThisLiteral *lit) OVERRIDE;
-    virtual void visit_ident_lit(parser::IdentifierLiteral *lit) OVERRIDE;
-    virtual void visit_null_lit(parser::NullLiteral *lit) OVERRIDE;
-    virtual void visit_bool_lit(parser::BoolLiteral *lit) OVERRIDE;
-    virtual void visit_num_lit(parser::NumberLiteral *lit) OVERRIDE;
-    virtual void visit_str_lit(parser::StringLiteral *lit) OVERRIDE;
-    virtual void visit_fun_lit(parser::FunctionLiteral *lit) OVERRIDE;
-    virtual void visit_var_lit(parser::VariableLiteral *lit) OVERRIDE;
-    virtual void visit_array_lit(parser::ArrayLiteral *lit) OVERRIDE;
-    virtual void visit_obj_lit(parser::ObjectLiteral *lit) OVERRIDE;
-    virtual void visit_nothing_lit(parser::NothingLiteral *lit) OVERRIDE;
+    virtual void visit_this_lit(parser::ThisLiteral *lit) override;
+    virtual void visit_ident_lit(parser::IdentifierLiteral *lit) override;
+    virtual void visit_null_lit(parser::NullLiteral *lit) override;
+    virtual void visit_bool_lit(parser::BoolLiteral *lit) override;
+    virtual void visit_num_lit(parser::NumberLiteral *lit) override;
+    virtual void visit_str_lit(parser::StringLiteral *lit) override;
+    virtual void visit_fun_lit(parser::FunctionLiteral *lit) override;
+    virtual void visit_var_lit(parser::VariableLiteral *lit) override;
+    virtual void visit_array_lit(parser::ArrayLiteral *lit) override;
+    virtual void visit_obj_lit(parser::ObjectLiteral *lit) override;
+    virtual void visit_nothing_lit(parser::NothingLiteral *lit) override;
 
-    virtual void visit_empty_stmt(parser::EmptyStatement *stmt) OVERRIDE;
-    virtual void visit_expr_stmt(parser::ExpressionStatement *stmt) OVERRIDE;
-    virtual void visit_block_stmt(parser::BlockStatement *stmt) OVERRIDE;
-    virtual void visit_if_stmt(parser::IfStatement *stmt) OVERRIDE;
-    virtual void visit_do_while_stmt(parser::DoWhileStatement *stmt) OVERRIDE;
-    virtual void visit_while_stmt(parser::WhileStatement *stmt) OVERRIDE;
-    virtual void visit_for_in_stmt(parser::ForInStatement *stmt) OVERRIDE;
-    virtual void visit_for_stmt(parser::ForStatement *stmt) OVERRIDE;
-    virtual void visit_cont_stmt(parser::ContinueStatement *stmt) OVERRIDE;
-    virtual void visit_break_stmt(parser::BreakStatement *stmt) OVERRIDE;
-    virtual void visit_ret_stmt(parser::ReturnStatement *stmt) OVERRIDE;
-    virtual void visit_with_stmt(parser::WithStatement *stmt) OVERRIDE;
-    virtual void visit_switch_stmt(parser::SwitchStatement *stmt) OVERRIDE;
-    virtual void visit_throw_stmt(parser::ThrowStatement *stmt) OVERRIDE;
-    virtual void visit_try_stmt(parser::TryStatement *stmt) OVERRIDE;
-    virtual void visit_dbg_stmt(parser::DebuggerStatement *stmt) OVERRIDE;
+    virtual void visit_empty_stmt(parser::EmptyStatement *stmt) override;
+    virtual void visit_expr_stmt(parser::ExpressionStatement *stmt) override;
+    virtual void visit_block_stmt(parser::BlockStatement *stmt) override;
+    virtual void visit_if_stmt(parser::IfStatement *stmt) override;
+    virtual void visit_do_while_stmt(parser::DoWhileStatement *stmt) override;
+    virtual void visit_while_stmt(parser::WhileStatement *stmt) override;
+    virtual void visit_for_in_stmt(parser::ForInStatement *stmt) override;
+    virtual void visit_for_stmt(parser::ForStatement *stmt) override;
+    virtual void visit_cont_stmt(parser::ContinueStatement *stmt) override;
+    virtual void visit_break_stmt(parser::BreakStatement *stmt) override;
+    virtual void visit_ret_stmt(parser::ReturnStatement *stmt) override;
+    virtual void visit_with_stmt(parser::WithStatement *stmt) override;
+    virtual void visit_switch_stmt(parser::SwitchStatement *stmt) override;
+    virtual void visit_throw_stmt(parser::ThrowStatement *stmt) override;
+    virtual void visit_try_stmt(parser::TryStatement *stmt) override;
+    virtual void visit_dbg_stmt(parser::DebuggerStatement *stmt) override;
     
 public:
     AnalyzedFunction *lookup(parser::FunctionLiteral *fun);

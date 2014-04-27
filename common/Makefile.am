@@ -25,6 +25,6 @@ libcommon_la_CFLAGS += -DLong=int
 endif
 
 library_includedir = $(includedir)/richmond/common
-library_include_HEADERS = cast.hh conversion.hh core.hh exception.hh \
-						  lexical.hh proxy.hh string.hh stringbuilder.hh \
-						  types.hh unicode.hh
+library_include_HEADERS = cast.hh conversion.hh exception.hh lexical.hh \
+						  proxy.hh string.hh stringbuilder.hh types.hh \
+						  unicode.hh

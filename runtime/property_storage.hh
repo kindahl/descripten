@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <gc_cpp.h>             // 3rd party.
 #include <gc/gc_allocator.h>    // 3rd party.
-#include "common/core.hh"
 #include "common/maybe.hh"
 #include "property.hh"
 

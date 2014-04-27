@@ -20,7 +20,6 @@
 #include <vector>
 #include <gc_cpp.h>
 #include <gc/gc_allocator.h>
-#include "common/core.hh"
 #include "parser/ast.hh"
 #include "parser/visitor.hh"
 #include "value_data.h"
@@ -330,44 +329,44 @@ private:
     void parse_fun_decls(const DeclarationVector &decls);
 
 private:
-    virtual Completion parse_binary_expr(BinaryExpression *expr) OVERRIDE;
-    virtual Completion parse_unary_expr(UnaryExpression *expr) OVERRIDE;
-    virtual Completion parse_assign_expr(AssignmentExpression *expr) OVERRIDE;
-    virtual Completion parse_cond_expr(ConditionalExpression *expr) OVERRIDE;
-    virtual Completion parse_prop_expr(PropertyExpression *expr) OVERRIDE;
-    virtual Completion parse_call_expr(CallExpression *expr) OVERRIDE;
-    virtual Completion parse_call_new_expr(CallNewExpression *expr) OVERRIDE;
-    virtual Completion parse_regular_expr(RegularExpression *expr) OVERRIDE;
-    virtual Completion parse_fun_expr(FunctionExpression *expr) OVERRIDE;
+    virtual Completion parse_binary_expr(BinaryExpression *expr) override;
+    virtual Completion parse_unary_expr(UnaryExpression *expr) override;
+    virtual Completion parse_assign_expr(AssignmentExpression *expr) override;
+    virtual Completion parse_cond_expr(ConditionalExpression *expr) override;
+    virtual Completion parse_prop_expr(PropertyExpression *expr) override;
+    virtual Completion parse_call_expr(CallExpression *expr) override;
+    virtual Completion parse_call_new_expr(CallNewExpression *expr) override;
+    virtual Completion parse_regular_expr(RegularExpression *expr) override;
+    virtual Completion parse_fun_expr(FunctionExpression *expr) override;
 
-    virtual Completion parse_this_lit(ThisLiteral *lit) OVERRIDE;
-    virtual Completion parse_ident_lit(IdentifierLiteral *lit) OVERRIDE;
-    virtual Completion parse_null_lit(NullLiteral *lit) OVERRIDE;
-    virtual Completion parse_bool_lit(BoolLiteral *lit) OVERRIDE;
-    virtual Completion parse_num_lit(NumberLiteral *lit) OVERRIDE;
-    virtual Completion parse_str_lit(StringLiteral *lit) OVERRIDE;
-    virtual Completion parse_fun_lit(FunctionLiteral *lit) OVERRIDE;
-    virtual Completion parse_var_lit(VariableLiteral *lit) OVERRIDE;
-    virtual Completion parse_array_lit(ArrayLiteral *lit) OVERRIDE;
-    virtual Completion parse_obj_lit(ObjectLiteral *lit) OVERRIDE;
-    virtual Completion parse_nothing_lit(NothingLiteral *lit) OVERRIDE;
+    virtual Completion parse_this_lit(ThisLiteral *lit) override;
+    virtual Completion parse_ident_lit(IdentifierLiteral *lit) override;
+    virtual Completion parse_null_lit(NullLiteral *lit) override;
+    virtual Completion parse_bool_lit(BoolLiteral *lit) override;
+    virtual Completion parse_num_lit(NumberLiteral *lit) override;
+    virtual Completion parse_str_lit(StringLiteral *lit) override;
+    virtual Completion parse_fun_lit(FunctionLiteral *lit) override;
+    virtual Completion parse_var_lit(VariableLiteral *lit) override;
+    virtual Completion parse_array_lit(ArrayLiteral *lit) override;
+    virtual Completion parse_obj_lit(ObjectLiteral *lit) override;
+    virtual Completion parse_nothing_lit(NothingLiteral *lit) override;
 
-    virtual Completion parse_empty_stmt(EmptyStatement *stmt) OVERRIDE;
-    virtual Completion parse_expr_stmt(ExpressionStatement *stmt) OVERRIDE;
-    virtual Completion parse_block_stmt(BlockStatement *stmt) OVERRIDE;
-    virtual Completion parse_if_stmt(IfStatement *stmt) OVERRIDE;
-    virtual Completion parse_do_while_stmt(DoWhileStatement *stmt) OVERRIDE;
-    virtual Completion parse_while_stmt(WhileStatement *stmt) OVERRIDE;
-    virtual Completion parse_for_in_stmt(ForInStatement *stmt) OVERRIDE;
-    virtual Completion parse_for_stmt(ForStatement *stmt) OVERRIDE;
-    virtual Completion parse_cont_stmt(ContinueStatement *stmt) OVERRIDE;
-    virtual Completion parse_break_stmt(BreakStatement *stmt) OVERRIDE;
-    virtual Completion parse_ret_stmt(ReturnStatement *stmt) OVERRIDE;
-    virtual Completion parse_with_stmt(WithStatement *stmt) OVERRIDE;
-    virtual Completion parse_switch_stmt(SwitchStatement *stmt) OVERRIDE;
-    virtual Completion parse_throw_stmt(ThrowStatement *stmt) OVERRIDE;
-    virtual Completion parse_try_stmt(TryStatement *stmt) OVERRIDE;
-    virtual Completion parse_dbg_stmt(DebuggerStatement *stmt) OVERRIDE;
+    virtual Completion parse_empty_stmt(EmptyStatement *stmt) override;
+    virtual Completion parse_expr_stmt(ExpressionStatement *stmt) override;
+    virtual Completion parse_block_stmt(BlockStatement *stmt) override;
+    virtual Completion parse_if_stmt(IfStatement *stmt) override;
+    virtual Completion parse_do_while_stmt(DoWhileStatement *stmt) override;
+    virtual Completion parse_while_stmt(WhileStatement *stmt) override;
+    virtual Completion parse_for_in_stmt(ForInStatement *stmt) override;
+    virtual Completion parse_for_stmt(ForStatement *stmt) override;
+    virtual Completion parse_cont_stmt(ContinueStatement *stmt) override;
+    virtual Completion parse_break_stmt(BreakStatement *stmt) override;
+    virtual Completion parse_ret_stmt(ReturnStatement *stmt) override;
+    virtual Completion parse_with_stmt(WithStatement *stmt) override;
+    virtual Completion parse_switch_stmt(SwitchStatement *stmt) override;
+    virtual Completion parse_throw_stmt(ThrowStatement *stmt) override;
+    virtual Completion parse_try_stmt(TryStatement *stmt) override;
+    virtual Completion parse_dbg_stmt(DebuggerStatement *stmt) override;
 
 public:
     Evaluator(FunctionLiteral *code, Type type, EsCallFrame &frame);

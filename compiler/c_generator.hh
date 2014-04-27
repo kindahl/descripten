@@ -17,8 +17,6 @@
  */
 
 #pragma once
-#include <cassert>
-#include <map>
 #include "common/core.hh"
 #include "allocator.hh"
 #include "generator.hh"

@@ -194,7 +194,7 @@ inline EsValueData es_value_from_string(const struct EsString *str)
 
     assert((uintptr_t)str < UINT64_C(0xffffffffffff));
 
-    value.data.bits = ES_VALUE_TAG_STRING | (uint64_t)str;
+    value.data.bits = ES_VALUE_TAG_STRING | (uintptr_t)str;
     return value;
 }
 
@@ -208,7 +208,7 @@ inline EsValueData es_value_from_object(struct EsObject *obj)
 
     assert((uintptr_t)obj < UINT64_C(0xffffffffffff));
 
-    value.data.bits = ES_VALUE_TAG_OBJECT | (uint64_t)obj;
+    value.data.bits = ES_VALUE_TAG_OBJECT | (uintptr_t)obj;
     return value;
 }
 

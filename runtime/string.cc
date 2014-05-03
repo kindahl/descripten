@@ -107,6 +107,11 @@ const EsString *EsString::create_from_utf8(const char *raw, size_t size)
     return str;
 }
 
+const EsString *EsString::create_from_utf8(const std::string &str)
+{
+    return create_from_utf8(str.c_str(), str.size());
+}
+
 bool EsString::empty() const
 {
     return len_ == 0;

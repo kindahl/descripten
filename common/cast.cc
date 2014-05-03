@@ -17,9 +17,3 @@
  */
 
 #include "cast.hh"
-
-#ifdef PLATFORM_DARWIN
-char lex_cast_buf_[64];     // FIXME: Enable thread local storage on Darwin.
-#else
-__thread char lex_cast_buf_[64];
-#endif

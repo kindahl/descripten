@@ -41,8 +41,7 @@ const EsString *EsPropertyKey::to_string() const
     if (is_string())
         return as_string();
 
-    return EsString::create_from_utf8(
-            lexical_cast<const char *>(as_index()));
+    return EsString::create_from_utf8(std::to_string(as_index()));
 }
 
 void EsPropertyKeySet::initialize()

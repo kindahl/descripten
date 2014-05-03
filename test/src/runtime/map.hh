@@ -65,7 +65,7 @@ public:
         for (size_t i = 0; i < EsMap::MAX_NUM_NON_MAPPED; i++)
         {
             TS_ASSERT(!map0.map_);
-            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(lexical_cast<const char *>(i))), EsProperty(false, false, false, Maybe<EsValue>()));
+            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(std::to_string(i))), EsProperty(false, false, false, Maybe<EsValue>()));
         }
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED);
         TS_ASSERT_EQUALS(map0.props_.size(), EsMap::MAX_NUM_NON_MAPPED);
@@ -94,7 +94,7 @@ public:
 
         for (size_t i = 0; i < EsMap::MAX_NUM_NON_MAPPED; i++)
         {
-            TS_ASSERT(map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8(lexical_cast<const char *>(i)))));
+            TS_ASSERT(map0.lookup(EsPropertyKey::from_str(EsString::create_from_utf8(std::to_string(i)))));
         }
     }
 
@@ -146,7 +146,7 @@ public:
         for (size_t i = 0; i < EsMap::MAX_NUM_NON_MAPPED; i++)
         {
             TS_ASSERT(!map0.map_);
-            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(lexical_cast<const char *>(i))),
+            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(std::to_string(i))),
                      EsProperty(false, false, false, Maybe<EsValue>()));
         }
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED);
@@ -434,7 +434,7 @@ public:
         for (size_t i = 0; i < EsMap::MAX_NUM_NON_MAPPED; i++)
         {
             TS_ASSERT(!map0.map_);
-            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(lexical_cast<const char *>(i))),
+            map0.add(EsPropertyKey::from_str(EsString::create_from_utf8(std::to_string(i))),
                      EsProperty(false, false, false, Maybe<EsValue>()));
         }
         TS_ASSERT_EQUALS(map0.size(), EsMap::MAX_NUM_NON_MAPPED);

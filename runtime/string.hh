@@ -96,6 +96,7 @@ public:
     static const EsString *create(const String &str);
     static const EsString *create_from_utf8(const char *str);
     static const EsString *create_from_utf8(const char *raw, size_t size);
+    static const EsString *create_from_utf8(const std::string &str);
 
     /**
      * @return true if the string is empty and false otherwise.

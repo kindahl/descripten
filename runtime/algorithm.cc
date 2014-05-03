@@ -370,7 +370,7 @@ namespace algorithm
                 {
                     EsValue new_elem;
                     if (!json_walkT(EsString::create_from_utf8(
-                            lexical_cast<const char *>(i)), val_obj, reviver, new_elem))
+                            std::to_string(i)), val_obj, reviver, new_elem))
                         return false;
 
                     if (new_elem.is_undefined())
@@ -638,7 +638,7 @@ namespace algorithm
         {
             EsValue str_p;
             if (!json_strT(EsString::create_from_utf8(
-                    lexical_cast<const char *>(i)), val, state, str_p))
+                    std::to_string(i)), val, state, str_p))
                 return false;
 
             if (str_p.is_undefined())

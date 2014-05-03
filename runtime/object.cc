@@ -1164,7 +1164,8 @@ bool EsArray::define_own_propertyT(EsPropertyKey p, const EsPropertyDescriptor &
                 
                 if (throws)
                 {
-                    ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DELETE, lexical_cast<const char *>(old_len)));
+                    ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DELETE,
+                             std::to_string(old_len).c_str()));
                     return false;
                 }
 
@@ -1291,8 +1292,9 @@ bool EsArray::update_own_propertyT(EsPropertyKey p, EsPropertyReference &current
 
                 if (throws)
                 {
-                    ES_THROW(EsTypeError, es_fmt_msg(ES_MSG_TYPE_PROP_DELETE,
-                                                     lexical_cast<const char *>(old_len)));
+                    ES_THROW(EsTypeError,
+                             es_fmt_msg(ES_MSG_TYPE_PROP_DELETE,
+                                        std::to_string(old_len).c_str()));
                     return false;
                 }
 

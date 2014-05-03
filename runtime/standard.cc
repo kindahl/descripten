@@ -853,7 +853,7 @@ ES_API_FUN(es_std_arr_proto_push)
             // FIXME: This looks like a mess.
             if (!o->putT(EsPropertyKey::from_str(
                     EsString::create_from_utf8(
-                            lexical_cast<const char *>(n++))), arg, true))
+                            std::to_string(n++))), arg, true))
                 return false;
         }
         else

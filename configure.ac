@@ -69,13 +69,13 @@ fi
 if [ test x$debug_build = xtrue ]
 then
     AC_MSG_RESULT(yes)
-    CXXFLAGS="$CXXFLAGS -Wall -Werror -Wfatal-errors -Wno-switch -O0 -DDEBUG"
+    CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -Wno-switch -O0 -DDEBUG"
 else
     AC_MSG_RESULT(no)
     # If we let the 'omit frame pointer' optimisation enabled,
     # we'll have difficulty later on while trying
     # to analyse crash dump files sent by the users.
-    CXXFLAGS="$CXXFLAGS -Wall -Werror -Wfatal-errors -Wno-switch -O3 -DNDEBUG -fno-omit-frame-pointer"
+    CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -Wno-switch -O3 -DNDEBUG -fno-omit-frame-pointer"
 fi
 
 AC_DEFINE(_UNIX)

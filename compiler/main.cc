@@ -40,7 +40,7 @@ using parser::UnicodeStream;
 
 namespace {
 
-std::string change_file_ext(const std::string &path, const std::string ext)
+/*std::string change_file_ext(const std::string &path, const std::string ext)
 {
     std::string dir_name;
     std::string base_name;
@@ -70,7 +70,7 @@ std::string change_file_ext(const std::string &path, const std::string ext)
     base_name.append(ext);
 
     return dir_name + base_name;
-}
+}*/
 
 }
 
